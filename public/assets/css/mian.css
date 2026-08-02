@@ -1,0 +1,121 @@
+/* Add matrial-icon */
+@import url('./matrial-icon/mui-icon.css');
+
+/*Add font size */
+@import url('./font-size.css');
+
+/* Hero section in Landing page */
+.hero-section {
+  background-image: url('../../assets/images/main/hero.jpg');
+  background-position: right;
+  height: 50vh;
+  background-size: contain;
+  background-repeat: repeat-x;
+}
+.hero {
+  height: 81vh;
+  width: 40%;
+  background-color: white;
+  position: relative;
+  margin-right: auto;
+  z-index: 1;
+  flex-direction: column;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.hero::before {
+  content: '';
+  width: 12.5rem;
+  height: 100%;
+  background-color: white;
+  position: absolute;
+  top: 0;
+  right: -6%;
+  transform: skewX(-7deg);
+  z-index: -1;
+}
+
+@media (min-width: 540px) {
+  .hero-section {
+    height: 70vh;
+  }
+}
+@media (min-width: 720px) {
+  .hero-section {
+    height: 85vh;
+  }
+}
+@media (min-width: 690px) {
+  .hero-section {
+    height: 80vh;
+    background-size: inherit;
+    background-repeat: inherit;
+  }
+}
+
+/* Card Category in landig page */
+.card-category {
+  width: 8.13rem;
+  height: 8.13rem;
+}
+.card-category__icon {
+  font-size: 1.75rem;
+}
+.card-category__title {
+  font-size: 0.88rem;
+}
+.card-category__link {
+  font-size: 0.63rem;
+}
+.card-category__link .material-symbols-outlined {
+  font-size: 1rem;
+}
+
+@media (min-width: 992px) {
+  .card-category {
+    width: 12.25rem;
+    height: 12.25rem;
+  }
+  .card-category__icon {
+    font-size: 3.13rem;
+  }
+  .card-category__title {
+    font-size: 1.13rem;
+  }
+  .card-category__link {
+    font-size: 0.81rem;
+  }
+  .card-category__link .material-symbols-outlined {
+    font-size: 1.5rem;
+  }
+}
+
+/* learning path section  */
+.path-learning {
+  border-radius: 1.75rem;
+}
+
+.path-learning__card {
+  margin-top: 7.5rem;
+}
+.path-learning__icon {
+  position: absolute;
+  top: 0;
+  right: 50%;
+  width: 8rem;
+  height: 8rem;
+  border-radius: 100px;
+  overflow: hidden;
+  transform: translate(53%, -50%);
+}
+
+@media (min-width: 992px) {
+  .path-learning {
+    border-radius: 6.25rem;
+  }
+  .path-learning__icon {
+    width: 12.38rem;
+    height: 12.38rem;
+  }
+}

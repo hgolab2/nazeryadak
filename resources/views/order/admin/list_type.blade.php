@@ -1,0 +1,94 @@
+<div class="border rounded p-3 bg-secondary mb-2">
+    <div class="d-flex align-items-center gap-3 flex-wrap">
+        <p class="m-0">
+            <b>{{ l('تعداد نتایج') }}:</b>
+            {{ $totalCount }}
+        </p>
+    </div>
+</div>
+
+<div class="table-p">
+    <table class="table table-bordered table-striped table-hover">
+        <thead class="table-primary">
+        <tr>
+            <th class="text-center">{{ l('ابزار') }}</th>
+            <th class="text-center">{{ l('کد سفارش') }}</th>
+            <th class="text-center">{{ l('مشتری') }}</th>
+            <th class="text-center">{{ l('تعداد اقلام') }}</th>
+            <th class="text-center">{{ l('مبلغ نهایی') }}</th>
+            <th class="text-center">{{ l('وضعیت') }}</th>
+            <th class="text-center">{{ l('تاریخ') }}</th>
+        </tr>
+        </thead>
+        <tbody>
+
+        @forelse($model as $order)
+            <tr>
+                {{-- ابزار --}}
+                <td class="text-center">
+                    <button class="btn btn-icon btn-light btn-xs rounded-circle shadow-sm"
+                            type="button" data-bs-toggle="dropdown">
+                        <i class="fi-dots-vertical"></i>
+                    </button>
+                    <ul class="dropdown-menu my-1">
+                        <li>
+                            <a class="dropdown-item" href="/admin/order/show/{{ $order->id }}">
+                                <i class="fa fa-eye me-2"></i>
+                                {{ l('مشاهده') }}
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="/admin/order/edit/{{ $order->id }}">
+                                <i class="fa fa-edit me-2"></i>
+                                {{ l('ویرایش') }}
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item text-danger"
+                               onclick="return destroy({{ $order->id }})"
+                               style="cursor:pointer">
+                                <i class="fa fa-trash me-2"></i>
+                                {{ l('حذف') }}
+                            </a>
+                        </li>
+                    </ul>
+                </td>
+
+                <td class="text-center">{{ $order->id }}</td>
+
+                <td class="text-center">
+                    {{ $order->customer?->fullName() ?? '—' }}
+                </td>
+
+                <td class="text-center">
+                    {{ $order->items->sum('quantity') }}
+                </td>
+
+                <td class="text-center">
+                {{(int)$order->final_price}}
+
+                </td>
+
+
+
+                <td class="text-center">
+                    <span class="badge bg-info">
+                        {{ $order->status() }}
+                    </span>
+                </td>
+
+                <td class="text-center">
+                    {{$order->created_at != null ? toPersianDate($order->created_at) : ''}}
+                </td>
+            </tr>
+        @empty
+            <tr>
+                <td colspan="8" class="text-center text-muted">
+                    {{ l('موردی یافت نشد') }}
+                </td>
+            </tr>
+        @endforelse
+
+        </tbody>
+    </table>
+</div>

@@ -1,0 +1,100 @@
+@extends('layout.layout', ['title' => 'پرداخت | ناظر یدک'])
+@section('main_content')
+<div class="container">
+    <div class="row mt-3 mb-2">
+        <div class="col-12">
+            <div class="cart-content py-3 px-4 mb-3">
+                <ul class="checkout-steps mb-0">
+                    <li class="is-completed-extra"><a href="javascript:void(0)" class="checkout-steps-active active-link-shopping">اطلاعات ارسال</a></li>
+                    <li class="is-completed"><a href="javascript:void(0)" class="checkout-steps-active active-link-shopping">پرداخت</a></li>
+                    <li class="is-active"><a href="javascript:void(0)" class="checkout-steps-item active-link">اتمام خرید</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+<main>
+    <div class="container">
+        @if(session('error'))
+        <div class="alert alert-danger font-13 d-flex align-items-center gap-2" role="alert">
+            <i class="fas fa-exclamation-circle"></i> {{ session('error') }}
+        </div>
+        @endif
+
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="cart-content p-4 mb-3">
+                    <div class="d-flex align-items-center gap-2 pb-2 mb-3 border-bottom">
+                        <i class="fas fa-credit-card" style="color:var(--primary);"></i>
+                        <h6 class="mb-0 font-13 fw-bold">انتخاب شیوه پرداخت</h6>
+                    </div>
+                    <div class="p-3 d-flex align-items-center justify-content-between" style="border:2px solid var(--primary); border-radius:var(--radius-sm); background:var(--primary-lighter);">
+                        <div class="d-flex align-items-center gap-3">
+                            <input type="radio" class="form-check-input" checked style="margin-top:0;">
+                            <div>
+                                <p class="font-13 fw-bold mb-0"><i class="fa fa-credit-card me-1" style="color:var(--primary);"></i> پرداخت اینترنتی</p>
+                                <p class="font-12 text-muted mb-0">از طریق درگاه امن زرین‌پال</p>
+                            </div>
+                        </div>
+                        <div style="background:#ffd700; border-radius:6px; padding:6px 10px;">
+                            <span style="font-weight:700; font-size:0.85rem; color:#1a1a2e;">ZarinPal</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="cart-content p-4">
+                    <div class="d-flex align-items-center gap-2 pb-2 mb-3 border-bottom">
+                        <i class="fas fa-box" style="color:var(--accent);"></i>
+                        <h6 class="mb-0 font-13 fw-bold">خلاصه سفارش</h6>
+                    </div>
+                    <div class="row">
+                        @foreach($order->items as $item)
+                        <div class="col-md-4 col-6 mb-3">
+                            <a href="{{ $item->product?->url() }}" class="d-block">
+                                <div class="card custom-card text-center p-2">
+                                    @if($item->product?->image() != '')
+                                    <img src="{{ $item->product?->image() }}" class="slider-pic" alt="">
+                                    @else
+                                    <div class="d-flex align-items-center justify-content-center" style="height:100px;"><i class="fas fa-image" style="font-size:2rem; color:#ddd;"></i></div>
+                                    @endif
+                                    <div class="card-body py-2">
+                                        <p class="font-12 mb-0" style="line-height:1.7;">{{ $item->product?->title }}</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="cart-content p-3" style="position:sticky; top:20px;">
+                    <div class="d-flex align-items-center gap-2 pb-2 mb-3 border-bottom">
+                        <i class="fas fa-receipt" style="color:var(--primary);"></i>
+                        <h6 class="mb-0 font-13 fw-bold">صورتحساب</h6>
+                    </div>
+                    <div class="d-flex justify-content-between py-2 font-13">
+                        <span class="text-muted">مبلغ محصولات</span>
+                        <span>{{ number_format($order->final_price) }} تومان</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-2 font-13 border-bottom">
+                        <span class="text-muted"><i class="fas fa-truck me-1"></i> هزینه ارسال</span>
+                        <span>{{ number_format($order->shipping_price) }} تومان</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-3">
+                        <span class="fw-bold">مبلغ قابل پرداخت</span>
+                        <span class="fw-bold" style="font-size:1.1rem; color:var(--primary);">{{ number_format($order->total_price) }} <small class="font-12 fw-normal">تومان</small></span>
+                    </div>
+                    <a href="/payment/zarinpal/{{ $order->id }}" class="btn add-cart-btn2 text-center d-block font-13 fw-bold" style="background:linear-gradient(135deg, var(--success), #43a047);">
+                        <i class="fas fa-lock me-1"></i> پرداخت امن
+                    </a>
+                    <div class="text-center mt-3">
+                        <p class="font-12 text-muted mb-0"><i class="fas fa-shield-alt me-1" style="color:var(--success);"></i> اتصال امن SSL</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+@endsection

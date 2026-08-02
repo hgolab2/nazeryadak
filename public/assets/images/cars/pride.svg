@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200">
+  <defs>
+    <linearGradient id="bodyPride" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#27ae60;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#1e8449;stop-opacity:1"/>
+    </linearGradient>
+  </defs>
+  <path d="M70,130 Q80,128 88,120 L120,82 Q130,68 152,63 L255,58 Q272,58 285,66 L318,90 Q328,97 342,103 L355,108 Q365,113 365,125 L365,140 Q365,145 360,145 L70,145 Q65,145 65,140 Z" fill="url(#bodyPride)" stroke="#145a32" stroke-width="1.5"/>
+  <path d="M128,83 L156,65 L250,60 L280,70 L290,83 Z" fill="#82e0aa" stroke="#58d68d" stroke-width="1" opacity="0.5"/>
+  <line x1="210" y1="62" x2="210" y2="83" stroke="#58d68d" stroke-width="1"/>
+  <circle cx="118" cy="148" r="20" fill="#2c3e50"/>
+  <circle cx="118" cy="148" r="13" fill="#7f8c8d"/>
+  <circle cx="118" cy="148" r="5" fill="#95a5a6"/>
+  <circle cx="310" cy="148" r="20" fill="#2c3e50"/>
+  <circle cx="310" cy="148" r="13" fill="#7f8c8d"/>
+  <circle cx="310" cy="148" r="5" fill="#95a5a6"/>
+  <ellipse cx="82" cy="118" rx="11" ry="7" fill="#f9e79f" opacity="0.9"/>
+  <ellipse cx="355" cy="113" rx="7" ry="6" fill="#e74c3c" opacity="0.9"/>
+</svg>

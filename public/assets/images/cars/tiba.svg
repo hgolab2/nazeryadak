@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200">
+  <defs>
+    <linearGradient id="bodyTiba" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#8e44ad;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#6c3483;stop-opacity:1"/>
+    </linearGradient>
+  </defs>
+  <path d="M65,130 Q75,128 85,120 L115,80 Q125,65 148,60 L258,55 Q275,55 290,64 L325,90 Q335,97 350,104 L362,109 Q372,114 372,125 L372,140 Q372,145 367,145 L65,145 Q60,145 60,140 Z" fill="url(#bodyTiba)" stroke="#4a235a" stroke-width="1.5"/>
+  <path d="M123,82 L153,63 L254,58 L285,68 L295,82 Z" fill="#c39bd3" stroke="#bb8fce" stroke-width="1" opacity="0.5"/>
+  <line x1="210" y1="60" x2="210" y2="82" stroke="#bb8fce" stroke-width="1"/>
+  <path d="M295,82 L320,90 L328,95 L300,85 Z" fill="#c39bd3" stroke="#bb8fce" stroke-width="1" opacity="0.4"/>
+  <circle cx="115" cy="148" r="21" fill="#2c3e50"/>
+  <circle cx="115" cy="148" r="13" fill="#7f8c8d"/>
+  <circle cx="115" cy="148" r="5" fill="#95a5a6"/>
+  <circle cx="318" cy="148" r="21" fill="#2c3e50"/>
+  <circle cx="318" cy="148" r="13" fill="#7f8c8d"/>
+  <circle cx="318" cy="148" r="5" fill="#95a5a6"/>
+  <ellipse cx="78" cy="118" rx="12" ry="7" fill="#f9e79f" opacity="0.9"/>
+  <ellipse cx="362" cy="113" rx="8" ry="6" fill="#e74c3c" opacity="0.9"/>
+</svg>

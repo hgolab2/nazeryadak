@@ -1,0 +1,132 @@
+.font-size-10 {
+  font-size: 0.63rem;
+}
+.font-size-12 {
+  font-size: 0.75rem;
+}
+.font-size-13 {
+  font-size: 0.81rem;
+}
+.font-size-14 {
+  font-size: 0.88rem;
+}
+.font-size-16 {
+  font-size: 16px !important;
+}
+.font-size-18 {
+  font-size: 18px !important;
+}
+.font-size-20 {
+  font-size: 20px !important;
+}
+.font-size-22 {
+  font-size: 22px !important;
+}
+
+@media (min-width: 576px) {
+  .font-size-sm-10 {
+    font-size: 0.63rem;
+  }
+  .font-size-sm-12 {
+    font-size: 12px !important;
+  }
+  .font-size-sm-13 {
+    font-size: 0.81rem;
+  }
+  .font-size-sm-14 {
+    font-size: 0.88rem;
+  }
+  .font-size-sm-16 {
+    font-size: 16px !important;
+  }
+  .font-size-sm-18 {
+    font-size: 18px !important;
+  }
+  .font-size-sm-20 {
+    font-size: 20px !important;
+  }
+  .font-size-sm-22 {
+    font-size: 22px !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .font-size-md-10 {
+    font-size: 0.63rem;
+  }
+  .font-size-md-12 {
+    font-size: 12px !important;
+  }
+  .font-size-md-13 {
+    font-size: 0.81rem;
+  }
+  .font-size-md-14 {
+    font-size: 0.88rem;
+  }
+  .font-size-md-16 {
+    font-size: 16px !important;
+  }
+  .font-size-md-18 {
+    font-size: 18px !important;
+  }
+  .font-size-md-20 {
+    font-size: 20px !important;
+  }
+  .font-size-md-22 {
+    font-size: 22px !important;
+  }
+}
+
+@media (min-width: 992px) {
+  .font-size-lg-10 {
+    font-size: 0.63rem;
+  }
+  .font-size-lg-12 {
+    font-size: 12px !important;
+  }
+  .font-size-lg-13 {
+    font-size: 0.81rem;
+  }
+  .font-size-lg-14 {
+    font-size: 0.88rem;
+  }
+  .font-size-lg-16 {
+    font-size: 16px !important;
+  }
+  .font-size-lg-18 {
+    font-size: 18px !important;
+  }
+  .font-size-lg-20 {
+    font-size: 20px !important;
+  }
+  .font-size-lg-22 {
+    font-size: 22px !important;
+  }
+}
+
+@media (min-width: 1200px) {
+  .font-size-xl-10 {
+    font-size: 0.63rem;
+  }
+  .font-size-xl-12 {
+    font-size: 12px !important;
+  }
+  .font-size-xl-13 {
+    font-size: 0.81rem;
+  }
+  .font-size-xl-14 {
+    font-size: 0.88rem;
+  }
+  .font-size-xl-16 {
+    font-size: 16px !important;
+  }
+  .font-size-xl-18 {
+    font-size: 18px !important;
+  }
+  .font-size-xl-20 {
+    font-size: 20px !important;
+  }
+  .font-size-xl-22 {
+    font-size: 22px !important;
+  }
+}

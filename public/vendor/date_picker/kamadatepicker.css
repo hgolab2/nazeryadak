@@ -1,0 +1,133 @@
+.bd-hide {
+	display: none;
+}
+
+.bd-main {
+	background-color: #FFF;
+	border: 1px solid #2b9a9a;
+	padding: 5px;
+	z-index: 9999;
+	width: auto !important;
+	margin: 0;
+	box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
+.bd-calendar {
+	width: auto;
+	padding: 0;
+	margin: 0;
+}
+
+.bd-title {
+	width: 100%;
+	padding: 0;
+	margin: 0;
+}
+
+.bd-calendar table {
+	border: none;
+	width: 100%;
+}
+
+.bd-dropdown {
+	display: inline-block;
+	float: right;
+	width: 40%;
+}
+
+.bd-dropdown select {
+	width: 100%;
+	height: 40px;
+	border: none;
+	cursor: pointer;
+}
+
+.bd-next, .bd-prev {
+	cursor: pointer;
+	background-repeat: no-repeat;
+	background-position: 50% 50%;
+	background-color: #FFF;
+	height: 40px;
+	width: 10%;
+	margin: 0;
+	padding: 0;
+	border: none;
+	display: inline-block;
+	float: right;
+}
+
+.bd-table thead {
+	background-color: #2b9a9a !important;
+	color: #FFF !important;
+	border : none !important;
+	border-right : none !important;
+	border-bottom : none !important;
+	font-weight: normal !important;
+}
+.bd-table thead th{
+	color: #fff !important;
+	border : none !important;
+}
+.bd-table thead tr {
+	height: 30px;
+	cursor: context-menu;
+}
+
+.bd-table thead tr th {
+	text-align: center;
+	font-weight: normal;
+}
+
+.bd-table tbody tr td {
+	border: none;
+}
+
+.bd-empty-cell {
+/*	width: 40px;
+	height: 40px;*/
+}
+
+.bd-table-days button {
+	width: 36px;
+	height: 36px;
+	cursor: pointer;
+	background-color: #F8F8F8;
+	border: 0;
+}
+
+.bd-table-days button:hover {
+	color: red;
+	font-weight: bold;
+	background-color: #E7E7E7;
+}
+
+.bd-today {
+	background-color: #DFF0D8 !important;
+	color: green;
+}
+
+.bd-holiday {
+    background-color: #FDE8E8 !important;
+}
+
+.bd-selected-day {
+	color: red;
+	font-weight: bold;
+}
+
+.bd-goto-today {
+	width: 100%;
+	height: 30px;
+	color: #FFF;
+	background-color: #2b9a9a;
+	padding-top: 5px;
+	cursor: pointer;
+	text-align: center;
+}
+button.bd-prev, button.bd-next {
+	font-size: 24px;
+	cursor: pointer;
+}
+button.bd-prev:hover, button.bd-next:hover {
+	color: #3c8f9a;
+}

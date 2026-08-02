@@ -1,0 +1,25 @@
+{
+    "platform": "laravel",
+    "region": "iran",
+    "port": 80,
+    "disks": [
+        {
+            "name": "routes",
+            "mountTo": "routes"
+        },
+        {
+            "name": "resources",
+            "mountTo": "resources"
+        },
+        {
+            "name": "app",
+            "mountTo": "app"
+        },
+        {
+            "name": "public",
+            "mountTo": "public"
+        }
+        
+
+    ]
+}

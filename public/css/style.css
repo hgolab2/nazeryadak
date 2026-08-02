@@ -1,0 +1,872 @@
+/*
+|--------------------------------------------------------------------------
+| Vazirmatn Font Embedding (Direct @font-face for maximum compatibility)
+|--------------------------------------------------------------------------
+| We are defining the font directly using font-face rules and CDN links
+| for the font files (woff2 format) to bypass potential @import restrictions.
+*/
+
+/* Vazirmatn Medium (500) */
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('/assets/font/Sahel/Sahel.woff2') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+}
+
+/* Vazirmatn SemiBold (600) - Used as Bold default in some apps */
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('/assets/font/Sahel/Sahel-Bold.woff2') format('woff2');
+    font-weight: 600;
+    font-style: normal;
+}
+
+/* Vazirmatn Bold (700) */
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('/assets/font/Sahel/Sahel-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+}
+
+/* Fallback for Regular (400) if no specific weight is set, using Medium */
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('/assets/font/Sahel/Sahel.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| General Styles
+|--------------------------------------------------------------------------
+*/
+:root {
+    --primary-blue: #1987ff; /* رنگ اصلی */
+    --secondary-red: #ef394e; /* رنگ اکشن (مثل افزودن به سبد خرید) */
+    --text-color: #3f4064; /* رنگ متن اصلی */
+    --background-color: #f0f0f1; /* رنگ پس زمینه */
+    --border-color: #e0e0e2;
+    --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+body {
+    font-family: 'Vazirmatn', Tahoma, sans-serif;
+    direction: rtl;
+    background-color: var(--background-color);
+    margin: 0;
+    padding: 0;
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+a {
+    text-decoration: none;
+    color: var(--primary-blue);
+    transition: color 0.2s;
+}
+
+a:hover {
+    color: #0d6efd;
+}
+
+.container {
+    max-width: 1240px;
+    margin: 30px auto;
+    padding: 0 10px;
+}
+
+h1, h2, h3, h4 {
+    color: #3f4064;
+    font-weight: 700;
+}
+
+/* Utility Classes */
+.alert {
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-weight: 500;
+    text-align: center;
+}
+.success-alert {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+.error-message {
+    color: var(--secondary-red);
+    font-size: 0.9rem;
+    margin-top: 5px;
+    display: block;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Header & Navigation
+|--------------------------------------------------------------------------
+*/
+.header {
+    background-color: #ffffff;
+    padding: 10px 0;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.header-content {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header h1 a {
+    text-decoration: none;
+    color: var(--secondary-red); /* دیجی‌کالا از لوگوی قرمز استفاده می‌کند */
+    font-size: 1.8rem;
+    font-weight: 900;
+}
+
+.nav-links {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.cart-link, .admin-link {
+    text-decoration: none;
+    color: var(--text-color);
+    font-weight: 500;
+    padding: 5px 10px;
+    border-radius: 6px;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.cart-link {
+    background-color: #f7f7f7;
+    border: 1px solid var(--border-color);
+}
+.cart-link:hover {
+    background-color: var(--border-color);
+    color: var(--text-color);
+}
+.admin-link:hover {
+    color: var(--primary-blue);
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Product Grid (Index Page)
+|--------------------------------------------------------------------------
+*/
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.product-card {
+    background-color: white;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+    transition: transform 0.3s, box-shadow 0.3s;
+    display: flex;
+    flex-direction: column;
+}
+.product-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.product-image-placeholder {
+    height: 250px;
+    background-color: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.1rem;
+    color: #6c757d;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.product-info {
+    padding: 15px;
+    text-align: right;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.product-name {
+    font-size: 1rem;
+    font-weight: 500;
+    margin-bottom: 10px;
+    color: var(--text-color);
+    min-height: 40px;
+}
+
+.product-price {
+    font-size: 1.5rem;
+    color: var(--text-color);
+    font-weight: 700;
+    margin-bottom: 10px;
+    text-align: left; /* قیمت معمولا چپ‌چین است */
+    padding-top: 10px;
+    border-top: 1px solid #f0f0f1;
+}
+.product-price small {
+    font-size: 60%;
+    color: #6c757d;
+    margin-right: 5px;
+}
+
+.product-link {
+    display: block;
+    width: 100%;
+    background-color: var(--primary-blue);
+    color: white;
+    padding: 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    text-align: center;
+    transition: background-color 0.3s;
+}
+.product-link:hover {
+    background-color: #0d6efd;
+}
+.out-of-stock {
+    display: block;
+    padding: 12px;
+    border-radius: 8px;
+    color: white;
+    background-color: #dc3545;
+    font-weight: 500;
+    text-align: center;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Product Detail Page (Show View)
+|--------------------------------------------------------------------------
+*/
+.product-detail-card {
+    display: flex;
+    background-color: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+}
+
+.detail-image-area {
+    flex: 1;
+    padding-left: 30px;
+}
+.detail-info-area {
+    flex: 2;
+    padding-right: 20px;
+}
+
+.detail-image-placeholder {
+    height: 450px;
+    background-color: #f7f7f7;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 10px;
+    font-size: 1.5rem;
+    color: #a0a0a0;
+    border: 1px solid var(--border-color);
+}
+
+.detail-name {
+    font-size: 2rem;
+    color: var(--text-color);
+    margin-bottom: 15px;
+    border-bottom: 2px solid #f0f0f1;
+    padding-bottom: 10px;
+}
+
+.detail-price {
+    font-size: 2.2rem;
+    color: var(--secondary-red); /* قیمت به رنگ قرمز */
+    font-weight: 900;
+    margin-bottom: 25px;
+    text-align: left;
+}
+.detail-price small {
+    font-size: 60%;
+    color: #3f4064;
+    margin-right: 5px;
+}
+
+.detail-description h3 {
+    font-size: 1.2rem;
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.detail-description p {
+    line-height: 2;
+    color: #6c757d;
+}
+
+.add-to-cart-btn {
+    display: block;
+    width: 100%;
+    max-width: 350px;
+    background-color: var(--secondary-red);
+    color: white;
+    padding: 15px;
+    border: none;
+    cursor: pointer;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    text-decoration: none;
+    transition: background-color 0.3s;
+}
+.add-to-cart-btn:hover:not(:disabled) {
+    background-color: #c42d3e;
+}
+.add-to-cart-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background-color: #ccc;
+}
+
+.stock-status {
+    margin-top: 15px;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+.stock-available {
+    color: #28a745;
+}
+.stock-unavailable {
+    color: var(--secondary-red);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Cart Page Styles
+|--------------------------------------------------------------------------
+*/
+.cart-table-wrapper {
+    overflow-x: auto;
+    background-color: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+}
+
+.cart-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px;
+}
+
+.cart-table th, .cart-table td {
+    padding: 15px;
+    text-align: right;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.cart-table th {
+    background-color: #f7f7f7;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.cart-table tr:last-child td {
+    border-bottom: none;
+}
+
+.product-name-link {
+    font-weight: 500;
+    color: var(--text-color);
+    text-decoration: none;
+}
+.product-name-link:hover {
+    color: var(--primary-blue);
+}
+
+.quantity-form {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.quantity-input {
+    padding: 8px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    text-align: center;
+    width: 60px;
+    font-family: 'Vazirmatn', sans-serif;
+}
+
+.update-btn {
+    background-color: var(--primary-blue);
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-size: 0.9rem;
+}
+.update-btn:hover {
+    background-color: #0d6efd;
+}
+
+.remove-btn {
+    background-color: #999;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-size: 0.9rem;
+}
+.remove-btn:hover {
+    background-color: #777;
+}
+
+.cart-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-top: 30px;
+    padding: 25px;
+    background-color: white;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+    font-size: 1.1rem;
+}
+
+.total-price strong {
+    font-size: 1.6rem;
+    color: var(--secondary-red);
+    margin-right: 10px;
+}
+
+.checkout-actions {
+    display: flex;
+    gap: 15px;
+}
+
+.checkout-btn {
+    background-color: var(--secondary-red); /* قرمز برای نهایی کردن خرید */
+    color: white;
+    padding: 15px 30px;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 700;
+    transition: background-color 0.3s;
+}
+.checkout-btn:hover {
+    background-color: #c42d3e;
+}
+
+.back-to-shop-btn {
+    background-color: #999;
+    color: white;
+    padding: 15px 30px;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 700;
+    transition: background-color 0.3s;
+}
+.back-to-shop-btn:hover {
+    background-color: #777;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Checkout & Order Success Styles
+|--------------------------------------------------------------------------
+*/
+.checkout-layout {
+    display: flex;
+    flex-direction: row-reverse;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.shipping-form-box, .order-summary-box {
+    background-color: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+}
+
+.shipping-form-box {
+    flex: 3;
+}
+.order-summary-box {
+    flex: 2;
+    height: fit-content;
+    border: 1px solid var(--border-color);
+}
+
+.shipping-form-box h2, .order-summary-box h2 {
+    color: var(--text-color);
+    font-size: 1.5rem;
+    border-bottom: 2px solid #f0f0f1;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.form-group input, .form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+    font-family: 'Vazirmatn', sans-serif;
+}
+.form-group input:focus, .form-group textarea:focus {
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(25, 135, 255, 0.25);
+    outline: none;
+}
+
+.place-order-btn {
+    width: 100%;
+    background-color: var(--secondary-red);
+    color: white;
+    padding: 15px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: background-color 0.3s;
+}
+.place-order-btn:hover {
+    background-color: #c42d3e;
+}
+
+.summary-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.summary-list li {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px dashed #e9ecef;
+    font-size: 1rem;
+}
+
+.summary-total {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 20px;
+    margin-top: 15px;
+    border-top: 2px solid var(--border-color);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--secondary-red);
+}
+
+/* Order Success Page */
+.order-success-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 70vh;
+}
+.success-box {
+    background-color: white;
+    border: 1px solid var(--border-color);
+    padding: 40px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    max-width: 600px;
+    width: 100%;
+}
+.success-title {
+    color: #28a745;
+    font-size: 2rem;
+    margin-bottom: 20px;
+    font-weight: 700;
+}
+.order-id {
+    font-size: 1.1rem;
+    color: #6c757d;
+    margin-bottom: 30px;
+}
+.order-details-summary {
+    background-color: #f7f7f7;
+    border: 1px solid #c3e6cb;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 30px;
+    text-align: right;
+}
+.detail-list li {
+    padding: 8px 0;
+    border-bottom: 1px dashed #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    font-weight: 500;
+}
+.status-badge {
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-weight: 700;
+    color: white;
+    font-size: 0.9rem;
+    display: inline-block;
+}
+.status-paid { background-color: #28a745; }
+.status-pending { background-color: var(--primary-blue); }
+
+/*
+|--------------------------------------------------------------------------
+| Admin Dashboard Styles
+|--------------------------------------------------------------------------
+*/
+.admin-title {
+    color: var(--text-color);
+    text-align: center;
+    margin-bottom: 10px;
+}
+.section-title {
+    color: var(--primary-blue);
+    border-bottom: 3px solid var(--primary-blue);
+    padding-bottom: 10px;
+    margin-top: 30px;
+    margin-bottom: 20px;
+    font-size: 1.6rem;
+}
+.admin-table-wrapper {
+    overflow-x: auto;
+    background-color: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+}
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 800px;
+}
+.admin-table th, .admin-table td {
+    padding: 15px;
+    text-align: right;
+    border-bottom: 1px solid var(--border-color);
+}
+.admin-table th {
+    background-color: #f7f7f7;
+    font-weight: 600;
+    color: var(--text-color);
+}
+.admin-table tbody tr:hover {
+    background-color: #f9f9f9;
+}
+
+.detail-btn {
+    background-color: var(--primary-blue);
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+.detail-btn:hover {
+    background-color: #0d6efd;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.5);
+    padding-top: 60px;
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 30px;
+    border: none;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 800px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    position: relative;
+    direction: rtl;
+}
+
+.close-btn {
+    color: var(--secondary-red);
+    float: left;
+    font-size: 32px;
+    font-weight: 500;
+}
+
+.close-btn:hover,
+.close-btn:focus {
+    color: #333;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.modal-body h4 {
+    color: var(--primary-blue);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 5px;
+    margin-top: 20px;
+    font-weight: 600;
+}
+
+.modal-info-list {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 20px;
+}
+
+.modal-info-list li {
+    padding: 8px 0;
+    border-bottom: 1px dashed #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.05rem;
+}
+.modal-info-list li span {
+     font-weight: 500;
+     color: #6c757d;
+}
+.modal-info-list li strong {
+    font-weight: 700;
+}
+.modal-info-list li p {
+    margin: 0;
+    text-align: left;
+    max-width: 70%;
+    font-weight: 500;
+}
+
+.modal-items-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+.modal-items-table th, .modal-items-table td {
+    border: 1px solid var(--border-color);
+    padding: 10px;
+    text-align: right;
+}
+.modal-items-table th {
+    background-color: #f7f7f7;
+    font-weight: 600;
+}
+.modal-items-table tfoot td {
+    background-color: #fff3cd;
+    border-top: 2px solid var(--secondary-red);
+    color: var(--secondary-red);
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Responsive adjustments
+|--------------------------------------------------------------------------
+*/
+@media (max-width: 992px) {
+    .checkout-layout {
+        flex-direction: column;
+    }
+    .shipping-form-box, .order-summary-box {
+        flex: 1;
+    }
+    .product-detail-card {
+        flex-direction: column;
+    }
+    .detail-image-area {
+        padding-left: 0;
+        margin-bottom: 20px;
+    }
+    .detail-info-area {
+        padding-right: 0;
+    }
+    .detail-price {
+        text-align: right;
+    }
+    .add-to-cart-btn {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .container { margin: 20px auto; padding: 0 10px; }
+
+    .header-content {
+        flex-direction: column;
+        text-align: center;
+    }
+    .nav-links {
+        margin-top: 15px;
+        gap: 10px;
+        justify-content: center;
+    }
+    .cart-link, .admin-link { min-width: 150px; text-align: center; }
+
+    .cart-summary {
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+    }
+    .total-price { text-align: center; }
+    .checkout-actions { flex-direction: column; width: 100%; }
+    .checkout-btn, .back-to-shop-btn { width: 100%; text-align: center; }
+
+    .success-box { padding: 20px; }
+
+    .product-grid {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+}
