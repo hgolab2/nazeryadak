@@ -42,8 +42,7 @@ $('.mobile-menu-level-2 > li.has-mobile-submenu-2 > a').on('click', function () 
 
 /*----------------------- owl carousel slider --------------------*/
 
-$(document).ready()
-{
+$(document).ready(function () {
     $('.best-suggestion-slider').owlCarousel({
         items:4,
         rtl:true,
@@ -79,13 +78,13 @@ $(document).ready()
         loop:true,
         responsive:{
             0:{
-                items:1
+                items:2
             },
             600:{
                 items:2
             },
             800:{
-                items:2
+                items:3
             },
             1000:{
                 items:3
@@ -96,7 +95,7 @@ $(document).ready()
 
         }
     });
-}
+});
 
 /*----------------------- count down timer --------------------*/
 

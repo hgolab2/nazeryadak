@@ -311,21 +311,21 @@
         <div class="footer-features">
             <div class="container">
                 <div class="row text-center">
-                    <div class="col-6 col-lg-3 mb-3 mb-lg-0">
+                    <div class="col-6 col-lg-4 mb-3 mb-lg-0">
                         <div class="footer-feature-item">
                             <div class="footer-feature-icon"><i class="fas fa-truck"></i></div>
                             <h6>ارسال رایگان</h6>
                             <span>قم +۵M | سایر شهرها +۲۰M</span>
                         </div>
                     </div>
-                    <div class="col-6 col-lg-3 mb-3 mb-lg-0">
+                    <div class="col-6 col-lg-4 mb-3 mb-lg-0">
                         <div class="footer-feature-item">
                             <div class="footer-feature-icon"><i class="fas fa-shield-alt"></i></div>
                             <h6>ضمانت اصالت</h6>
                             <span>کالای ۱۰۰٪ اصل</span>
                         </div>
                     </div>
-                    <div class="col-6 col-lg-3">
+                    <div class="col-12 col-lg-4">
                         <div class="footer-feature-item">
                             <div class="footer-feature-icon"><i class="fas fa-headset"></i></div>
                             <h6>پشتیبانی</h6>
@@ -341,7 +341,7 @@
                 <div class="row">
                     <div class="col-lg-4 col-md-6 footer-box mb-4">
                         <div class="footer-brand">
-                            <img src="/assets/images/logo.png" alt="ناظر یدک" style="height:40px; filter:brightness(0) invert(1); margin-bottom:15px;">
+                            <img src="/assets/images/logo.png" alt="ناظر یدک" style="height:44px; background:#fff; border-radius:6px; padding:5px 10px; margin-bottom:15px;">
                             <div class="footer-about">
                                 nazeryadak یک فروشگاه اینترنتی تخصصی در حوزه فروش لوازم یدکی خودرو با تمرکز ویژه بر قطعات اصلی ایساکو (ISACO) است. ما بستری امن برای خرید آنلاین لوازم یدکی فراهم کرده‌ایم.
                             </div>

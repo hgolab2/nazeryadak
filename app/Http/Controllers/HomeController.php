@@ -54,6 +54,7 @@ class HomeController extends Controller
         $carCategories = \App\Models\EshopCategory::withCount('products')
             ->where('is_featured', 1)
             ->orderByDesc('products_count')
+            ->take(10)
             ->get();
         return View('index' , compact('articles','products','advertisements','carCategories'));
 	}

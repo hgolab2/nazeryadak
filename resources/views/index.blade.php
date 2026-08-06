@@ -132,7 +132,7 @@
             </div>
             <div class="row mt-2 g-3">
                 @foreach ($articles as $article)
-                    <div class="col-xl-3 col-lg-3 col-sm-6">
+                    <div class="col-6 col-lg-3">
                         <a href="{{$article->getUrl()}}" class="d-block h-100 text-decoration-none">
                             <div class="blog-card-new">
                                 @if($article->image && $article->images)

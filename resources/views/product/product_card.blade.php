@@ -1,32 +1,35 @@
+@php
+    $discountPercent = $product->discountPercent();
+    $hasDiscount = $discountPercent > 0;
+@endphp
 <div class="item">
-    <div class="card border-0 custom-card mt-3 position-relative">
-        <a href="{{$product->url()}}" class="d-block w-100">
+    <div class="card custom-card position-relative">
+        @if($hasDiscount)
+            <span class="product-discount-badge">{{ toPersianNumbers(round($discountPercent), false) }}%</span>
+        @endif
+
+        <a href="{{$product->url()}}" class="product-thumb">
             <img src="{{$product->image()}}" class="slider-pic lazy-img"
                  @if(!$product->hasImage()) data-fetch="/product/fetch-image/{{$product->id}}" @endif
+                 onerror="this.onerror=null;this.src='/images/no-image.svg';this.classList.add('is-placeholder');"
+                 loading="lazy"
                  alt="{{$product->title}}">
         </a>
-        <div class="card-body">
+
+        <div class="card-body product-card-body">
             <a href="{{$product->url()}}" class="product-title">{{toPersianNumbers($product->title)}}</a>
 
-            <div class="d-flex justify-content-between align-items-center px-3 py-3">
-                <span class="badge text-white rounded-pill font-13" style="height: 25px; background: var(--accent);">
-                    {{$product->discountPercent()}}%
-                </span>
-
-                <span class="font-13">
-                    {{toPersianNumbers($product->price)}} تومان
-                    <br>
-                    <del class="text-muted font-13">{{toPersianNumbers($product->regular_price)}}</del>
-                </span>
+            <div class="product-price-row">
+                @if($hasDiscount)
+                    <del class="product-old-price">{{toPersianNumbers($product->regular_price)}}</del>
+                @endif
+                <span class="product-price">{{toPersianNumbers($product->price)}} <small>تومان</small></span>
             </div>
 
-            <div class="d-flex justify-content-center">
-                <button class="btn add-cart-btn m-0" data-id="{{ $product->id }}">
-                    <i class="fa fa-cart-plus me-1"></i>
-                    افزودن به سبد خرید
-                </button>
-            </div>
-
+            <button class="btn add-cart-btn" data-id="{{ $product->id }}">
+                <i class="fa fa-cart-plus me-1"></i>
+                افزودن به سبد خرید
+            </button>
         </div>
     </div>
 </div>
