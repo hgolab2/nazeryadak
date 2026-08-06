@@ -16,7 +16,42 @@ use App\Http\Controllers\Admin\UserAdminController;
 use App\Http\Controllers\Admin\ImportController;
 
 use App\Http\Middleware\ShareDataInFrontend;
+Route::get('/sitemap.xml', function () {
+    $urls = collect([
+        ['loc' => seo_url(), 'priority' => '1.0', 'changefreq' => 'daily'],
+        ['loc' => seo_url('/shop'), 'priority' => '0.9', 'changefreq' => 'daily'],
+        ['loc' => seo_url('/blog'), 'priority' => '0.7', 'changefreq' => 'weekly'],
+        ['loc' => seo_url('/about-us'), 'priority' => '0.5', 'changefreq' => 'monthly'],
+        ['loc' => seo_url('/contact-us'), 'priority' => '0.5', 'changefreq' => 'monthly'],
+        ['loc' => seo_url('/faq'), 'priority' => '0.5', 'changefreq' => 'monthly'],
+    ]);
 
+    $importantShopUrls = [
+        '/shop?title=ایساکو',
+        '/shop?title=لنت ترمز',
+        '/shop?title=فیلتر روغن',
+        '/shop?title=تسمه تایم',
+        '/shop?title=سنسور',
+        '/shop?car_model=پژو 206',
+        '/shop?car_model=پژو 405',
+        '/shop?car_model=سمند',
+        '/shop?car_model=دنا',
+        '/shop?car_model=پراید',
+    ];
+    foreach ($importantShopUrls as $shopUrl) {
+        $urls->push(['loc' => seo_url($shopUrl), 'priority' => '0.75', 'changefreq' => 'daily']);
+    }
+    foreach (\App\Enums\ProductCategory::cases() as $category) {
+        $urls->push(['loc' => seo_url('/shop?category=' . $category->slug()), 'priority' => '0.75', 'changefreq' => 'daily']);
+    }
+    \App\Models\Product::where('is_active', 1)->select(['id', 'title', 'slug', 'updated_at'])->latest('updated_at')->chunk(500, function ($products) use (&$urls) {
+        foreach ($products as $product) {
+            $urls->push(['loc' => seo_url($product->url()), 'lastmod' => optional($product->updated_at)->toAtomString(), 'priority' => '0.8', 'changefreq' => 'weekly']);
+        }
+    });
+
+    return response(view('sitemap', compact('urls'))->render(), 200)->header('Content-Type', 'application/xml; charset=UTF-8');
+});
 Route::group(['namespace' => 'Frontend', 'middleware' => [ShareDataInFrontend::class]], function () {
     Route::get('/payment/zarinpal/{id}', [PaymentController::class, 'request'])->name('payment.request');
     Route::get('/payment/zarinpal/callback', [PaymentController::class, 'callback'])->name('payment.callback');

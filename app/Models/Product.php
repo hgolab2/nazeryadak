@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Product extends Model
 {
@@ -28,17 +29,11 @@ class Product extends Model
     ];
 
     protected $casts = [
-        'price'        => 'integer',
-        'regular_price'=> 'integer',
-        'weight'       => 'integer',
-        'is_active'    => 'boolean',
+        'price'         => 'integer',
+        'regular_price' => 'integer',
+        'weight'        => 'integer',
+        'is_active'     => 'boolean',
     ];
-
-    /*
-    |--------------------------------------------------------------------------
-    | Relationships
-    |--------------------------------------------------------------------------
-    */
 
     public function categories()
     {
@@ -52,7 +47,7 @@ class Product extends Model
 
     public function url()
     {
-        return '/product/'.$this->id;
+        return '/product/' . $this->id . '/' . ($this->slug ?: Str::slug($this->title, '-'));
     }
 
     public function image()
@@ -75,7 +70,7 @@ class Product extends Model
 
     public function favorites()
     {
-        return $this->belongsToMany(User::class,'product_favorites','product_id','user_id')->withPivot('pin')->withTimestamps();
+        return $this->belongsToMany(User::class, 'product_favorites', 'product_id', 'user_id')->withPivot('pin')->withTimestamps();
     }
 
     public function discountPercent()
@@ -84,10 +79,9 @@ class Product extends Model
             return 0;
         }
 
-        // اگر قیمت کمتر از قیمت اصلی باشد، درصد تخفیف محاسبه می‌شود
         if ($this->price < $this->regular_price) {
             $percent = (($this->regular_price - $this->price) / $this->regular_price) * 100;
-            return round($percent, 2); // گرد کردن تا دو رقم اعشار
+            return round($percent, 2);
         }
 
         return 0;

@@ -1,5 +1,13 @@
+@php
+    $shopTitle = $title ? ('خرید ' . $title . ' | فروشگاه لوازم یدکی ناظر یدک') : 'خرید لوازم یدکی خودرو | قطعات اصلی ایساکو در ناظر یدک';
+    $shopDescription = $title ? seo_description('جستجو و خرید ' . $title . ' در فروشگاه ناظر یدک؛ قطعات اصلی خودرو با امکان بررسی کد فنی، قیمت روز، ضمانت اصالت و ارسال سراسر کشور.') : 'خرید آنلاین لوازم یدکی خودرو با تمرکز ویژه بر قطعات اصلی ایساکو؛ قطعات موتوری، مصرفی، برقی، بدنه، جلوبندی و ترمز با قیمت روز و ارسال سراسر کشور از ناظر یدک.';
+@endphp
 @extends('layout.layout', [
-    'title' => "فروشگاه لوازم یدکی | ناظر یدک"
+    'title' => $shopTitle,
+    'metaDescription' => $shopDescription,
+    'keywords' => seo_default_keywords(),
+    'canonical' => seo_url('/shop'),
+    'schema' => [seo_store_schema(), ['@context' => 'https://schema.org', '@type' => 'CollectionPage', 'name' => $shopTitle, 'description' => $shopDescription, 'url' => seo_url('/shop')], seo_breadcrumb_schema([['name' => 'ناظر یدک', 'url' => seo_url()], ['name' => 'فروشگاه لوازم یدکی', 'url' => seo_url('/shop')]])],
 ])
 @section('main_content')
 <div class="container">

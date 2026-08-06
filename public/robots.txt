@@ -1,2 +1,13 @@
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /dashboardAdmin
+Disallow: /login
+Disallow: /cart
+Disallow: /profile/
+Disallow: /order/
+Disallow: /payment/
+Disallow: /product/fetch-image/
+
+Sitemap: https://nazeryadak.ir/sitemap.xml

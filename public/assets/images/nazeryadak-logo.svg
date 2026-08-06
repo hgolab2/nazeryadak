@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="520" height="160" viewBox="0 0 520 160" role="img" aria-labelledby="title desc">
+  <title id="title">ناظر یدک</title>
+  <desc id="desc">لوگوی فروشگاه ناظر یدک برای فروش لوازم یدکی خودرو و قطعات ایساکو</desc>
+  <defs>
+    <linearGradient id="shield" x1="22" y1="18" x2="138" y2="142" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0D6FAE"/>
+      <stop offset="1" stop-color="#00457C"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#FF9800"/>
+      <stop offset="1" stop-color="#F57C00"/>
+    </linearGradient>
+  </defs>
+  <rect width="520" height="160" fill="none"/>
+  <g transform="translate(24 14)">
+    <path d="M68 0 126 16v43c0 41-24 66-58 80C34 125 10 100 10 59V16L68 0Z" fill="url(#shield)"/>
+    <path d="M40 97c15-31 38-52 69-64-8 9-13 19-14 30 0 7 3 15 10 22-22-5-43 0-65 12Z" fill="#fff" opacity=".96"/>
+    <path d="M28 70c10-24 28-39 54-47-13 13-23 28-30 46-4 11-8 23-12 35-9-9-13-21-12-34Z" fill="#fff" opacity=".9"/>
+    <circle cx="92" cy="45" r="5" fill="url(#accent)"/>
+    <path d="M18 112c24 16 58 22 98 2" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" opacity=".92"/>
+  </g>
+  <g transform="translate(170 30)">
+    <text x="330" y="52" direction="rtl" text-anchor="end" font-family="Tahoma, Arial, sans-serif" font-size="46" font-weight="800" fill="#00457C">ناظر یدک</text>
+    <text x="330" y="88" direction="rtl" text-anchor="end" font-family="Tahoma, Arial, sans-serif" font-size="18" font-weight="700" fill="#F57C00">قطعات اصلی خودرو و ایساکو</text>
+    <path d="M10 106h320" stroke="#E8F1FA" stroke-width="6" stroke-linecap="round"/>
+    <path d="M210 106h120" stroke="url(#accent)" stroke-width="6" stroke-linecap="round"/>
+  </g>
+</svg>

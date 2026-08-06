@@ -569,4 +569,65 @@ function resizeMainImage($BaseFilename, $_w, $_h, $cache = FALSE, $cache_key = '
         if ($cache) return env('DOMAIN') . '/cache/imgs/' . pathinfo($filenameEnd)['basename'];
     }
 }
+function seo_site_name(): string
+{
+    return 'ناظر یدک';
+}
+
+function seo_base_url(): string
+{
+    return rtrim(config('app.url') ?: url('/'), '/');
+}
+
+function seo_url(string $path = ''): string
+{
+    return seo_base_url() . '/' . ltrim($path, '/');
+}
+
+function seo_description(string $text, int $limit = 155): string
+{
+    $text = trim(preg_replace('/\s+/u', ' ', strip_tags($text)));
+    return mb_strlen($text) > $limit ? mb_substr($text, 0, $limit - 1) . '…' : $text;
+}
+
+function seo_json_ld(array $data): string
+{
+    return json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+}
+
+function seo_default_keywords(): string
+{
+    return 'خرید لوازم یدکی خودرو, قطعات ایساکو, لوازم یدکی ایساکو, خرید قطعات اصلی ایساکو, نمایندگی قطعات ایساکو, قطعات اصلی خودرو, خرید قطعات خودرو, فروشگاه لوازم یدکی, قطعات پژو 206, قطعات پژو 405, قطعات سمند, قطعات دنا, قطعات پراید, کد فنی قطعه خودرو';
+}
+
+function seo_store_schema(): array
+{
+    return [
+        '@context' => 'https://schema.org',
+        '@type' => 'AutoPartsStore',
+        '@id' => seo_url('#store'),
+        'name' => seo_site_name(),
+        'alternateName' => ['nazeryadak', 'فروشگاه قطعات ایساکو'],
+        'description' => 'فروشگاه تخصصی لوازم یدکی خودرو با تمرکز ویژه بر قطعات اصلی ایساکو و ارسال سراسر کشور.',
+        'url' => seo_url(),
+        'logo' => seo_url('/assets/images/logo.png'),
+        'image' => seo_url('/assets/images/logo.png'),
+        'telephone' => '+989127471631',
+        'priceRange' => '$',
+        'areaServed' => 'IR',
+        'address' => ['@type' => 'PostalAddress', 'addressCountry' => 'IR', 'addressRegion' => 'قم'],
+        'sameAs' => ['https://wa.me/989127471631'],
+    ];
+}
+
+function seo_breadcrumb_schema(array $items): array
+{
+    return [
+        '@context' => 'https://schema.org',
+        '@type' => 'BreadcrumbList',
+        'itemListElement' => array_map(function ($item, $index) {
+            return ['@type' => 'ListItem', 'position' => $index + 1, 'name' => $item['name'], 'item' => $item['url']];
+        }, array_values($items), array_keys(array_values($items))),
+    ];
+}
 ?>

@@ -1,23 +1,42 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-    <title>{{$title}}</title>
-    @if (!empty($keywords))
-    <meta name="keywords" content="{{$keywords}}">
-    @endif
-    @if (!empty($metaDescription))
-    <meta name="description" content="{{$metaDescription}}">
-    @endif
+    @php
+        $seoTitle = $title ?? seo_site_name();
+        $seoDescription = $metaDescription ?? 'خرید آنلاین لوازم یدکی اصلی خودرو، قطعات ایساکو، قطعات مصرفی، موتوری، برقی، بدنه و جلوبندی با ضمانت اصالت کالا و ارسال سراسر کشور از ناظر یدک.';
+        $seoKeywords = $keywords ?? seo_default_keywords();
+        $seoCanonical = $canonical ?? url()->current();
+        $seoImage = $ogImage ?? seo_url('/assets/images/logo.png');
+        $seoType = $ogType ?? 'website';
+        $schemaItems = $schema ?? [];
+        if (!empty($schemaItems) && array_is_list($schemaItems) === false) {
+            $schemaItems = [$schemaItems];
+        }
+    @endphp
+    <title>{{ $seoTitle }}</title>
+    <meta name="description" content="{{ $seoDescription }}">
+    <meta name="keywords" content="{{ $seoKeywords }}">
+    <meta name="robots" content="{{ !empty($follow) ? 'noindex,nofollow' : 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1' }}">
+    <meta name="googlebot" content="{{ !empty($follow) ? 'noindex,nofollow' : 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1' }}">
+    <link rel="canonical" href="{{ $seoCanonical }}">
+    <meta property="og:locale" content="fa_IR">
+    <meta property="og:site_name" content="{{ seo_site_name() }}">
+    <meta property="og:type" content="{{ $seoType }}">
+    <meta property="og:title" content="{{ $seoTitle }}">
+    <meta property="og:description" content="{{ $seoDescription }}">
+    <meta property="og:url" content="{{ $seoCanonical }}">
+    <meta property="og:image" content="{{ $seoImage }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $seoTitle }}">
+    <meta name="twitter:description" content="{{ $seoDescription }}">
+    <meta name="twitter:image" content="{{ $seoImage }}">
     @if(!empty($ampurl))
         <link rel=amphtml href="{{$ampurl}}">
     @endif
-    @if(!empty($canonical))
-    <link rel="canonical" href="{{$canonical}}">
-    @endif
-    @if(!empty($follow))
-    <meta name="robots" content="noindex">
-    <meta name="googlebot" content="noindex">
-    @endif
+    @foreach($schemaItems as $schemaItem)
+        <script type="application/ld+json">{!! seo_json_ld($schemaItem) !!}</script>
+    @endforeach
+    @yield('head')
     <link rel="icon" type="image/ico" href="/favicon.ico"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -34,7 +53,7 @@
         <div class="container">
             <div class="d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center gap-4">
-                    <span><i class="fas fa-phone-alt"></i> مشاوره و پشتیبانی: ۰۹۱۲۷۴۷۱۶۳۱</span>
+                    <span><i class="fas fa-phone-alt"></i> مشاوره و پشتیبانی: علی حاجی ناظری - ۰۹۱۲۷۴۷۱۶۳۱</span>
                     <span><i class="fas fa-clock"></i> ساعت کاری: شنبه تا پنج‌شنبه ۹ الی ۱۸</span>
                 </div>
                 <div class="d-flex align-items-center gap-4">
@@ -279,7 +298,7 @@
                 <li><a href="/blog"><i class="fas fa-newspaper me-1 d-none d-xl-inline"></i> مجله یدکی</a></li>
                 <li><a href="/about-us">درباره ما</a></li>
                 <li><a href="/contact-us">تماس با ما</a></li>
-                <li class="me-0 ms-auto"><a href="tel:09127471631" class="nav-phone-link"><i class="fas fa-headset me-1"></i> ۰۹۱۲۷۴۷۱۶۳۱</a></li>
+                <li class="me-0 ms-auto"><a href="tel:09127471631" class="nav-phone-link"><i class="fas fa-headset me-1"></i> علی حاجی ناظری - ۰۹۱۲۷۴۷۱۶۳۱</a></li>
            </ul>
         </div>
     </nav>

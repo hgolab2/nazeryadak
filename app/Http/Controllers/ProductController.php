@@ -74,7 +74,7 @@ class ProductController extends Controller
         return Product::orderBy('id' , 'desc')->where('is_active' , '1')->where('file_path' ,'!=', '')->paginate($count);
     }
 
-    function show($id)
+    function show($id, $slug = null)
     {
         if(!$id){
             return view('errors.404');
@@ -83,6 +83,9 @@ class ProductController extends Controller
         if(!$model)
         {
             return view('errors.404');
+        }
+                if ($slug !== null && request()->path() !== ltrim($model->url(), '/')) {
+            return redirect($model->url(), 301);
         }
         $products = $this->getProduct(8);
         return view('product.show' , compact('model','products'));

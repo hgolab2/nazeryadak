@@ -1,5 +1,18 @@
+@php
+    $productUrl = seo_url($model->url());
+    $productImage = str_starts_with($model->image(), 'http') ? $model->image() : seo_url($model->image());
+    $productDescription = seo_description(($model->description ?: ($model->title . ' مناسب خرید از فروشگاه لوازم یدکی ناظر یدک با تمرکز بر قطعات اصلی ایساکو، ضمانت اصالت کالا و ارسال سراسر کشور.')) . ($model->sku ? ' کد فنی: ' . $model->sku : '') . ($model->car_model ? ' مناسب خودرو: ' . $model->car_model : ''));
+    $productKeywords = implode(', ', array_filter([$model->title, $model->sku ? 'خرید ' . $model->sku : null, $model->car_model ? 'لوازم یدکی ' . $model->car_model : null, 'خرید لوازم یدکی اصلی', 'قطعات ایساکو', 'قطعات اصلی ایساکو', 'ناظر یدک']));
+    $productSchema = ['@context' => 'https://schema.org', '@type' => 'Product', '@id' => $productUrl . '#product', 'name' => $model->title, 'description' => $productDescription, 'image' => [$productImage], 'sku' => $model->sku ?: (string) $model->id, 'brand' => ['@type' => 'Brand', 'name' => 'ISACO'], 'offers' => ['@type' => 'Offer', 'url' => $productUrl, 'priceCurrency' => 'IRR', 'price' => (string) (($model->price ?? 0) * 10), 'availability' => 'https://schema.org/InStock', 'itemCondition' => 'https://schema.org/NewCondition', 'seller' => ['@id' => seo_url('#store')]]];
+@endphp
 @extends('layout.layout', [
-    'title' => $model->title . ' | ناظر یدک'
+    'title' => 'خرید ' . $model->title . ' | قیمت و مشخصات در ناظر یدک',
+    'metaDescription' => $productDescription,
+    'keywords' => $productKeywords,
+    'canonical' => $productUrl,
+    'ogImage' => $productImage,
+    'ogType' => 'product',
+    'schema' => [seo_store_schema(), $productSchema, ['@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => array_values(array_filter([['@type' => 'Question', 'name' => 'آیا ' . $model->title . ' اصل است؟', 'acceptedAnswer' => ['@type' => 'Answer', 'text' => 'این محصول در ناظر یدک با تاکید بر ضمانت اصالت کالا عرضه می‌شود و بهتر است پیش از خرید، نام قطعه، کد فنی و خودرو مناسب بررسی شود.']], $model->sku ? ['@type' => 'Question', 'name' => 'کد فنی این قطعه چیست؟', 'acceptedAnswer' => ['@type' => 'Answer', 'text' => 'کد فنی ثبت‌شده برای این محصول ' . $model->sku . ' است.']] : null, $model->car_model ? ['@type' => 'Question', 'name' => 'این قطعه برای چه خودرویی مناسب است؟', 'acceptedAnswer' => ['@type' => 'Answer', 'text' => 'بر اساس اطلاعات محصول، این قطعه برای ' . $model->car_model . ' مناسب است.']] : null]))], seo_breadcrumb_schema([['name' => 'ناظر یدک', 'url' => seo_url()], ['name' => 'فروشگاه لوازم یدکی', 'url' => seo_url('/shop')], ['name' => $model->title, 'url' => $productUrl]])],
 ])
 @section('main_content')
 
@@ -212,6 +225,28 @@
                 </div>
             </div>
 
+
+            <section class="product-seo-faq product-tab-content" aria-labelledby="product-faq-title">
+                <div class="row pb-3">
+                    <div class="col-12">
+                        <h2 class="section-title" id="product-faq-title">راهنمای خرید {{$model->title}}</h2>
+                        <div class="mx-3 mt-3 font-13" style="line-height:2.2;">
+                            <h3 class="font-14 fw-bold">آیا {{$model->title}} اصل است؟</h3>
+                            <p class="text-muted">این محصول از فروشگاه ناظر یدک با تاکید بر ضمانت اصالت کالا عرضه می‌شود. هنگام خرید قطعات خودرو، تطبیق نام قطعه، کد فنی و خودرو مناسب اهمیت زیادی دارد.</p>
+                            @if($model->sku)
+                            <h3 class="font-14 fw-bold">کد فنی این قطعه چیست؟</h3>
+                            <p class="text-muted">کد فنی ثبت‌شده برای این محصول {{$model->sku}} است. جستجو با کد فنی دقیق‌ترین روش برای پیدا کردن لوازم یدکی اصلی خودرو محسوب می‌شود.</p>
+                            @endif
+                            @if($model->car_model)
+                            <h3 class="font-14 fw-bold">این قطعه برای چه خودرویی مناسب است؟</h3>
+                            <p class="text-muted">بر اساس اطلاعات محصول، {{$model->title}} برای {{$model->car_model}} مناسب است. قبل از نهایی کردن سفارش، مشخصات فنی و مدل خودرو را بررسی کنید.</p>
+                            @endif
+                            <h3 class="font-14 fw-bold">ارسال این قطعه چگونه انجام می‌شود؟</h3>
+                            <p class="text-muted mb-0">ناظر یدک امکان ارسال قطعات خودرو به قم و سایر شهرهای کشور را فراهم کرده است و سفارش پس از ثبت، بر اساس روش ارسال انتخاب‌شده پردازش می‌شود.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
             {{-- محصولات مرتبط --}}
             <div class="product-slider mb-4">
                 <div class="row">
