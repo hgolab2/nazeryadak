@@ -66,8 +66,7 @@
                     {{-- لوگو --}}
                     <div class="flex-shrink-0">
                         <a href="/" class="site-logo">
-                            <img src="/assets/images/logo-new.png"
-                                 onerror="this.onerror=null;this.src='/assets/images/logo.png';"
+                            <img src="/assets/images/logo.png"
                                  alt="ناظر یدک - لوازم یدکی خودرو و محصولات اصلی ایساکو">
                         </a>
                     </div>
@@ -156,9 +155,7 @@
                     <div class="offcanvas offcanvas-start" tabindex="-1" data-bs-scroll="true" id="mobile-menu">
                         <div class="offcanvas-header" style="background: var(--primary); padding: 15px;">
                             <span class="site-logo site-logo-mobile">
-                                <img src="/assets/images/logo-new.png"
-                                     onerror="this.onerror=null;this.src='/assets/images/logo.png';"
-                                     alt="ناظر یدک">
+                                <img src="/assets/images/logo.png" alt="ناظر یدک">
                             </span>
                             <button type="button" class="btn-close btn-close-white text-reset" data-bs-dismiss="offcanvas"></button>
                         </div>
@@ -206,8 +203,7 @@
                 </div>
                 <div class="col-5 text-center">
                     <a href="/" class="site-logo site-logo-mobile">
-                        <img src="/assets/images/logo-new.png"
-                             onerror="this.onerror=null;this.src='/assets/images/logo2.png';"
+                        <img src="/assets/images/logo.png"
                              alt="ناظر یدک - لوازم یدکی خودرو و محصولات اصلی ایساکو">
                     </a>
                 </div>
@@ -342,8 +338,7 @@
                     <div class="col-lg-4 col-md-6 footer-box mb-4">
                         <div class="footer-brand">
                             <span class="site-logo" style="margin-bottom:15px;">
-                                <img src="/assets/images/logo-new.png"
-                                     onerror="this.onerror=null;this.src='/assets/images/logo.png';"
+                                <img src="/assets/images/logo.png"
                                      alt="ناظر یدک - لوازم یدکی خودرو و محصولات اصلی ایساکو">
                             </span>
                             <div class="footer-about">
