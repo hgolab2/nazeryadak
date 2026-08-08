@@ -1,6 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
-  <rect width="200" height="200" rx="12" fill="#f5f5f5"/>
-  <path d="M70 130 L85 105 L100 120 L120 90 L145 130Z" fill="#ddd"/>
-  <circle cx="82" cy="82" r="12" fill="#ddd"/>
-  <text x="100" y="165" text-anchor="middle" font-family="Tahoma,sans-serif" font-size="12" fill="#bbb">بدون تصویر</text>
+  <path d="M70 130 L85 105 L100 120 L120 90 L145 130Z" fill="#c9d4e0"/>
+  <circle cx="82" cy="82" r="12" fill="#c9d4e0"/>
+  <text x="100" y="165" text-anchor="middle" font-family="Tahoma,sans-serif" font-size="12" fill="#aab6c4">بدون تصویر</text>
 </svg>

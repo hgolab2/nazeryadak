@@ -1,46 +1,72 @@
-@foreach ($model as $product)
-<div class="col-lg-4 col-md-6 col-sm-6 mb-3">
-    <div class="card custom-card position-relative h-100">
+@if($model->isEmpty())
+<div class="col-12">
+    <div class="search-empty text-center">
+        <div class="search-empty-icon"><i class="fas fa-search"></i></div>
+        <h5>قطعه‌ای با این مشخصات پیدا نشد</h5>
+        <p>می‌توانید یکی از این راه‌ها را امتحان کنید:</p>
+        <ul class="search-empty-tips">
+            <li><i class="fas fa-barcode"></i> جستجو با <strong>کد فنی</strong> قطعه — دقیق‌ترین روش</li>
+            <li><i class="fas fa-font"></i> نوشتن نام کوتاه‌تر، مثلاً «لنت» به‌جای «لنت ترمز جلو پژو»</li>
+            <li><i class="fas fa-filter"></i> برداشتن فیلترهای دسته‌بندی و خودرو</li>
+        </ul>
+        <div class="search-empty-actions">
+            <a href="/shop" class="btn"><i class="fas fa-store me-1"></i> همه‌ی قطعات</a>
+            <a href="tel:09127471631" class="btn btn-outline"><i class="fas fa-headset me-1"></i> پرسیدن از کارشناس</a>
+        </div>
+    </div>
+</div>
+@endif
 
-        <span class="heart-icon m-2 itemFavorite_{{ $product->id }}" style="position:absolute; top:5px; left:5px; z-index:2;">
+@foreach ($model as $product)
+@php
+    $discountPercent = $product->discountPercent();
+    $hasDiscount = $discountPercent > 0;
+@endphp
+<div class="col-lg-4 col-md-6 col-6 mb-3">
+    <div class="card custom-card shop-card position-relative h-100">
+
+        <span class="heart-icon itemFavorite_{{ $product->id }}">
             <i class="{{ count($product->favorites) > 0 ? 'fas' : 'far' }} fa-heart favorite-icon"
-               onclick="addFavorite({{ $product->id }})" style="font-size: 1.1rem; color: #ccc;"></i>
+               onclick="addFavorite({{ $product->id }})"></i>
         </span>
 
-        <a href="{{ $product->url() }}" class="d-block w-100 text-center pt-3 px-2">
+        @if($hasDiscount)
+            <span class="product-discount-badge">{{ toPersianNumbers(round($discountPercent), false) }}%</span>
+        @endif
+
+        <a href="{{ $product->url() }}" class="product-thumb">
             <img src="{{ $product->image() }}" class="slider-pic lazy-img"
-                 @if(!$product->hasImage()) data-fetch="/product/fetch-image/{{$product->id}}" @endif
+                 onerror="this.onerror=null;this.src='/images/no-image.svg';this.classList.add('is-placeholder');"
+                 loading="lazy"
                  alt="{{ $product->title }}">
         </a>
 
-        <div class="card-body d-flex flex-column">
-            <a href="{{ $product->url() }}" class="product-title flex-grow-1">
-                {{ $product->title }}
-            </a>
+        <div class="card-body product-card-body">
+            <a href="{{ $product->url() }}" class="product-title">{{ $product->title }}</a>
 
-            <div class="d-flex justify-content-between align-items-center px-1 py-2 mt-2">
-                @if($product->discountPercent() > 0)
-                    <span class="badge text-white rounded-pill font-13" style="background: var(--accent);">
-                        {{ $product->discountPercent() }}%
+            <div class="product-meta">
+                @if($product->sku)
+                    {{-- کد فنی عمداً با ارقام انگلیسی و چپ‌به‌راست نمایش داده می‌شود
+                         چون خریدار آن را با کد روی قطعه مقایسه یا کپی می‌کند --}}
+                    <span class="product-sku" title="کد فنی قطعه">
+                        <i class="fas fa-barcode"></i> <bdi>{{ $product->sku }}</bdi>
                     </span>
-                @else
-                    <span></span>
                 @endif
-
-                <span class="font-13 text-end">
-                    @if($product->discountPercent() > 0)
-                        <strong>{{ toPersianNumbers($product->price) }}</strong> تومان
-                        <br>
-                        <del class="text-muted" style="font-size: 0.8rem;">
-                            {{ toPersianNumbers($product->regular_price) }}
-                        </del>
-                    @else
-                        <strong>{{ toPersianNumbers($product->regular_price) }}</strong> تومان
-                    @endif
-                </span>
+                @if($product->car_model)
+                    <span class="product-car" title="خودرو مناسب">
+                        <i class="fas fa-car"></i> {{ Str::limit($product->car_model, 22) }}
+                    </span>
+                @endif
             </div>
 
-            <button class="btn add-cart-btn mt-auto" data-id="{{ $product->id }}">
+            <div class="product-price-row">
+                @if($hasDiscount)
+                    <del class="product-old-price">{{ toPersianNumbers($product->regular_price) }}</del>
+                @endif
+                <span class="product-price">{{ toPersianNumbers($product->price) }} <small>تومان</small></span>
+            </div>
+
+            <button class="btn add-cart-btn" data-id="{{ $product->id }}">
                 <i class="fa fa-cart-plus me-1"></i>
                 افزودن به سبد خرید
             </button>

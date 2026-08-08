@@ -461,12 +461,11 @@ $(document).on('click', '.add-cart-btn', function (e) {
             }
         },
         error: function (xhr) {
-            Swal.fire({
-                title: 'خطا!',
-                text: 'مشکلی در افزودن محصول پیش آمد',
-                icon: 'error',
-                confirmButtonText: 'باشه'
-            });
+            // سرور دلیل دقیق را می‌فرستد (مثلاً «موجودی کافی نیست») — همان را نشان بده
+            var msg = (xhr.responseJSON && xhr.responseJSON.message)
+                ? xhr.responseJSON.message
+                : 'مشکلی در افزودن محصول پیش آمد';
+            toast.fire({ icon: 'error', title: msg });
         }
     });
 });

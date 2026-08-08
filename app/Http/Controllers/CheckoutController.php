@@ -21,6 +21,8 @@ class CheckoutController extends Controller
     {
         $user = $this->customer();
         if (!$user) {
+            // بدون این، کاربری که وسط خرید بود بعد از ورود در داشبورد رها می‌شد
+            session()->put('url.intended', '/order/shopping');
             return redirect('/login');
         }
 
@@ -104,16 +106,21 @@ class CheckoutController extends Controller
     {
         $user = $this->customer();
         if (!$user) {
+            // مقصد را نگه دار تا بعد از ورود کاربر به همین‌جا برگردد
+            session()->put('url.intended', '/order/payment/' . $id);
             return redirect('/login');
         }
 
+        // 'failed' هم پذیرفته می‌شود تا دکمه‌ی «تلاش مجدد پرداخت» کار کند؛
+        // قبلا کاربر بعد از پرداخت ناموفق بی‌هیچ توضیحی به لیست سفارش‌ها پرت می‌شد
         $order = Order::where('id', $id)
             ->where('customer_id', $user->id)
-            ->where('status', 'pending')
+            ->whereIn('status', ['pending', 'failed'])
             ->first();
 
         if (!$order) {
-            return redirect('/profile/orders');
+            return redirect('/profile/orders')
+                ->with('error', 'این سفارش برای پرداخت در دسترس نیست.');
         }
 
         $address = CustomerAddress::where('customer_id', $user->id)->first();
@@ -122,8 +129,10 @@ class CheckoutController extends Controller
         }
 
         $order->update(['address_id' => $address->id]);
+        $address->load('province');
+        $shippingInfo = getShippingInfo($order);
 
-        return view('order.payment', compact('order'));
+        return view('order.payment', compact('order', 'address', 'shippingInfo'));
     }
 
     public function confirmOrder(Request $request)

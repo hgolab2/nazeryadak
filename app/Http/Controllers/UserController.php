@@ -81,11 +81,48 @@ class UserController extends Controller
         return view('auth.login');
     }
 
+    /**
+     * یکسان‌سازی شماره‌ی موبایل: ارقام فارسی/عربی به لاتین، حذف فاصله و
+     * خط تیره، و تبدیل +98 و 0098 و 98 به شکل 09xxxxxxxxx.
+     *
+     * قبلا اعتبارسنجی فقط ^09\d{9}$ بود، پس «۰۹۱۲۳۴۵۶۷۸۹» که کیبورد فارسی
+     * موبایل تولید می‌کند رد می‌شد — همان قالبی که در placeholder نوشته شده بود.
+     */
+    public static function normalizeMobile(?string $value): string
+    {
+        $value = strtr((string) $value, [
+            '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
+            '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
+            '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4',
+            '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
+        ]);
+        $value = preg_replace('/[^0-9+]/', '', $value);
+
+        if (str_starts_with($value, '+98')) {
+            $value = '0' . substr($value, 3);
+        } elseif (str_starts_with($value, '0098')) {
+            $value = '0' . substr($value, 4);
+        } elseif (str_starts_with($value, '98') && strlen($value) === 12) {
+            $value = '0' . substr($value, 2);
+        } elseif (strlen($value) === 10 && str_starts_with($value, '9')) {
+            $value = '0' . $value;
+        }
+
+        return $value;
+    }
+
+    private const MOBILE_RULES = ['mobile' => 'required|regex:/^09\d{9}$/'];
+
+    private const MOBILE_MESSAGES = [
+        'mobile.required' => 'لطفا شماره موبایل خود را وارد کنید.',
+        'mobile.regex'    => 'شماره موبایل باید ۱۱ رقم و به شکل ۰۹۱۲۳۴۵۶۷۸۹ باشد.',
+    ];
+
     public function sendOtp(Request $request)
     {
-        $request->validate([
-            'mobile' => 'required|regex:/^09\d{9}$/'
-        ]);
+        $request->merge(['mobile' => self::normalizeMobile($request->mobile)]);
+
+        $request->validate(self::MOBILE_RULES, self::MOBILE_MESSAGES);
 
         $key = 'otp-' . $request->mobile;
         if (RateLimiter::tooManyAttempts($key, 3)) {
@@ -117,9 +154,17 @@ class UserController extends Controller
 
     public function verifyOtp(Request $request)
     {
+        $request->merge([
+            'mobile' => self::normalizeMobile($request->mobile),
+            'otp'    => self::normalizeMobile($request->otp),
+        ]);
+
         $request->validate([
             'mobile' => 'required',
             'otp' => 'required|digits:6'
+        ], [
+            'otp.required' => 'لطفا کد تأیید را وارد کنید.',
+            'otp.digits'   => 'کد تأیید باید ۶ رقم باشد.',
         ]);
 
         $user = Customer::where('phone', $request->mobile)

@@ -47,9 +47,16 @@
                             <span class="text-muted"><i class="fas fa-phone me-1"></i> شماره تماس:</span><br>
                             <strong>{{ optional($order->customer->address)->receiver_phone ?? $order->customer?->phone ?? '—' }}</strong>
                         </div>
+                        {{-- total_price همان مبلغی است که از کارت کسر می‌شود؛
+                             قبلا final_price نمایش داده می‌شد که هزینه‌ی ارسال را کم داشت --}}
                         <div class="col-md-6 py-3 border-top">
-                            <span class="text-muted"><i class="fas fa-money-bill me-1"></i> مبلغ نهایی:</span><br>
-                            <strong style="color:var(--primary);">{{ number_format($order->final_price) }} تومان</strong>
+                            <span class="text-muted"><i class="fas fa-money-bill me-1"></i> مبلغ پرداختی:</span><br>
+                            <strong style="color:var(--primary);">{{ number_format($order->total_price) }} تومان</strong>
+                            @if($order->shipping_price > 0)
+                                <span class="d-block font-12 text-muted mt-1">
+                                    شامل {{ number_format($order->shipping_price) }} تومان هزینه ارسال
+                                </span>
+                            @endif
                         </div>
                         <div class="col-md-6 py-3 border-top">
                             <span class="text-muted"><i class="fas fa-info-circle me-1"></i> وضعیت:</span><br>

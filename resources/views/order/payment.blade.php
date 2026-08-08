@@ -42,6 +42,28 @@
                     </div>
                 </div>
 
+                {{-- آدرس تحویل: کاربر باید پیش از پرداخت ببیند کالا کجا می‌رود --}}
+                @if(!empty($address))
+                <div class="cart-content p-4 mb-3">
+                    <div class="d-flex align-items-center justify-content-between pb-2 mb-3 border-bottom">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fas fa-map-marker-alt" style="color:var(--primary);"></i>
+                            <h6 class="mb-0 font-13 fw-bold">آدرس تحویل</h6>
+                        </div>
+                        <a href="/order/shopping" class="font-12" style="color:var(--primary);">
+                            <i class="fas fa-edit me-1"></i> ویرایش
+                        </a>
+                    </div>
+                    <p class="font-13 mb-1"><strong>{{ $address->receiver_name }}</strong> — {{ $address->receiver_phone }}</p>
+                    <p class="font-13 text-muted mb-0" style="line-height:2;">
+                        {{ optional($address->province)->name }}، {{ $address->city }}، {{ $address->address_line }}
+                        @if($address->postal_code)
+                            <span class="d-block">کد پستی: {{ $address->postal_code }}</span>
+                        @endif
+                    </p>
+                </div>
+                @endif
+
                 <div class="cart-content p-4">
                     <div class="d-flex align-items-center gap-2 pb-2 mb-3 border-bottom">
                         <i class="fas fa-box" style="color:var(--accent);"></i>
@@ -80,7 +102,17 @@
                     </div>
                     <div class="d-flex justify-content-between py-2 font-13 border-bottom">
                         <span class="text-muted"><i class="fas fa-truck me-1"></i> هزینه ارسال</span>
-                        <span>{{ number_format($order->shipping_price) }} تومان</span>
+                        {{-- همان برچسبی که در مرحله‌ی قبل نشان داده شد؛ قبلا اینجا
+                             «۰ تومان» می‌آمد و کاربر فکر می‌کرد ارسال رایگان است --}}
+                        <span>
+                            @if(!empty($shippingInfo) && $shippingInfo['type'] === 'free')
+                                <span class="text-success fw-bold">{{ $shippingInfo['label'] }}</span>
+                            @elseif(!empty($shippingInfo) && $shippingInfo['type'] === 'tipax')
+                                <span style="color:var(--accent);">{{ $shippingInfo['label'] }}</span>
+                            @else
+                                {{ number_format($order->shipping_price) }} تومان
+                            @endif
+                        </span>
                     </div>
                     <div class="d-flex justify-content-between py-3">
                         <span class="fw-bold">مبلغ قابل پرداخت</span>

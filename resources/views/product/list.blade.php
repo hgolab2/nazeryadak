@@ -23,8 +23,9 @@
 <main>
     <div class="container">
         <div class="row">
-            {{-- سایدبار --}}
-            <div class="col-lg-3">
+            {{-- سایدبار: در موبایل بعد از محصولات می‌آید تا کاربر
+                 مجبور نباشد از روی فیلترها رد شود --}}
+            <div class="col-lg-3 order-2 order-lg-1">
                 <div class="custom-sidebar mb-3">
                     <div class="d-flex align-items-center gap-2 border-bottom pb-2 mb-2">
                         <i class="fas fa-filter" style="color: var(--primary);"></i>
@@ -73,7 +74,7 @@
             </div>
 
             {{-- محصولات --}}
-            <div class="col-lg-9">
+            <div class="col-lg-9 order-1 order-lg-2">
                 <div class="product-items">
                     <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-3 px-1">
                         <div class="d-flex align-items-center gap-2">

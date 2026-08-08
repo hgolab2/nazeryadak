@@ -107,7 +107,7 @@
                                 <li><i class="fas fa-ruler-combined me-2" style="color: var(--primary); width: 20px; text-align: center;"></i> ابعاد: {{$model->width}} × {{$model->height}} سانتی‌متر</li>
                                 @endif
                                 @if($model->sku)
-                                <li><i class="fas fa-barcode me-2" style="color: var(--primary); width: 20px; text-align: center;"></i> کد فنی: {{$model->sku}}</li>
+                                <li><i class="fas fa-barcode me-2" style="color: var(--primary); width: 20px; text-align: center;"></i> کد فنی: <bdi class="sku-code">{{$model->sku}}</bdi></li>
                                 @endif
                                 @if($model->car_model)
                                 <li><i class="fas fa-car me-2" style="color: var(--primary); width: 20px; text-align: center;"></i> خودرو مناسب: {{$model->car_model}}</li>
@@ -206,7 +206,7 @@
                                     @if($model->sku)
                                     <div class="row mb-2">
                                         <div class="col-sm-4"><div class="box-line">کد فنی</div></div>
-                                        <div class="col-sm-8"><div class="box-line">{{$model->sku}}</div></div>
+                                        <div class="col-sm-8"><div class="box-line"><bdi class="sku-code">{{$model->sku}}</bdi></div></div>
                                     </div>
                                     @endif
                                     @if($model->car_model)

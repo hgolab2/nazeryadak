@@ -35,6 +35,124 @@ class Product extends Model
         'is_active'     => 'boolean',
     ];
 
+    /**
+     * نگاشت حرف‌های عربی به معادل فارسی و ارقام به لاتین.
+     *
+     * ۹۳٪ عنوان محصولات با «ي» و «ك» عربی ذخیره شده‌اند، ولی کیبورد فارسی
+     * «ی» و «ک» تولید می‌کند. بدون یکسان‌سازی، جستجوی «فیلتر» هیچ نتیجه‌ای
+     * نمی‌داد در حالی که ۱۹۱ محصول موجود بود.
+     */
+    /** حرف‌های عربی → فارسی (فقط روی ستون‌های متنی اعمال می‌شود) */
+    private const LETTER_MAP = [
+        'ي' => 'ی', 'ك' => 'ک', 'ة' => 'ه', 'ۀ' => 'ه',
+        'أ' => 'ا', 'إ' => 'ا', 'آ' => 'ا', 'ٱ' => 'ا',
+        'ؤ' => 'و', 'ئ' => 'ی',
+        "\u{200C}" => ' ',  // نیم‌فاصله
+        "\u{0640}" => '',   // کشیده
+    ];
+
+    /** ارقام فارسی/عربی → لاتین و حذف جداکننده‌ها (فقط روی کد فنی) */
+    private const DIGIT_MAP = [
+        '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4',
+        '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
+        '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
+        '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
+        '-' => '', '_' => '', '/' => '', '.' => '', ' ' => '',
+    ];
+
+    /** یکسان‌سازی عبارت ورودی کاربر (حرف‌ها؛ ارقام جداگانه) */
+    public static function normalizeTerm(?string $value): string
+    {
+        $value = (string) $value;
+        $value = strtr($value, self::LETTER_MAP);
+        $value = strtr($value, [
+            '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4',
+            '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
+            '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
+            '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
+            "\u{200F}" => '', "\u{200E}" => '',
+        ]);
+        $value = preg_replace('/\s+/u', ' ', $value);
+
+        return mb_strtolower(trim($value));
+    }
+
+    /** شکل فشرده‌ی یک کد فنی برای مقایسه (بدون خط تیره و فاصله) */
+    private static function normalizeCode(string $value): string
+    {
+        return strtr($value, self::DIGIT_MAP);
+    }
+
+    private static function normalizedColumn(string $column, array $map): string
+    {
+        $expr = "LOWER($column)";
+        foreach ($map as $from => $to) {
+            $expr = "REPLACE($expr, " . self::quote($from) . ', ' . self::quote($to) . ')';
+        }
+
+        return $expr;
+    }
+
+    private static function quote(string $value): string
+    {
+        return "'" . str_replace("'", "''", $value) . "'";
+    }
+
+    /**
+     * جستجوی متنی روی نام قطعه، کد فنی و خودرو مناسب.
+     * هر کلمه جداگانه بررسی می‌شود، پس ترتیب کلمات مهم نیست.
+     */
+    public function scopeSearchText($query, ?string $term)
+    {
+        $term = self::normalizeTerm($term);
+        if ($term === '') {
+            return $query;
+        }
+
+        // اگر کل عبارت یک کد فنی است، مستقیم روی sku جستجو کن — سریع‌تر و دقیق‌تر
+        $code = self::normalizeCode($term);
+        if ($code !== '' && preg_match('/^[0-9a-z]{4,}$/', $code)) {
+            $skuExpr = self::normalizedColumn('sku', self::DIGIT_MAP);
+            $query->where(function ($q) use ($skuExpr, $code, $term) {
+                $q->whereRaw($skuExpr . ' LIKE ?', ['%' . $code . '%'])
+                  ->orWhereRaw(self::normalizedColumn('title', self::LETTER_MAP) . ' LIKE ?', ['%' . $term . '%']);
+            });
+
+            return $query;
+        }
+
+        $titleExpr = self::normalizedColumn('title', self::LETTER_MAP);
+        $carExpr   = self::normalizedColumn('car_model', self::LETTER_MAP);
+
+        // هر کلمه باید پیدا شود، ولی ترتیبشان مهم نیست
+        foreach (explode(' ', $term) as $word) {
+            if ($word === '') {
+                continue;
+            }
+            $like = '%' . $word . '%';
+            $query->where(function ($q) use ($titleExpr, $carExpr, $like) {
+                $q->whereRaw($titleExpr . ' LIKE ?', [$like])
+                  ->orWhereRaw($carExpr . ' LIKE ?', [$like]);
+            });
+        }
+
+        return $query;
+    }
+
+    /** جستجو فقط روی خودرو مناسب */
+    public function scopeSearchCarModel($query, ?string $term)
+    {
+        $term = self::normalizeTerm($term);
+        if ($term === '') {
+            return $query;
+        }
+
+        return $query->whereRaw(
+            self::normalizedColumn('car_model', self::LETTER_MAP) . ' LIKE ?',
+            ['%' . $term . '%']
+        );
+    }
+
     public function categories()
     {
         return $this->hasMany(ProductInCategory::class, 'product_id');

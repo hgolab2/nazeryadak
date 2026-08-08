@@ -10,7 +10,6 @@
 
         <a href="{{$product->url()}}" class="product-thumb">
             <img src="{{$product->image()}}" class="slider-pic lazy-img"
-                 @if(!$product->hasImage()) data-fetch="/product/fetch-image/{{$product->id}}" @endif
                  onerror="this.onerror=null;this.src='/images/no-image.svg';this.classList.add('is-placeholder');"
                  loading="lazy"
                  alt="{{$product->title}}">

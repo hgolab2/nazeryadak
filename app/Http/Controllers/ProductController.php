@@ -35,10 +35,11 @@ class ProductController extends Controller
             ->pluck('cnt', 'product_in_category.category_id');
         $query = Product::where('is_active', 1);
         if ($request->filled('title')) {
-            $query->where('title', 'like', '%' . $request->title . '%');
+            // نام قطعه، کد فنی و خودرو را با هم می‌گردد و ک/ی عربی و فارسی را یکسان می‌گیرد
+            $query->searchText($request->title);
         }
         if ($request->filled('car_model')) {
-            $query->where('car_model', 'like', '%' . $request->car_model . '%');
+            $query->searchCarModel($request->car_model);
         }
         if ($request->filled('categories')) {
             $categoryIds = explode(',', $request->categories);

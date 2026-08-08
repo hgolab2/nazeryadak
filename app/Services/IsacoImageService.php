@@ -14,6 +14,19 @@ class IsacoImageService
     private static array $wordIndex = [];
     private static array $normalizedTitles = [];
 
+    /**
+     * وقتی false باشد هیچ درخواستی به isaco.ir زده نمی‌شود و فقط از کاتالوگ
+     * ذخیره‌شده استفاده می‌شود. درخواست‌های وب همیشه با همین حالت اجرا می‌شوند
+     * تا رندر صفحه هرگز منتظر یک سایت بیرونی نماند.
+     */
+    private bool $allowRemote = false;
+
+    public function allowRemote(bool $allow = true): static
+    {
+        $this->allowRemote = $allow;
+        return $this;
+    }
+
     public function fetchForProduct(Product $product): array
     {
         $result = ['image' => null, 'description' => null];
@@ -63,6 +76,10 @@ class IsacoImageService
 
     private function fetchDescription(string $code, string $title): ?string
     {
+        if (!$this->allowRemote) {
+            return null;
+        }
+
         try {
             $slug = str_replace(' ', '-', $title);
             $url = 'https://isaco.ir/%D9%82%D8%B7%D8%B9%D8%A7%D8%AA/' . $code . '/' . urlencode($slug);
@@ -117,7 +134,8 @@ class IsacoImageService
             self::$catalog = json_decode(file_get_contents($cachePath), true) ?: [];
         }
 
-        if (empty(self::$catalog)) {
+        if (empty(self::$catalog) && $this->allowRemote) {
+            // ۱۷ صفحه اسکرپ با تایم‌اوت ۳۰ ثانیه‌ای؛ فقط از خط فرمان اجرا می‌شود
             self::$catalog = [];
             for ($page = 1; $page <= 17; $page++) {
                 $products = $this->scrapeIsacoPage($page);
@@ -127,6 +145,10 @@ class IsacoImageService
             if (!empty(self::$catalog)) {
                 file_put_contents($cachePath, json_encode(self::$catalog, JSON_UNESCAPED_UNICODE));
             }
+        }
+
+        if (self::$catalog === null) {
+            self::$catalog = [];
         }
 
         $this->buildWordIndex();
@@ -289,6 +311,10 @@ class IsacoImageService
 
     private function downloadImage(string $url, int $productId): ?string
     {
+        if (!$this->allowRemote) {
+            return null;
+        }
+
         try {
             $response = Http::timeout(15)
                 ->withHeaders(['User-Agent' => 'Mozilla/5.0'])
