@@ -48,18 +48,12 @@
 </head>
 <body>
 
-    {{-- هدر بالای صفحه - اطلاعات تماس --}}
+    {{-- هدر بالای صفحه - فقط تماس و ساعت کاری؛ لینک‌ها در منوی اصلی هستند --}}
     <div class="header-top-bar d-none d-lg-block">
         <div class="container">
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="d-flex align-items-center gap-4">
-                    <span><i class="fas fa-phone-alt"></i> مشاوره و پشتیبانی: علی حاجی ناظری - ۰۹۱۲۷۴۷۱۶۳۱</span>
-                    <span><i class="fas fa-clock"></i> ساعت کاری: شنبه تا پنج‌شنبه ۹ الی ۱۸</span>
-                </div>
-                <div class="d-flex align-items-center gap-4">
-                    <a href="/about-us"><i class="fas fa-info-circle me-1"></i> درباره ما</a>
-                    <a href="/contact-us"><i class="fas fa-envelope me-1"></i> تماس با ما</a>
-                </div>
+            <div class="d-flex align-items-center gap-4">
+                <span><i class="fas fa-phone-alt"></i> مشاوره و پشتیبانی: علی حاجی ناظری - ۰۹۱۲۷۴۷۱۶۳۱</span>
+                <span><i class="fas fa-clock"></i> ساعت کاری: شنبه تا پنج‌شنبه ۹ الی ۱۸</span>
             </div>
         </div>
     </div>
@@ -71,15 +65,17 @@
                 <div class="d-flex align-items-center justify-content-between gap-3">
                     {{-- لوگو --}}
                     <div class="flex-shrink-0">
-                        <a href="/" class="d-block" style="background:#fff; border-radius:8px; padding:6px 12px;">
-                            <img src="/assets/images/logo.png" style="height:45px;">
+                        <a href="/" class="site-logo">
+                            <img src="/assets/images/logo-new.png"
+                                 onerror="this.onerror=null;this.src='/assets/images/logo.png';"
+                                 alt="ناظر یدک - لوازم یدکی خودرو و محصولات اصلی ایساکو">
                         </a>
                     </div>
-                    {{-- جستجو --}}
-                    <div class="flex-grow-1" style="max-width: 500px;">
+                    {{-- جستجو: تنها جعبه‌ی جستجوی سایت --}}
+                    <div class="flex-grow-1" style="max-width: 560px;">
                         <form method="get" action="/shop">
                             <div class="search-box-header">
-                                <input type="search" name="title" placeholder="جستجوی قطعه، کد فنی یا نام محصول...">
+                                <input type="search" name="title" value="{{ request('title') }}" placeholder="نام قطعه، خودرو یا کد فنی را بنویسید...">
                                 <button type="submit"><i class="fa fa-search"></i> جستجو</button>
                             </div>
                         </form>
@@ -159,9 +155,11 @@
                     <a href="#mobile-menu" data-bs-toggle="offcanvas"><i class="fa fa-bars mobile-menu-icon"></i></a>
                     <div class="offcanvas offcanvas-start" tabindex="-1" data-bs-scroll="true" id="mobile-menu">
                         <div class="offcanvas-header" style="background: var(--primary); padding: 15px;">
-                            <div style="background:#fff; border-radius:6px; padding:4px 10px;">
-                                <img src="/assets/images/logo.png" style="height: 32px;">
-                            </div>
+                            <span class="site-logo site-logo-mobile">
+                                <img src="/assets/images/logo-new.png"
+                                     onerror="this.onerror=null;this.src='/assets/images/logo.png';"
+                                     alt="ناظر یدک">
+                            </span>
                             <button type="button" class="btn-close btn-close-white text-reset" data-bs-dismiss="offcanvas"></button>
                         </div>
                         <div class="offcanvas-body px-0">
@@ -176,12 +174,6 @@
                             @else
                             <a href="/login" class="mobile-login-btn"><i class="fas fa-sign-in-alt me-2"></i> ورود / ثبت نام</a>
                             @endif
-                            <form method="get" action="/shop">
-                                <div class="input-group search-box px-3 mt-3">
-                                    <input type="search" name="title" class="form-control form-control-lg" placeholder="جستجو در ناظر یدک">
-                                    <button type="submit" class="btn" style="background: var(--primary); color: #fff;"><i class="fa fa-search"></i></button>
-                                </div>
-                            </form>
                             <ul class="mobile-menu-level-1">
                                 <li class="has-mobile-submenu"><a href="#"><i class="fas fa-th-large me-2" style="color:var(--primary);"></i> دسته‌بندی محصولات</a>
                                     <ul class="mobile-menu-level-2">
@@ -213,8 +205,10 @@
                     </div>
                 </div>
                 <div class="col-5 text-center">
-                    <a href="/" class="d-inline-block" style="background:#fff; border-radius:6px; padding:4px 10px;">
-                        <img src="/assets/images/logo2.png" style="height:28px;">
+                    <a href="/" class="site-logo site-logo-mobile">
+                        <img src="/assets/images/logo-new.png"
+                             onerror="this.onerror=null;this.src='/assets/images/logo2.png';"
+                             alt="ناظر یدک - لوازم یدکی خودرو و محصولات اصلی ایساکو">
                     </a>
                 </div>
                 <div class="col-2 d-flex align-items-center justify-content-end">
@@ -275,6 +269,12 @@
                     </div>
                 </div>
             </div>
+
+            {{-- جستجوی موبایل: همیشه دیده می‌شود، نه پنهان در منو --}}
+            <form method="get" action="/shop" class="mobile-search">
+                <input type="search" name="title" value="{{ request('title') }}" placeholder="نام قطعه، خودرو یا کد فنی...">
+                <button type="submit" aria-label="جستجو"><i class="fa fa-search"></i></button>
+            </form>
         </div>
     </header>
 
@@ -341,7 +341,11 @@
                 <div class="row">
                     <div class="col-lg-4 col-md-6 footer-box mb-4">
                         <div class="footer-brand">
-                            <img src="/assets/images/logo.png" alt="ناظر یدک" style="height:44px; background:#fff; border-radius:6px; padding:5px 10px; margin-bottom:15px;">
+                            <span class="site-logo" style="margin-bottom:15px;">
+                                <img src="/assets/images/logo-new.png"
+                                     onerror="this.onerror=null;this.src='/assets/images/logo.png';"
+                                     alt="ناظر یدک - لوازم یدکی خودرو و محصولات اصلی ایساکو">
+                            </span>
                             <div class="footer-about">
                                 nazeryadak یک فروشگاه اینترنتی تخصصی در حوزه فروش لوازم یدکی خودرو با تمرکز ویژه بر قطعات اصلی ایساکو (ISACO) است. ما بستری امن برای خرید آنلاین لوازم یدکی فراهم کرده‌ایم.
                             </div>

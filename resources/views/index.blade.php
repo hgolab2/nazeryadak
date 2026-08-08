@@ -14,11 +14,7 @@
                 <div class="home-hero-content">
                     <span class="home-kicker"><i class="fas fa-shield-alt"></i> تمرکز ویژه بر قطعات اصلی ایساکو</span>
                     <h1>خرید <span class="hero-highlight">سریع</span> لوازم یدکی خودرو با کد فنی یا نام قطعه</h1>
-                    <p>بخش بزرگی از محصولات ناظر یدک از قطعات ایساکو و قطعات اصلی خودرو است؛ قطعات مصرفی، موتوری، برقی، بدنه، ترمز و جلوبندی را برای پژو، سمند، دنا، پراید، تیبا و تارا سریع پیدا کنید.</p>
-                    <form method="get" action="/shop" class="home-hero-search">
-                        <input type="search" name="title" placeholder="مثلا لنت ترمز، فیلتر روغن، 206 یا کد فنی..." aria-label="جستجوی لوازم یدکی">
-                        <button type="submit"><i class="fa fa-search"></i><span>جستجو</span></button>
-                    </form>
+                    <p>قطعات مصرفی، موتوری، برقی، بدنه، ترمز و جلوبندی برای پژو، سمند، دنا، پراید، تیبا و تارا — با ضمانت اصالت و ارسال به سراسر کشور.</p>
                     <div class="home-hero-actions">
                         <a href="/shop" class="home-primary-action"><i class="fas fa-store"></i> فروشگاه قطعات</a>
                         <a href="tel:09127471631" class="home-secondary-action"><i class="fas fa-headset"></i> مشاوره خرید</a>
@@ -41,13 +37,6 @@
             <a href="/shop?title=فیلتر روغن"><i class="fas fa-oil-can"></i><span>فیلتر روغن</span></a>
             <a href="/shop?title=تسمه تایم"><i class="fas fa-cogs"></i><span>تسمه تایم</span></a>
             <a href="/shop?title=سنسور"><i class="fas fa-bolt"></i><span>سنسورها</span></a>
-        </section>
-
-        <section class="home-trust-strip" aria-label="مزیت‌های ناظر یدک">
-            <div><i class="fas fa-medal"></i><strong>قطعات ایساکو</strong><span>تمرکز بر کالای اصلی و قابل پیگیری</span></div>
-            <div><i class="fas fa-truck"></i><strong>ارسال سریع</strong><span>قم و سراسر کشور</span></div>
-            <div><i class="fas fa-barcode"></i><strong>جستجوی کد فنی</strong><span>پیدا کردن قطعه دقیق</span></div>
-            <div><i class="fas fa-headset"></i><strong>مشاوره تخصصی</strong><span>انتخاب قطعه مناسب خودرو</span></div>
         </section>
 
         <section class="product-slider home-section">
@@ -105,26 +94,6 @@
             <a href="/contact-us"><i class="fas fa-phone-alt"></i> تماس با کارشناسان</a>
         </section>
 
-        <section class="home-section home-seo-hub" aria-labelledby="home-seo-title">
-            <div class="section-header">
-                <h2 class="section-title" id="home-seo-title">فروشگاه تخصصی لوازم یدکی و قطعات ایساکو</h2>
-                <a href="/shop" class="section-link">خرید قطعات <i class="fa fa-chevron-left"></i></a>
-            </div>
-            <div class="home-seo-copy">
-                <p>در ناظر یدک می‌توانید برای خودروهای پرتقاضا مثل پژو ۲۰۶، پژو ۴۰۵، سمند، دنا، رانا، تارا، تیبا و پراید قطعات اصلی و مصرفی را بر اساس نام قطعه، کد فنی، دسته‌بندی و خودرو مناسب پیدا کنید. تمرکز فروشگاه روی قطعات اصلی ایساکو، قیمت شفاف، ضمانت اصالت و ارسال سراسر کشور است.</p>
-                <div class="home-keyword-links">
-                    <a href="/shop?title=لنت ترمز">خرید لنت ترمز</a>
-                    <a href="/shop?title=فیلتر روغن">خرید فیلتر روغن</a>
-                    <a href="/shop?title=تسمه تایم">خرید تسمه تایم</a>
-                    <a href="/shop?car_model=پژو 206">لوازم یدکی پژو ۲۰۶</a>
-                    <a href="/shop?car_model=سمند">لوازم یدکی سمند</a>
-                    <a href="/shop?car_model=دنا">لوازم یدکی دنا</a>
-                    <a href="/shop?car_model=پراید">لوازم یدکی پراید</a>
-                    <a href="/shop?title=ایساکو">قطعات اصلی ایساکو</a>
-                </div>
-            </div>
-        </section>
-
         <section class="product-slider home-section">
             <div class="section-header">
                 <h2 class="section-title">آخرین مطالب راهنمای خرید</h2>
@@ -155,6 +124,24 @@
                         </a>
                     </div>
                 @endforeach
+            </div>
+        </section>
+
+        {{-- متن معرفی و لینک‌های پرجستجو: انتهای صفحه تا جلوی خرید را نگیرد --}}
+        <section class="home-section home-seo-hub" aria-labelledby="home-seo-title">
+            <h2 class="home-seo-title" id="home-seo-title">فروشگاه تخصصی لوازم یدکی و قطعات ایساکو</h2>
+            <div class="home-seo-copy">
+                <p>در ناظر یدک می‌توانید برای خودروهای پرتقاضا مثل پژو ۲۰۶، پژو ۴۰۵، سمند، دنا، رانا، تارا، تیبا و پراید قطعات اصلی و مصرفی را بر اساس نام قطعه، کد فنی، دسته‌بندی و خودرو مناسب پیدا کنید. تمرکز فروشگاه روی قطعات اصلی ایساکو، قیمت شفاف، ضمانت اصالت و ارسال سراسر کشور است.</p>
+                <div class="home-keyword-links">
+                    <a href="/shop?title=لنت ترمز">خرید لنت ترمز</a>
+                    <a href="/shop?title=فیلتر روغن">خرید فیلتر روغن</a>
+                    <a href="/shop?title=تسمه تایم">خرید تسمه تایم</a>
+                    <a href="/shop?car_model=پژو 206">لوازم یدکی پژو ۲۰۶</a>
+                    <a href="/shop?car_model=سمند">لوازم یدکی سمند</a>
+                    <a href="/shop?car_model=دنا">لوازم یدکی دنا</a>
+                    <a href="/shop?car_model=پراید">لوازم یدکی پراید</a>
+                    <a href="/shop?title=ایساکو">قطعات اصلی ایساکو</a>
+                </div>
             </div>
         </section>
     </div>
