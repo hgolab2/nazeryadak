@@ -4616,3 +4616,595 @@ footer{
         padding: 8px 12px;
     }
 }
+
+/* =======================================================================
+   رنگ و حال: لایه‌ی سرزندگی روی همان طیف آبی پایه
+   آبی رنگ اصلی می‌ماند؛ رنگ‌های مکمل فقط برای آیکون‌ها،
+   حاشیه‌ها و حالت hover استفاده می‌شوند.
+   ======================================================================= */
+
+:root {
+    --joy-orange: #f57c00;
+    --joy-teal: #00a99d;
+    --joy-violet: #6c5ce7;
+    --joy-pink: #e5397e;
+    --joy-green: #2eA84f;
+    --joy-sky: #0091d5;
+}
+
+/* ---------- هیرو: نور رنگی و کمی حرکت ---------- */
+
+.home-hero {
+    background:
+        radial-gradient(1100px 380px at 88% -12%, rgba(245,124,0,.34), transparent 62%),
+        radial-gradient(900px 420px at 6% 116%, rgba(0,169,157,.32), transparent 62%),
+        linear-gradient(135deg, #002f5b 0%, #00457c 52%, #0d6c93 100%);
+}
+
+/* بافت نقطه‌ای ملایم + هاله‌ی رنگی متحرک */
+.home-hero::before,
+.home-hero::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+}
+
+.home-hero::before {
+    inset: 0;
+    background-image: radial-gradient(rgba(255,255,255,.16) 1px, transparent 1px);
+    background-size: 22px 22px;
+    opacity: .5;
+    mask-image: linear-gradient(to bottom, #000 0%, transparent 78%);
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 78%);
+}
+
+.home-hero::after {
+    width: 340px;
+    height: 340px;
+    top: -120px;
+    right: 22%;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,152,0,.5), transparent 68%);
+    filter: blur(46px);
+    animation: joy-drift 16s ease-in-out infinite;
+}
+
+/* نوار رنگی باریک زیر هیرو */
+.home-hero .container::after {
+    content: '';
+    position: absolute;
+    right: -50vw;
+    left: -50vw;
+    bottom: -26px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--joy-orange), var(--joy-pink), var(--joy-violet), var(--joy-sky), var(--joy-teal));
+    opacity: .85;
+}
+
+.home-hero .container {
+    position: relative;
+    z-index: 1;
+}
+
+@keyframes joy-drift {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+    50%      { transform: translate3d(-26px, 26px, 0) scale(1.12); }
+}
+
+.home-kicker {
+    background: rgba(255,255,255,.16);
+    border-color: rgba(255,255,255,.28);
+}
+
+.home-kicker i {
+    animation: joy-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes joy-pulse {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.18); }
+}
+
+/* کلمه‌ی کلیدی رنگی داخل تیتر هیرو */
+.hero-highlight {
+    position: relative;
+    color: #ffd08a;
+    white-space: nowrap;
+}
+
+.hero-highlight::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    left: 0;
+    bottom: 2px;
+    height: 8px;
+    border-radius: 6px;
+    background: linear-gradient(90deg, var(--joy-orange), rgba(245,124,0,0));
+    opacity: .5;
+    z-index: -1;
+}
+
+.home-hero-search {
+    transition: box-shadow .3s ease, transform .3s ease;
+}
+
+.home-hero-search:focus-within {
+    box-shadow: 0 18px 44px rgba(0,0,0,.28);
+    transform: translateY(-2px);
+}
+
+.home-hero-search button {
+    background: linear-gradient(135deg, var(--joy-orange), var(--accent-light));
+}
+
+.home-hero-search button:hover {
+    background: linear-gradient(135deg, var(--accent-dark), var(--joy-orange));
+}
+
+.home-primary-action:hover,
+.home-secondary-action:hover {
+    transform: translateY(-2px);
+}
+
+.home-secondary-action:hover {
+    background: rgba(255,255,255,.2);
+    color: #fff;
+}
+
+.home-isaco-card {
+    animation: joy-float 6s ease-in-out infinite;
+    position: relative;
+    background: rgba(255,255,255,.13);
+    border-color: rgba(255,255,255,.26);
+    box-shadow: 0 18px 40px rgba(0,0,0,.22), 0 0 0 1px rgba(255,255,255,.06) inset;
+}
+
+.home-isaco-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 22%;
+    left: 22%;
+    height: 3px;
+    border-radius: 0 0 4px 4px;
+    background: linear-gradient(90deg, var(--joy-orange), var(--joy-teal));
+}
+
+@keyframes joy-float {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-9px); }
+}
+
+/* ---------- تیتر بخش‌ها: خط زیرین رنگین‌کمانی ---------- */
+
+.section-title::after {
+    width: 62px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--joy-orange), var(--primary-light));
+}
+
+.home-page .section-link:hover {
+    transform: translateX(-3px);
+}
+
+/* ---------- چیپ‌های دسترسی سریع: هرکدام یک رنگ ---------- */
+
+.home-mobile-shortcuts a {
+    transition: var(--transition);
+}
+
+.home-mobile-shortcuts a:nth-child(1) { --chip: var(--joy-orange); }
+.home-mobile-shortcuts a:nth-child(2) { --chip: var(--joy-teal); }
+.home-mobile-shortcuts a:nth-child(3) { --chip: var(--joy-violet); }
+.home-mobile-shortcuts a:nth-child(4) { --chip: var(--joy-pink); }
+
+.home-mobile-shortcuts i {
+    color: var(--chip, var(--primary));
+    transition: var(--transition);
+}
+
+.home-mobile-shortcuts a:hover {
+    background: var(--chip, var(--primary));
+    border-color: var(--chip, var(--primary));
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.home-mobile-shortcuts a:hover i {
+    color: #fff;
+}
+
+/* ---------- نوار مزیت‌ها: آیکون رنگی داخل حباب ---------- */
+
+.home-trust-strip div {
+    position: relative;
+    overflow: hidden;
+    transition: var(--transition);
+}
+
+.home-trust-strip div::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 3px;
+    background: var(--chip, var(--primary));
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform .35s ease;
+}
+
+.home-trust-strip div:hover::before {
+    transform: scaleX(1);
+}
+
+.home-trust-strip div:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+}
+
+.home-trust-strip div:nth-child(1) { --chip: var(--joy-orange); }
+.home-trust-strip div:nth-child(2) { --chip: var(--joy-green); }
+.home-trust-strip div:nth-child(3) { --chip: var(--joy-violet); }
+.home-trust-strip div:nth-child(4) { --chip: var(--joy-teal); }
+
+.home-trust-strip i {
+    color: var(--chip, var(--primary));
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary-lighter);
+    background: color-mix(in srgb, var(--chip, var(--primary)) 12%, #fff);
+}
+
+/* ---------- دسته‌بندی‌ها: هر کارت رنگ خودش ---------- */
+
+.home-category-grid a {
+    position: relative;
+    overflow: hidden;
+    transition: var(--transition);
+}
+
+.home-category-grid a:nth-child(1) { --chip: var(--joy-orange); }
+.home-category-grid a:nth-child(2) { --chip: var(--joy-sky); }
+.home-category-grid a:nth-child(3) { --chip: var(--joy-violet); }
+.home-category-grid a:nth-child(4) { --chip: var(--joy-green); }
+
+.home-category-grid a::after {
+    content: '';
+    position: absolute;
+    top: -46px;
+    left: -46px;
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    background: var(--chip, var(--primary));
+    opacity: .09;
+    transition: transform .4s ease;
+}
+
+.home-category-grid a:hover::after {
+    transform: scale(1.55);
+}
+
+.home-category-grid a:hover {
+    transform: translateY(-4px);
+    border-color: var(--chip, var(--primary));
+    box-shadow: var(--shadow-md);
+}
+
+.home-category-grid i {
+    color: var(--chip, var(--primary));
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary-lighter);
+    background: color-mix(in srgb, var(--chip, var(--primary)) 12%, #fff);
+    position: relative;
+    z-index: 1;
+}
+
+.home-category-grid a:hover i {
+    background: var(--chip, var(--primary));
+    color: #fff;
+}
+
+/* ---------- خودروها: هاور رنگی چرخشی ---------- */
+
+.home-car-card {
+    transition: var(--transition);
+}
+
+.home-car-card:nth-child(5n+1) { --chip: var(--joy-orange); }
+.home-car-card:nth-child(5n+2) { --chip: var(--joy-teal); }
+.home-car-card:nth-child(5n+3) { --chip: var(--joy-violet); }
+.home-car-card:nth-child(5n+4) { --chip: var(--joy-sky); }
+.home-car-card:nth-child(5n+5) { --chip: var(--joy-pink); }
+
+.home-car-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--chip, var(--primary));
+    box-shadow: 0 10px 26px color-mix(in srgb, var(--chip, var(--primary)) 22%, transparent);
+}
+
+.home-car-card img {
+    transition: transform .35s ease;
+    background: var(--primary-lighter);
+    background: color-mix(in srgb, var(--chip, var(--primary)) 9%, #fff);
+}
+
+.home-car-card:hover img {
+    transform: scale(1.07);
+}
+
+.home-car-card:hover strong {
+    color: var(--chip, var(--primary));
+}
+
+.home-car-icon {
+    background: color-mix(in srgb, var(--chip, var(--primary)) 12%, #fff);
+    color: var(--chip, var(--primary));
+}
+
+/* ---------- کارت محصول: کمی جان ---------- */
+
+.custom-product-slider .custom-card {
+    transition: var(--transition);
+}
+
+.custom-product-slider .custom-card:hover {
+    border-color: var(--primary-light);
+    box-shadow: 0 12px 28px rgba(0,69,124,.16);
+}
+
+.custom-product-slider .slider-pic {
+    transition: transform .35s ease;
+}
+
+.custom-product-slider .custom-card:hover .slider-pic {
+    transform: scale(1.06);
+}
+
+.product-thumb {
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+}
+
+/* گودی تصویر با ته‌رنگ ملایم آبی تا کارت‌ها تخت به‌نظر نرسند */
+.custom-product-slider .product-thumb {
+    margin: 10px 10px 4px;
+    padding: 10px;
+    background: linear-gradient(160deg, #f4f8fc, #eef4fa);
+}
+
+/* نوار رنگی نازک بالای جعبه‌ی هر اسلایدر */
+.home-page .product-slider {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(180deg, #fff 0%, #fbfdff 100%);
+}
+
+.home-page .product-slider::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--joy-orange), var(--primary-light), var(--joy-teal));
+}
+
+.product-price {
+    color: var(--primary);
+}
+
+.product-discount-badge {
+    background: linear-gradient(135deg, var(--joy-pink), var(--joy-orange));
+    box-shadow: 0 4px 10px rgba(229,57,126,.3);
+}
+
+.custom-product-slider .add-cart-btn {
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+}
+
+.custom-product-slider .add-cart-btn:hover {
+    background: linear-gradient(135deg, var(--joy-orange), var(--accent-light));
+    box-shadow: 0 8px 18px rgba(245,124,0,.32);
+}
+
+/* ---------- پنل راهنمایی: پس‌زمینه‌ی زنده ---------- */
+
+.home-help-panel {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(120deg, var(--primary-dark) 0%, var(--primary) 45%, #0d6c93 100%);
+}
+
+.home-help-panel::before {
+    content: '';
+    position: absolute;
+    top: -80px;
+    left: -40px;
+    width: 260px;
+    height: 260px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(245,124,0,.55), transparent 70%);
+    filter: blur(30px);
+    animation: joy-drift 12s ease-in-out infinite;
+}
+
+.home-help-panel > *,
+.home-help-panel > a {
+    position: relative;
+    z-index: 1;
+}
+
+.home-help-panel a {
+    background: linear-gradient(135deg, var(--joy-orange), var(--accent-light));
+    box-shadow: 0 8px 20px rgba(245,124,0,.34);
+    transition: var(--transition);
+}
+
+.home-help-panel a:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 26px rgba(245,124,0,.45);
+    color: #fff;
+}
+
+/* ---------- لینک‌های کلیدواژه: چیپ‌های چندرنگ ---------- */
+
+.home-keyword-links a {
+    transition: var(--transition);
+}
+
+.home-keyword-links a:nth-child(5n+1) { --chip: var(--joy-orange); }
+.home-keyword-links a:nth-child(5n+2) { --chip: var(--joy-teal); }
+.home-keyword-links a:nth-child(5n+3) { --chip: var(--joy-violet); }
+.home-keyword-links a:nth-child(5n+4) { --chip: var(--joy-sky); }
+.home-keyword-links a:nth-child(5n+5) { --chip: var(--joy-pink); }
+
+.home-keyword-links a {
+    background: color-mix(in srgb, var(--chip, var(--primary)) 10%, #fff);
+    color: color-mix(in srgb, var(--chip, var(--primary)) 78%, #000);
+}
+
+.home-keyword-links a:hover {
+    background: var(--chip, var(--primary));
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+/* ---------- کارت‌های مجله: نوار رنگی بالای کارت ---------- */
+
+.home-page .blog-card-new {
+    position: relative;
+    overflow: hidden;
+    transition: var(--transition);
+}
+
+.home-page .blog-card-new::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 4px;
+    z-index: 2;
+    background: var(--chip, var(--primary));
+}
+
+.home-page .col-6:nth-child(4n+1) .blog-card-new { --chip: var(--joy-orange); }
+.home-page .col-6:nth-child(4n+2) .blog-card-new { --chip: var(--joy-sky); }
+.home-page .col-6:nth-child(4n+3) .blog-card-new { --chip: var(--joy-green); }
+.home-page .col-6:nth-child(4n+4) .blog-card-new { --chip: var(--joy-violet); }
+
+.home-page .blog-card-new:hover {
+    transform: translateY(-5px);
+    border-color: var(--chip, var(--primary));
+    box-shadow: 0 12px 26px color-mix(in srgb, var(--chip, var(--primary)) 20%, transparent);
+}
+
+.home-page .blog-card-new:hover h3 {
+    color: var(--chip, var(--primary));
+}
+
+/* ---------- فوتر: آیکون‌های رنگی ---------- */
+
+.footer-features {
+    position: relative;
+}
+
+.footer-features::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--joy-orange), var(--joy-pink), var(--joy-violet), var(--joy-sky), var(--joy-teal));
+}
+
+.footer-feature-item {
+    transition: var(--transition);
+}
+
+.footer-feature-item:hover {
+    transform: translateY(-3px);
+}
+
+.footer-features .row > div:nth-child(1) .footer-feature-item { --chip: var(--joy-orange); }
+.footer-features .row > div:nth-child(2) .footer-feature-item { --chip: var(--joy-green); }
+.footer-features .row > div:nth-child(3) .footer-feature-item { --chip: var(--joy-violet); }
+
+.footer-feature-icon {
+    background: color-mix(in srgb, var(--chip, var(--primary)) 12%, #fff);
+    transition: var(--transition);
+}
+
+.footer-feature-icon i {
+    color: var(--chip, var(--primary));
+}
+
+.footer-feature-item:hover .footer-feature-icon {
+    background: var(--chip, var(--primary));
+}
+
+.footer-feature-item:hover .footer-feature-icon i {
+    color: #fff;
+}
+
+.footer-social-btn:nth-child(1):hover {
+    background: var(--joy-green);
+    border-color: var(--joy-green);
+    box-shadow: 0 4px 15px rgba(46,168,79,.4);
+}
+
+/* ---------- ظاهر شدن نرم بخش‌ها هنگام اسکرول ----------
+   کلاس روی <body> فقط با جاوااسکریپت اضافه می‌شود،
+   پس اگر جاوااسکریپت اجرا نشد همه‌چیز عادی دیده می‌شود. */
+
+body.joy-reveal .home-section,
+body.joy-reveal .home-trust-strip,
+body.joy-reveal .home-mobile-shortcuts {
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity .55s ease, transform .55s ease;
+}
+
+body.joy-reveal .is-revealed {
+    opacity: 1;
+    transform: none;
+}
+
+/* ---------- دکمه‌ی بازگشت به بالا ---------- */
+
+.topbutton {
+    background: linear-gradient(135deg, var(--joy-orange), var(--accent-light));
+    box-shadow: 0 8px 20px rgba(245,124,0,.36);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .home-hero::before,
+    .home-hero::after,
+    .home-isaco-card,
+    .home-kicker i,
+    .home-help-panel::before {
+        animation: none;
+    }
+
+    body.joy-reveal .home-section,
+    body.joy-reveal .home-trust-strip,
+    body.joy-reveal .home-mobile-shortcuts {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+}

@@ -13,7 +13,7 @@
             <div class="home-hero-grid">
                 <div class="home-hero-content">
                     <span class="home-kicker"><i class="fas fa-shield-alt"></i> تمرکز ویژه بر قطعات اصلی ایساکو</span>
-                    <h1>خرید سریع لوازم یدکی خودرو با کد فنی یا نام قطعه</h1>
+                    <h1>خرید <span class="hero-highlight">سریع</span> لوازم یدکی خودرو با کد فنی یا نام قطعه</h1>
                     <p>بخش بزرگی از محصولات ناظر یدک از قطعات ایساکو و قطعات اصلی خودرو است؛ قطعات مصرفی، موتوری، برقی، بدنه، ترمز و جلوبندی را برای پژو، سمند، دنا، پراید، تیبا و تارا سریع پیدا کنید.</p>
                     <form method="get" action="/shop" class="home-hero-search">
                         <input type="search" name="title" placeholder="مثلا لنت ترمز، فیلتر روغن، 206 یا کد فنی..." aria-label="جستجوی لوازم یدکی">
@@ -159,4 +159,36 @@
         </section>
     </div>
 </main>
+@endsection
+
+@section('js')
+<script>
+// ظاهر شدن نرم بخش‌ها هنگام اسکرول.
+// کلاس فقط وقتی اضافه می‌شود که مرورگر IntersectionObserver داشته باشد،
+// در غیر این صورت صفحه بدون انیمیشن و کاملاً قابل مشاهده می‌ماند.
+(function () {
+    if (!('IntersectionObserver' in window)) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    var targets = document.querySelectorAll('.home-section, .home-trust-strip, .home-mobile-shortcuts');
+    if (!targets.length) return;
+
+    document.body.classList.add('joy-reveal');
+
+    var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+            if (!entry.isIntersecting) return;
+            entry.target.classList.add('is-revealed');
+            observer.unobserve(entry.target);
+        });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.06 });
+
+    targets.forEach(function (el) { observer.observe(el); });
+
+    // اگر به هر دلیلی observer کار نکرد، بعد از ۲ ثانیه همه‌چیز نمایش داده شود
+    setTimeout(function () {
+        targets.forEach(function (el) { el.classList.add('is-revealed'); });
+    }, 2000);
+})();
+</script>
 @endsection
