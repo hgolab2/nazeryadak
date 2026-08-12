@@ -21,6 +21,13 @@
 </a>
 
 <div class="admin-menu-title">محتوا</div>
+<a href="/admin/article/list" class="admin-menu-item {{ ($menu ?? '') == 'article/list' ? 'active' : '' }}">
+    <i class="fas fa-newspaper"></i> مدیریت بلاگ
+</a>
+<a href="/admin/article/create" class="admin-menu-item {{ ($menu ?? '') == 'article/create' ? 'active' : '' }}">
+    <i class="fas fa-pen"></i> مطلب جدید
+</a>
+
 <a href="/admin/advertisement/list" class="admin-menu-item {{ ($menu ?? '') == 'advertisement/list' ? 'active' : '' }}">
     <i class="fas fa-images"></i> تبلیغات و بنر
 </a>

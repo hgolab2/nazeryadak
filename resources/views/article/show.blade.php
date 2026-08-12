@@ -1,5 +1,19 @@
+@php
+    $articleSeoTitle = $info->seo_title ?: ($info->titr . ' | مجله یدکی');
+    $articleSeoDescription = seo_description($info->seo_description ?: ($info->sutitr ?: strip_tags($info->text ?? '')));
+    $articleCanonical = $info->canonical_url ?: seo_url($info->getUrl());
+    $articleRobots = (($info->robots_index ?? true) ? 'index' : 'noindex') . ',' . (($info->robots_follow ?? true) ? 'follow' : 'nofollow') . ',max-image-preview:large,max-snippet:-1,max-video-preview:-1';
+    $articleImage = !empty($info->images) ? seo_url($info->images->getPath()) : seo_url('/assets/images/logo.png');
+@endphp
+
 @extends('layout.layout', [
-    'title' => $info->titr . ' | مجله یدکی'
+    'title' => $articleSeoTitle,
+    'metaDescription' => $articleSeoDescription,
+    'keywords' => $info->keywords ?: seo_default_keywords(),
+    'canonical' => $articleCanonical,
+    'ogImage' => $articleImage,
+    'ogType' => 'article',
+    'robots' => $articleRobots,
 ])
 @section('main_content')
 <main>

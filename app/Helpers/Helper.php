@@ -455,7 +455,7 @@ function uploader($file,  $param = array())
         $data['description'] = $param['description'];
         $data['filetype'] = $file->getClientOriginalExtension();
         $data['savedate'] = date('Y-m-d H:i:s');
-        $data['savedby'] = $superAdmin->id;
+        $data['savedby'] = $superAdmin->getAuthIdentifier();
         $data['filesize'] = $file->getSize();
         $data['filepath'] = $filename;
         $data['grouptype'] = $param['grouptype'];
@@ -486,7 +486,7 @@ function uploader($file,  $param = array())
             $data3 = array();
             $data3['width'] = $imagesize[0];
             $data3['height'] = $imagesize[1];
-            File::where('fileId', $filecreeate->fileid)->update($data3);
+            File::where('fileId', $filecreeate->fileId)->update($data3);
         }
 
         return $filecreeate->fileId;

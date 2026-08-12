@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\OrderAdminController;
 use App\Http\Controllers\Admin\AdvertisementAdminController;
 use App\Http\Controllers\Admin\UserAdminController;
 use App\Http\Controllers\Admin\ImportController;
+use App\Http\Controllers\Admin\ArticleAdminController;
 
 use App\Http\Middleware\ShareDataInFrontend;
 Route::get('/sitemap.xml', function () {
@@ -130,6 +131,16 @@ Route::group(['namespace' => 'Frontend', 'middleware' => [ShareDataInFrontend::c
         Route::post('/admin/product/upload-image/{id}', [ProductAdminController::class, 'uploadImage']);
         Route::delete('/admin/product/delete-image/{id}', [ProductAdminController::class, 'deleteImage']);
         Route::delete('/admin/product/{id}', [ProductAdminController::class, 'destroy']);
+
+
+        /* Article */
+        Route::get('/admin/article/list', [ArticleAdminController::class, 'admin_list']);
+        Route::get('/admin/article/create', [ArticleAdminController::class, 'admin_create']);
+        Route::get('/admin/article/edit/{id}', [ArticleAdminController::class, 'admin_edit']);
+        Route::post('/admin/article/store', [ArticleAdminController::class, 'admin_store']);
+        Route::put('/admin/article/update/{id}', [ArticleAdminController::class, 'admin_update']);
+        Route::get('/admin/article/status/{id}', [ArticleAdminController::class, 'toggleStatus']);
+        Route::delete('/admin/article/{id}', [ArticleAdminController::class, 'destroy']);
 
         /* Order */
         Route::get('/admin/order/list', [OrderAdminController::class, 'admin_list']);
