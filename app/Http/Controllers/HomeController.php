@@ -187,7 +187,7 @@ class HomeController extends Controller
             }])
             ->latest()
             ->paginate(2);
-        $orders = Order::where('customer_id', $user->id)->latest()->paginate(5);
+        $orders = Order::with('items')->where('customer_id', $user->id)->latest()->paginate(5);
         $customer = Customer::where('id', $user->id)->first();
         $address = CustomerAddress::where('customer_id', $user->id)->first();
         return View('dashboard', compact('favorites' , 'orders' , 'customer' , 'address'));

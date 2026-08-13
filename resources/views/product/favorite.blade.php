@@ -1,69 +1,72 @@
 @extends('layout.layout', ['title' => 'علاقه‌مندی‌ها | ناظر یدک', 'robots' => seo_robots_tag(false, true), 'noBaseSchema' => true])
 @section('main_content')
-<main>
-    <div class="container">
-        <div class="row mt-3 mb-2">
-            <div class="col-12">
-                <ul class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="/" class="breadcrumb-custom">ناظر یدک</a></li>
-                    <li class="breadcrumb-item"><span class="breadcrumb-custom">علاقه‌مندی‌ها</span></li>
-                </ul>
-            </div>
-        </div>
-        <div class="row">
+<main class="nx-account">
+    <div class="nx-wrap">
+        <nav class="nx-breadcrumb" aria-label="مسیر صفحه">
+            <a href="/">ناظر یدک</a>
+            <i class="fas fa-chevron-left"></i>
+            <b>علاقه‌مندی‌ها</b>
+        </nav>
+
+        <div class="nx-account-layout">
             @include('layout.sidebar', ['menu' => 'favourits'])
-            <div class="col-lg-9">
-                <div class="cart-content p-3">
-                    <div class="d-flex align-items-center gap-2 pb-2 mb-3 border-bottom">
-                        <i class="fas fa-heart" style="color:var(--danger);"></i>
-                        <h6 class="mb-0 font-13 fw-bold">قطعات مورد علاقه</h6>
+
+            <div class="nx-account-main">
+                <section class="nx-card">
+                    <div class="nx-card-head">
+                        <h2><i class="fas fa-heart"></i> قطعات مورد علاقه</h2>
+                        @if($products->count() > 0)
+                            <span class="nx-order-date">{{ toPersianNumbers($products->count(), false) }} قطعه</span>
+                        @endif
                     </div>
+
                     @if($products->count() > 0)
-                    <div class="row">
-                        @foreach ($products as $product)
-                        <div class="col-md-6 mb-3" id="fav{{ $product->id }}">
-                            <div class="d-flex gap-3 p-3" style="border:1px solid var(--border-color); border-radius:var(--radius-sm);">
-                                <a href="{{ $product->url() }}" class="flex-shrink-0">
-                                    @if($product->image())
-                                    <img src="{{ $product->image() }}" style="width:80px; height:80px; object-fit:contain; border-radius:6px;" alt="">
-                                    @else
-                                    <div style="width:80px; height:80px; background:var(--bg-body); border-radius:6px; display:flex; align-items:center; justify-content:center;">
-                                        <i class="fas fa-image" style="font-size:1.5rem; color:#ddd;"></i>
-                                    </div>
-                                    @endif
-                                </a>
-                                <div class="flex-grow-1 d-flex flex-column">
-                                    <a href="{{ $product->url() }}" class="font-13 d-block mb-2" style="color:var(--text-dark); line-height:1.8;">
-                                        {{ $product->title }}
+                        <div class="nx-items">
+                            @foreach ($products as $product)
+                                <div class="nx-item" id="fav{{ $product->id }}">
+                                    <a href="{{ $product->url() }}" class="nx-item-thumb">
+                                        <img src="{{ $product->image() }}" alt="{{ $product->title }}" loading="lazy"
+                                             onerror="this.onerror=null;this.src='/images/no-image.svg';">
                                     </a>
-                                    <div class="d-flex justify-content-between align-items-center mt-auto">
-                                        <div class="d-flex gap-2">
-                                            <button class="btn btn-sm add-cart-btn3 px-2 py-1" data-id="{{ $product->id }}" style="background:var(--primary); color:#fff; border:none; border-radius:6px; font-size:.75rem;">
-                                                <i class="fa fa-cart-plus me-1"></i> سبد خرید
+                                    <div class="nx-item-info">
+                                        <a href="{{ $product->url() }}">{{ $product->title }}</a>
+                                        <div class="nx-item-meta">
+                                            @if($product->sku)<bdi>{{ $product->sku }}</bdi>@endif
+                                            @if($product->car_model) — {{ $product->car_model }} @endif
+                                        </div>
+                                        <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+                                            <button class="nx-btn-red add-cart-btn3" data-id="{{ $product->id }}"
+                                                    style="height:34px; padding:0 14px; font-size:12px;">
+                                                <i class="fa fa-cart-plus"></i> سبد خرید
                                             </button>
-                                            <button class="btn btn-sm px-2 py-1" onclick="removeFavorite({{ $product->id }})" style="border:1px solid var(--border-color); color:var(--text-light); border-radius:6px; font-size:.75rem;">
-                                                <i class="fa fa-trash me-1"></i> حذف
+                                            <button class="nx-btn-ghost" onclick="removeFavorite({{ $product->id }})"
+                                                    style="height:34px; padding:0 14px; font-size:12px;">
+                                                <i class="fa fa-trash"></i> حذف
                                             </button>
                                         </div>
-                                        @if($product->price)
-                                        <span class="font-12 fw-bold" style="color:var(--primary);">{{ toPersianNumbers(number_format($product->price)) }} <small>تومان</small></span>
-                                        @endif
                                     </div>
+                                    @if($product->isContactPrice())
+                                        {{-- قطعات بدنه و شاسی قیمت اعلامی ندارند --}}
+                                        <div class="nx-item-price" style="font-size:12px; color:var(--accent, #ef394e);">
+                                            <i class="fas fa-phone-alt me-1"></i>{{ contactPriceLabel() }}
+                                        </div>
+                                    @elseif($product->price)
+                                        <div class="nx-item-price">
+                                            {{ toPersianNumbers(number_format($product->price)) }}
+                                            <small style="font-size:11px; color:var(--nx-muted,#81858b);">تومان</small>
+                                        </div>
+                                    @endif
                                 </div>
-                            </div>
+                            @endforeach
                         </div>
-                        @endforeach
-                    </div>
                     @else
-                    <div class="text-center py-5">
-                        <div style="width:80px; height:80px; background:var(--primary-lighter); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 15px;">
-                            <i class="fas fa-heart" style="font-size:2rem; color:var(--primary); opacity:.4;"></i>
+                        <div class="nx-empty-state">
+                            <i class="fas fa-heart"></i>
+                            <p>هنوز قطعه‌ای به علاقه‌مندی‌ها اضافه نکرده‌اید.</p>
+                            <a href="/shop" class="nx-btn-red"><i class="fas fa-store"></i> رفتن به فروشگاه</a>
                         </div>
-                        <p class="font-13 text-muted mb-3">هنوز قطعه‌ای به علاقه‌مندی‌ها اضافه نکرده‌اید.</p>
-                        <a href="/shop" class="btn btn-info px-4 font-13">مشاهده فروشگاه</a>
-                    </div>
                     @endif
-                </div>
+                </section>
             </div>
         </div>
     </div>
@@ -96,7 +99,7 @@ $(document).on('click', '.add-cart-btn3', function (e) {
             }
         },
         error: function () {
-            Swal.fire({ icon: 'error', text: 'خطا در افزودن به سبد خرید', confirmButtonColor: 'var(--primary)' });
+            Swal.fire({ icon: 'error', text: 'خطا در افزودن به سبد خرید', confirmButtonColor: '#ef4056' });
         }
     });
 });

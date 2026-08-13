@@ -24,6 +24,9 @@
             // ده برابر اختلاف داشت
             $shippingRules = getShippingRules();
             $cartSum = array_sum(array_map(fn($i) => ($i['price'] ?? 0) * ($i['quantity'] ?? 1), $cart));
+            // قطعات بدنه و شاسی مبلغ اعلامی ندارند و در جمع کل حساب نمی‌شوند؛
+            // مبلغشان تلفنی اعلام و به فاکتور نهایی اضافه می‌شود.
+            $hasContactPriceItem = collect($cart)->contains(fn($i) => !empty($i['contact_price']));
         @endphp
 
         @if(count($cart) == 0)
@@ -55,6 +58,7 @@
                         </div>
 
                         @foreach($cart as $id => $item)
+                        @php $itemContactPrice = !empty($item['contact_price']); @endphp
                         <div class="shopping-cart-item" data-id="{{ $id }}">
                             <div class="row align-items-center">
                                 {{-- تصویر --}}
@@ -83,14 +87,26 @@
                                         <input type="text" name="qty" class="qty form-control text-center" value="{{ $item['quantity'] ?? 1 }}" readonly style="width:42px; height:32px; border-radius:6px; font-size:.9rem;">
                                         <button class="cart-qty-minus btn-qty" type="button" data-id="{{ $id }}" style="background:var(--border-color); color:var(--text-dark); border:none; border-radius:6px; width:32px; height:32px; font-size:1rem; cursor:pointer;">−</button>
                                     </div>
-                                    <p class="font-12 text-muted mt-1 mb-0">قیمت واحد: {{ toPersianNumbers(number_format($item['price'] ?? 0)) }} تومان</p>
+                                    @if($itemContactPrice)
+                                        <p class="font-12 mt-1 mb-0" style="color:var(--accent, #ef394e);">
+                                            <i class="fas fa-phone-alt me-1"></i> قیمت واحد: استعلام تلفنی
+                                        </p>
+                                    @else
+                                        <p class="font-12 text-muted mt-1 mb-0">قیمت واحد: {{ toPersianNumbers(number_format($item['price'] ?? 0)) }} تومان</p>
+                                    @endif
                                 </div>
                                 {{-- قیمت کل و حذف --}}
                                 <div class="col-lg-3 col-6 mt-2 mt-lg-0 text-end">
-                                    <p class="mb-1" style="font-weight:700; color:var(--primary); font-size:.95rem;">
-                                        <span class="item-subtotal">{{ toPersianNumbers(number_format(($item['price'] ?? 0) * ($item['quantity'] ?? 1))) }}</span>
-                                        <small class="font-12 fw-normal">تومان</small>
-                                    </p>
+                                    @if($itemContactPrice)
+                                        <p class="mb-1" style="font-weight:700; color:var(--accent, #ef394e); font-size:.85rem;">
+                                            {{ contactPriceLabel() }}
+                                        </p>
+                                    @else
+                                        <p class="mb-1" style="font-weight:700; color:var(--primary); font-size:.95rem;">
+                                            <span class="item-subtotal">{{ toPersianNumbers(number_format(($item['price'] ?? 0) * ($item['quantity'] ?? 1))) }}</span>
+                                            <small class="font-12 fw-normal">تومان</small>
+                                        </p>
+                                    @endif
                                     <button class="delete-item btn btn-sm px-2 py-1" data-id="{{ $id }}" style="border:1px solid var(--border-color); color:var(--text-light); border-radius:6px; font-size:.78rem; cursor:pointer;">
                                         <i class="fa fa-trash me-1"></i> حذف
                                     </button>
@@ -151,8 +167,17 @@
                             @endif
                         </div>
 
+                        @if($hasContactPriceItem)
+                        {{-- قطعه‌ی استعلامی در سبد هست؛ کاربر باید بداند جمع زیر کامل نیست --}}
+                        <div class="font-12 px-2 py-2" style="line-height:1.9; background:#fff8e1; border-radius:var(--radius-sm); color:#7a5c00;">
+                            <i class="fas fa-phone-alt me-1"></i>
+                            سبد شما قطعه‌ی <b>بدنه و شاسی</b> دارد که قیمتش روی سایت اعلام نمی‌شود؛
+                            مبلغ آن در جمع زیر نیامده و پس از ثبت سفارش، کارشناسان ما آن را تلفنی به شما اعلام می‌کنند.
+                        </div>
+                        @endif
+
                         <div class="d-flex justify-content-between py-3 px-2">
-                            <span style="font-weight:700; font-size:.95rem;">جمع کالاها <small class="font-12 fw-normal text-muted d-block">(بدون هزینه ارسال)</small></span>
+                            <span style="font-weight:700; font-size:.95rem;">جمع کالاها <small class="font-12 fw-normal text-muted d-block">(بدون هزینه ارسال{{ $hasContactPriceItem ? ' و قطعات استعلامی' : '' }})</small></span>
                             <span style="font-weight:700; font-size:1.1rem; color:var(--primary);">
                                 <span class="cart-total-sum">
                                     {{ toPersianNumbers(number_format(array_sum(array_map(fn($i) => ($i['price'] ?? 0) * ($i['quantity'] ?? 1), $cart)))) }}
@@ -174,8 +199,14 @@
                         {{-- نشان‌های اطمینان --}}
                         <div class="border-top pt-3 mt-2">
                             <div class="d-flex align-items-center gap-2 mb-2">
-                                <i class="fas fa-shield-alt font-12" style="color:var(--success);"></i>
-                                <span class="font-12 text-muted">پرداخت امن و رمزنگاری شده</span>
+                                @if(onlinePaymentEnabled())
+                                    <i class="fas fa-shield-alt font-12" style="color:var(--success);"></i>
+                                    <span class="font-12 text-muted">پرداخت امن و رمزنگاری شده</span>
+                                @else
+                                    {{-- پرداخت آنلاین خاموش است؛ وعده‌ی «پرداخت امن» گمراه‌کننده می‌شد --}}
+                                    <i class="fas fa-headset font-12" style="color:var(--success);"></i>
+                                    <span class="font-12 text-muted">تأیید سفارش و هماهنگی پرداخت، تلفنی توسط کارشناس</span>
+                                @endif
                             </div>
                             <div class="d-flex align-items-center gap-2">
                                 <i class="fas fa-certificate font-12" style="color:var(--primary);"></i>

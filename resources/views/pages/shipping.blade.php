@@ -53,8 +53,10 @@
                     </div>
 
                     <h5 style="font-size:.95rem; color:var(--primary); font-weight:700;"><i class="fas fa-money-bill-wave me-1"></i> هزینه ارسال</h5>
-                    <table class="table table-bordered font-13 text-center mb-4" style="border-radius:var(--radius); overflow:hidden;">
-                        <thead style="background:var(--primary); color:#fff;">
+                    {{-- روی موبایل به‌جای شکستن صفحه، خودِ جدول افقی اسکرول می‌شود --}}
+                    <div class="table-responsive mb-4">
+                    <table class="table table-bordered font-13 text-center mb-0" style="border-radius:8px; overflow:hidden;">
+                        <thead style="background:#ef4056; color:#fff;">
                             <tr>
                                 <th>مقصد</th>
                                 <th>مبلغ فاکتور</th>
@@ -84,6 +86,7 @@
                             </tr>
                         </tbody>
                     </table>
+                    </div>
 
                     <h5 style="font-size:.95rem; color:var(--primary); font-weight:700;"><i class="fas fa-clock me-1"></i> زمان پردازش سفارش</h5>
                     <p>سفارش‌هایی که تا ساعت ۱۴:۰۰ ثبت و پرداخت شوند، همان روز کاری پردازش و آماده ارسال می‌شوند. سفارش‌های بعد از این ساعت، روز کاری بعد پردازش خواهند شد.</p>

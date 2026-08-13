@@ -38,12 +38,36 @@ class Order extends Model
         return $this->belongsTo(Customer::class);
     }
 
+    /**
+     * آدرس تحویل سفارش. صفحه‌ی جزئیات سفارش تا پیش از این نام تحویل‌گیرنده و
+     * تلفن را نداشت و به‌جایش شماره‌ی سفارش و یک شماره‌ی ثابت نمایش می‌داد.
+     */
+    public function address()
+    {
+        return $this->belongsTo(CustomerAddress::class, 'address_id');
+    }
+
+    /**
+     * آیا سفارش قلمی از دسته‌ی «شاسی و بدنه» دارد؟ مبلغ این اقلام روی سایت
+     * اعلام نمی‌شود و در جمع فاکتور نمی‌آید؛ کارشناس تلفنی اعلام می‌کند.
+     */
+    public function hasContactPriceItems(): bool
+    {
+        $this->loadMissing('items.product.categories');
+
+        return $this->items->contains(fn ($item) => (bool) $item->product?->isContactPrice());
+    }
+
     public function status()
     {
         switch ($this->status) {
 
             case 'pending':
                 return 'در انتظار پرداخت';
+
+            // سفارشی که بدون پرداخت آنلاین ثبت شده و منتظر تماس کارشناس است
+            case 'awaiting_call':
+                return 'در انتظار تماس کارشناس';
 
             case 'paid':
                 return 'پرداخت شده';

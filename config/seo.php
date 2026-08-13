@@ -59,7 +59,7 @@ return [
 
     'social' => [
         'whatsapp'  => 'https://wa.me/989127471631',
-        'instagram' => env('SEO_INSTAGRAM', ''),
+        'instagram' => env('SEO_INSTAGRAM', 'https://www.instagram.com/nazeryadak.ir'),
         'telegram'  => env('SEO_TELEGRAM', ''),
         'twitter'   => env('SEO_TWITTER', ''),
         'aparat'    => env('SEO_APARAT', ''),

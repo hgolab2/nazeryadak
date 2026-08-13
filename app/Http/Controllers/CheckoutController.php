@@ -7,8 +7,10 @@ use App\Models\Product;
 use App\Models\ShippingMethod;
 use App\Models\CustomerAddress;
 use App\Models\Province;
+use App\Services\OrderNotifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class CheckoutController extends Controller
 {
@@ -43,7 +45,9 @@ class CheckoutController extends Controller
 
         foreach ($cart as $id => $item) {
             $product = Product::find($id);
-            $price = $product ? $product->price : $item['price'];
+            // قطعات استعلامی (بدنه و شاسی) با مبلغ صفر ثبت می‌شوند تا در جمع
+            // فاکتور نیایند؛ مبلغشان بعدا تلفنی هماهنگ و به فاکتور اضافه می‌شود.
+            $price = $product ? $product->sellablePrice() : (int) ($item['price'] ?? 0);
             $quantity = $item['quantity'] ?? 1;
 
             $order->items()->create([
@@ -132,7 +136,111 @@ class CheckoutController extends Controller
         $address->load('province');
         $shippingInfo = getShippingInfo($order);
 
-        return view('order.payment', compact('order', 'address', 'shippingInfo'));
+        // وقتی پرداخت آنلاین خاموش است، این صفحه به «بازبینی و ثبت نهایی سفارش»
+        // تبدیل می‌شود و به‌جای درگاه، پیش‌فاکتور صادر می‌شود.
+        $onlinePayment = onlinePaymentEnabled();
+        $hasContactPriceItems = $order->hasContactPriceItems();
+
+        // سفارشی که قلم استعلامی دارد مبلغ کامل ندارد و نباید به درگاه برود،
+        // حتی اگر پرداخت آنلاین روشن باشد.
+        $canPayOnline = $onlinePayment && ! $hasContactPriceItems;
+
+        return view('order.payment', compact(
+            'order', 'address', 'shippingInfo', 'onlinePayment', 'hasContactPriceItems', 'canPayOnline'
+        ));
+    }
+
+    /**
+     * ثبت نهایی سفارش بدون پرداخت آنلاین.
+     *
+     * سفارش با وضعیت «در انتظار تماس کارشناس» ثبت می‌شود، سبد خالی می‌شود و
+     * کاربر پیش‌فاکتور را می‌بیند. موجودی اینجا کم نمی‌شود؛ سفارش پس از تأیید
+     * تلفنی و پرداخت، توسط ادمین به «پرداخت شده» تغییر وضعیت می‌دهد.
+     */
+    public function place(Request $request, $id)
+    {
+        $user = $this->customer();
+        if (!$user) {
+            session()->put('url.intended', '/order/payment/' . $id);
+            return redirect('/login');
+        }
+
+        $order = Order::where('id', $id)
+            ->where('customer_id', $user->id)
+            ->whereIn('status', ['pending', 'failed'])
+            ->first();
+
+        if (!$order) {
+            return redirect('/profile/orders')->with('error', 'این سفارش برای ثبت در دسترس نیست.');
+        }
+
+        $address = CustomerAddress::where('customer_id', $user->id)->first();
+        if (!$address) {
+            return redirect('/order/shopping')->with('error', 'لطفا ابتدا آدرس تحویل را ثبت کنید.');
+        }
+
+        if ($order->items()->count() === 0) {
+            return redirect('/cart')->with('error', 'سفارش شما قلمی ندارد.');
+        }
+
+        $order->update([
+            'address_id' => $address->id,
+            'status'     => 'awaiting_call',
+        ]);
+
+        session()->forget('cart');
+
+        try {
+            (new OrderNotifier())->orderPlaced($order->fresh('customer'));
+        } catch (\Throwable $e) {
+            Log::error('اطلاع‌رسانی ثبت سفارش ناموفق بود', ['order_id' => $order->id, 'message' => $e->getMessage()]);
+        }
+
+        $adminPhone = config('payment.notify_mobile');
+        if ($adminPhone) {
+            try {
+                sendSms(
+                    $adminPhone,
+                    "سفارش جدید (نیازمند تماس) #{$order->id}\n"
+                    . $order->items()->count() . " قطعه\n"
+                    . ($user->phone ?: '')
+                );
+            } catch (\Throwable $e) {
+                Log::error('پیامک سفارش به ادمین ناموفق بود', ['order_id' => $order->id, 'message' => $e->getMessage()]);
+            }
+        }
+
+        return redirect('/order/invoice/' . $order->id);
+    }
+
+    /**
+     * پیش‌فاکتور سفارش؛ سندی که مشتری تا تماس کارشناس در دست دارد.
+     */
+    public function invoice($id)
+    {
+        $user = $this->customer();
+        if (!$user) {
+            session()->put('url.intended', '/order/invoice/' . $id);
+            return redirect('/login');
+        }
+
+        $order = Order::with(['items.product.categories', 'customer'])
+            ->where('id', $id)
+            ->where('customer_id', $user->id)
+            ->first();
+
+        if (!$order) {
+            return redirect('/profile/orders')->with('error', 'این سفارش پیدا نشد.');
+        }
+
+        $address      = $order->address ?: CustomerAddress::where('customer_id', $user->id)->first();
+        $shippingInfo = getShippingInfo($order);
+
+        if ($address) {
+            $address->load('province');
+        }
+
+        return view('order.invoice', compact('order', 'address', 'shippingInfo'));
     }
 
     public function confirmOrder(Request $request)
@@ -198,7 +306,8 @@ class CheckoutController extends Controller
                 $item['quantity'] = $product->stock;
                 $changed = true;
             }
-            $item['price'] = $product->price;
+            $item['price']         = $product->sellablePrice();
+            $item['contact_price'] = $product->isContactPrice();
         }
         if ($changed) {
             session()->put('cart', $cart);

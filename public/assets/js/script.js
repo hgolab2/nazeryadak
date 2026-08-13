@@ -1,6 +1,10 @@
 /*----------------------- mobile menu --------------------*/
 
-$('.mobile-menu-level-1 > li.has-mobile-submenu > a').on('click', function () {
+$('.mobile-menu-level-1 > li.has-mobile-submenu > a').on('click', function (e) {
+    // href="#" است؛ بدون این، کلیک روی سرشاخه صفحه را به بالا می‌پراند و
+    // «#» به آدرس اضافه می‌کند.
+    e.preventDefault();
+
     var _this = $(this).parent();
 
     if (_this.hasClass('open')) {
@@ -20,7 +24,9 @@ $('.mobile-menu-level-1 > li.has-mobile-submenu > a').on('click', function () {
     }
 })
 
-$('.mobile-menu-level-2 > li.has-mobile-submenu-2 > a').on('click', function () {
+$('.mobile-menu-level-2 > li.has-mobile-submenu-2 > a').on('click', function (e) {
+    e.preventDefault();
+
     var _this1 = $(this).parent();
 
     if (_this1.hasClass('open')){

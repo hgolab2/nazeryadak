@@ -33,10 +33,11 @@ class SettingAdminController extends Controller
         }
         access(83);
 
-        $rules     = getShippingRules();
-        $provinces = Province::orderBy('name')->get();
+        $rules          = getShippingRules();
+        $provinces      = Province::orderBy('name')->get();
+        $onlinePayment  = onlinePaymentEnabled();
 
-        return view('admin.settings', compact('rules', 'provinces'));
+        return view('admin.settings', compact('rules', 'provinces', 'onlinePayment'));
     }
 
     public function update(Request $request)
@@ -73,9 +74,12 @@ class SettingAdminController extends Controller
 
         $this->put('local_province_id', (int) $data['local_province_id']);
 
+        // تیک‌نخورده اصلا در ورودی نمی‌آید، پس مقدارش صفر است.
+        $this->put('online_payment_enabled', $request->boolean('online_payment_enabled') ? '1' : '0');
+
         forgetShippingSettings();
 
-        return redirect('/admin/settings')->with('success', 'تنظیمات ارسال با موفقیت ذخیره شد.');
+        return redirect('/admin/settings')->with('success', 'تنظیمات فروشگاه با موفقیت ذخیره شد.');
     }
 
     private function put(string $key, $value): void

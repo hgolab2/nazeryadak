@@ -1,124 +1,95 @@
-@extends('layout.layout', [
-    'title' => 'داشبورد | ناظر یدک',
-    'robots' => seo_robots_tag(false, true),
-    'noBaseSchema' => true,
-])
+@extends('layout.layout', ['title' => 'داشبورد | ناظر یدک', 'robots' => seo_robots_tag(false, true), 'noBaseSchema' => true])
 @section('main_content')
-<main>
-    <div class="container">
-        <div class="row mt-3 mb-2">
-            <div class="col-12">
-                <ul class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="/" class="breadcrumb-custom">ناظر یدک</a></li>
-                    <li class="breadcrumb-item"><span class="breadcrumb-custom">داشبورد</span></li>
-                </ul>
-            </div>
-        </div>
-        <div class="row">
+<main class="nx-account">
+    <div class="nx-wrap">
+        <nav class="nx-breadcrumb" aria-label="مسیر صفحه">
+            <a href="/">ناظر یدک</a>
+            <i class="fas fa-chevron-left"></i>
+            <b>داشبورد</b>
+        </nav>
+
+        <div class="nx-account-layout">
             @include('layout.sidebar', ['menu' => 'dashboard'])
-            <div class="col-lg-9">
-                {{-- اطلاعات شخصی + علاقه‌مندی --}}
-                <div class="row">
-                    <div class="col-lg-6 mb-3">
-                        <div class="cart-content p-3 h-100">
-                            <div class="d-flex align-items-center gap-2 pb-2 mb-3 border-bottom">
-                                <i class="fas fa-user-circle" style="color:var(--primary);"></i>
-                                <h6 class="mb-0 font-13 fw-bold">اطلاعات شخصی</h6>
-                            </div>
-                            @if($address)
-                            <div class="row font-13" style="line-height:2.2;">
-                                <div class="col-6 mb-2">
-                                    <span class="text-muted">نام:</span><br>
-                                    <span class="fw-bold">{{ $customer->fullname() ?: '—' }}</span>
-                                </div>
-                                <div class="col-6 mb-2">
-                                    <span class="text-muted">تلفن:</span><br>
-                                    <span class="fw-bold">{{ $address->receiver_phone ?? '—' }}</span>
-                                </div>
-                                <div class="col-12">
-                                    <span class="text-muted">آدرس:</span><br>
-                                    <span>{{ $address->province?->name }} — {{ $address->city }} — {{ $address->address_line }}</span>
-                                </div>
-                            </div>
-                            @else
-                            <p class="font-13 text-muted text-center py-3">اطلاعات آدرس ثبت نشده است.</p>
-                            @endif
-                            <a href="/profile/info" class="btn btn-sm mt-3 font-12" style="border:1px solid var(--primary); color:var(--primary); border-radius:var(--radius-sm);">
-                                <i class="fa fa-edit me-1"></i> ویرایش اطلاعات
-                            </a>
+
+            <div class="nx-account-main">
+                <div class="nx-account-grid">
+                    {{-- اطلاعات شخصی --}}
+                    <section class="nx-card">
+                        <div class="nx-card-head">
+                            <h2><i class="fas fa-user"></i> اطلاعات شخصی</h2>
+                            <a href="/profile/info">ویرایش <i class="fas fa-chevron-left"></i></a>
                         </div>
-                    </div>
-                    <div class="col-lg-6 mb-3">
-                        <div class="cart-content p-3 h-100">
-                            <div class="d-flex align-items-center justify-content-between pb-2 mb-3 border-bottom">
-                                <div class="d-flex align-items-center gap-2">
-                                    <i class="fas fa-heart" style="color:var(--danger);"></i>
-                                    <h6 class="mb-0 font-13 fw-bold">علاقه‌مندی‌ها</h6>
-                                </div>
-                                <a href="/favorite" class="font-12" style="color:var(--primary);">مشاهده همه</a>
+                        @if($address)
+                            <ul class="nx-datalist">
+                                <li><span>نام</span> {{ $customer->fullname() ?: '—' }}</li>
+                                <li><span>تلفن</span> <bdi>{{ toPersianNumbers($address->receiver_phone ?? '—') }}</bdi></li>
+                                <li class="is-wide">
+                                    <span>آدرس</span>
+                                    <span style="color:var(--nx-ink,#23254e); text-align:left;">
+                                        {{ $address->province?->name }} — {{ $address->city }} — {{ $address->address_line }}
+                                    </span>
+                                </li>
+                            </ul>
+                        @else
+                            <div class="nx-empty-state">
+                                <i class="fas fa-location-dot"></i>
+                                <p>هنوز آدرسی ثبت نکرده‌اید.</p>
+                                <a href="/profile/info" class="nx-btn-red"><i class="fas fa-plus"></i> ثبت آدرس</a>
                             </div>
-                            @forelse ($favorites as $product)
-                            <div class="d-flex align-items-center gap-2 py-2 {{ !$loop->last ? 'border-bottom' : '' }}" id="fav{{ $product->id }}">
-                                <a href="{{ $product->url() }}">
-                                    @if($product->image())
-                                    <img src="{{ $product->image() }}" style="width:50px; height:50px; object-fit:contain; border-radius:6px;" alt="">
-                                    @else
-                                    <div style="width:50px; height:50px; background:var(--bg-body); border-radius:6px; display:flex; align-items:center; justify-content:center;">
-                                        <i class="fas fa-image" style="color:#ddd;"></i>
+                        @endif
+                    </section>
+
+                    {{-- علاقه‌مندی‌ها --}}
+                    <section class="nx-card">
+                        <div class="nx-card-head">
+                            <h2><i class="fas fa-heart"></i> علاقه‌مندی‌ها</h2>
+                            <a href="/favorite">مشاهده همه <i class="fas fa-chevron-left"></i></a>
+                        </div>
+                        @if($favorites->count())
+                            <div class="nx-items">
+                                @foreach ($favorites as $product)
+                                    <div class="nx-item" id="fav{{ $product->id }}">
+                                        <a href="{{ $product->url() }}" class="nx-item-thumb">
+                                            <img src="{{ $product->image() }}" alt="{{ $product->title }}" loading="lazy"
+                                                 onerror="this.onerror=null;this.src='/images/no-image.svg';">
+                                        </a>
+                                        <div class="nx-item-info">
+                                            <a href="{{ $product->url() }}">{{ $product->title }}</a>
+                                            <div class="nx-item-meta">{{ toPersianNumbers(number_format($product->price)) }} تومان</div>
+                                        </div>
                                     </div>
-                                    @endif
-                                </a>
-                                <div class="flex-grow-1">
-                                    <a href="{{ $product->url() }}" class="font-12 d-block" style="color:var(--text-dark); line-height:1.7;">{{ $product->title }}</a>
-                                </div>
+                                @endforeach
                             </div>
-                            @empty
-                            <p class="font-13 text-muted text-center py-3">هنوز قطعه‌ای به علاقه‌مندی‌ها اضافه نکرده‌اید.</p>
-                            @endforelse
-                        </div>
-                    </div>
+                        @else
+                            <div class="nx-empty-state">
+                                <i class="fas fa-heart"></i>
+                                <p>هنوز قطعه‌ای به علاقه‌مندی‌ها اضافه نکرده‌اید.</p>
+                                <a href="/shop" class="nx-btn-ghost"><i class="fas fa-store"></i> دیدن قطعات</a>
+                            </div>
+                        @endif
+                    </section>
                 </div>
 
                 {{-- آخرین سفارش‌ها --}}
-                <div class="cart-content p-3">
-                    <div class="d-flex align-items-center justify-content-between pb-2 mb-3 border-bottom">
-                        <div class="d-flex align-items-center gap-2">
-                            <i class="fas fa-box" style="color:var(--accent);"></i>
-                            <h6 class="mb-0 font-13 fw-bold">آخرین سفارش‌ها</h6>
-                        </div>
-                        <a href="/profile/orders" class="font-12" style="color:var(--primary);">مشاهده همه</a>
+                <section class="nx-card" style="margin-top:16px;">
+                    <div class="nx-card-head">
+                        <h2><i class="fas fa-box"></i> آخرین سفارش‌ها</h2>
+                        <a href="/profile/orders">مشاهده همه <i class="fas fa-chevron-left"></i></a>
                     </div>
                     @if($orders->count() > 0)
-                    <div class="table-responsive">
-                        <table class="text-center table table-bordered font-13 mb-0" style="border-color:var(--border-color);">
-                            <thead style="background:var(--primary); color:#fff;">
-                                <tr>
-                                    <td class="py-2">شماره</td>
-                                    <td class="py-2">تاریخ</td>
-                                    <td class="py-2">مبلغ</td>
-                                    <td class="py-2">ارسال</td>
-                                    <td class="py-2">وضعیت</td>
-                                    <td class="py-2">جزئیات</td>
-                                </tr>
-                            </thead>
-                            <tbody>
+                        <div class="nx-orders">
                             @foreach ($orders as $order)
-                                <tr>
-                                    <td class="py-2">{{ $order->id }}</td>
-                                    <td class="py-2">{{ gregorian_to_jalali2($order->created_at) }}</td>
-                                    <td class="py-2">{{ toPersianNumbers(number_format($order->total_price)) }}</td>
-                                    <td class="py-2">{{ toPersianNumbers(number_format($order->shipping_price)) }}</td>
-                                    <td class="py-2"><span class="badge" style="background:var(--primary-lighter); color:var(--primary);">{{ $order->status() }}</span></td>
-                                    <td class="py-2"><a href="/profile/orderDetail/{{ $order->id }}" style="color:var(--primary);"><i class="fa fa-eye"></i></a></td>
-                                </tr>
+                                @include('order.order_card', ['order' => $order])
                             @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+                        </div>
                     @else
-                    <p class="font-13 text-muted text-center py-3">هنوز سفارشی ثبت نکرده‌اید.</p>
+                        <div class="nx-empty-state">
+                            <i class="fas fa-box-open"></i>
+                            <p>هنوز سفارشی ثبت نکرده‌اید.</p>
+                            <a href="/shop" class="nx-btn-red"><i class="fas fa-store"></i> رفتن به فروشگاه</a>
+                        </div>
                     @endif
-                </div>
+                </section>
             </div>
         </div>
     </div>

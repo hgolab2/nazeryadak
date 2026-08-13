@@ -22,6 +22,10 @@
     // موجودی قابل خرید؛ محصول بدون stock ثبت‌شده عملا قابل افزودن به سبد نیست
     $stock = (int) $model->stock;
 
+    /* قطعات دسته‌ی «شاسی و بدنه» قیمت ثابت ندارند: به‌جای مبلغ، دعوت به تماس
+       نشان داده می‌شود و در سبد و فاکتور هم به‌صورت «استعلام تلفنی» می‌آید. */
+    $contactPrice = $model->isContactPrice();
+
     // عنوان: «خرید {نام قطعه} + کد فنی» تا کوئری‌های کد فنی هم پوشش داده شود.
     $productTitle = seo_title(
         $fa('%D8%AE%D8%B1%DB%8C%D8%AF%20') . $model->title
@@ -56,7 +60,7 @@
     'ogImage' => $productImage,
     'ogImageAlt' => $model->title,
     'ogType' => 'product',
-    'ogPrice' => seo_price((int) $model->price),
+    'ogPrice' => $contactPrice ? null : seo_price((int) $model->price),
     'ogAvailability' => $productInStock ? 'in stock' : 'out of stock',
     'schema' => [
         $productSchema,
@@ -134,8 +138,23 @@
                     تنها {{ toPersianNumbers($stock, false) }} عدد در انبار باقی مانده است
                 </p>
                 @endif
-                @if($model->compareAtPrice())<div class="dk-detail-old"><del>{{ toPersianNumbers($model->compareAtPrice()) }} {{ $fa('%D8%AA%D9%88%D9%85%D8%A7%D9%86') }}</del><span class="dk-detail-discount">{{ toPersianNumbers(round($model->discountPercent()), false) }}%</span></div>@endif
-                <div class="dk-detail-price">{{ toPersianNumbers($model->price) }} <small>{{ $fa('%D8%AA%D9%88%D9%85%D8%A7%D9%86') }}</small></div>
+                @if($contactPrice)
+                    {{-- قطعات بدنه و شاسی: قیمت روی سایت اعلام نمی‌شود --}}
+                    <div class="dk-detail-price is-contact-price" style="font-size:1.05rem; color:var(--accent, #ef394e);">
+                        <i class="fas fa-phone-alt me-1"></i> {{ contactPriceLabel() }}
+                    </div>
+                    <p class="font-12 text-muted mb-2" style="line-height:1.9;">
+                        قیمت قطعات بدنه و شاسی بسته به رنگ، کیفیت و موجودی روز تعیین می‌شود؛
+                        برای اعلام قیمت با کارشناسان ما تماس بگیرید.
+                    </p>
+                    <a href="tel:{{ shopContactPhone() }}" class="btn w-100 text-center d-block mb-2"
+                       style="background:var(--accent, #ef394e); color:#fff; border:none; border-radius:var(--radius-sm); padding:12px;">
+                        <i class="fas fa-headset me-1"></i> تماس با کارشناس ({{ shopContactPhoneDisplay() }})
+                    </a>
+                @else
+                    @if($model->compareAtPrice())<div class="dk-detail-old"><del>{{ toPersianNumbers($model->compareAtPrice()) }} {{ $fa('%D8%AA%D9%88%D9%85%D8%A7%D9%86') }}</del><span class="dk-detail-discount">{{ toPersianNumbers(round($model->discountPercent()), false) }}%</span></div>@endif
+                    <div class="dk-detail-price">{{ toPersianNumbers($model->price) }} <small>{{ $fa('%D8%AA%D9%88%D9%85%D8%A7%D9%86') }}</small></div>
+                @endif
                 @if($stock > 0)
                     {{-- انتخاب تعداد در همین صفحه؛ قبلا برای خرید چند عدد باید در سبد
                          چند بار روی + کلیک می‌شد --}}
@@ -148,7 +167,14 @@
                             <button type="button" class="js-qty-minus" aria-label="کاهش تعداد" style="background:var(--border-color); color:var(--text-dark); border:none; border-radius:6px; width:36px; height:36px; font-size:1rem; cursor:pointer;">−</button>
                         </div>
                     </div>
-                    <button type="button" class="btn add-cart-btn" data-id="{{ $model->id }}" data-qty-from="buy-qty"><i class="fa fa-cart-plus me-1"></i>{{ $fa('%D8%A7%D9%81%D8%B2%D9%88%D8%AF%D9%86%20%D8%A8%D9%87%20%D8%B3%D8%A8%D8%AF%20%D8%AE%D8%B1%DB%8C%D8%AF') }}</button>
+                    <button type="button" class="btn add-cart-btn" data-id="{{ $model->id }}" data-qty-from="buy-qty">
+                        <i class="fa fa-cart-plus me-1"></i>
+                        @if($contactPrice)
+                            افزودن به سبد (استعلام قیمت)
+                        @else
+                            {{ $fa('%D8%A7%D9%81%D8%B2%D9%88%D8%AF%D9%86%20%D8%A8%D9%87%20%D8%B3%D8%A8%D8%AF%20%D8%AE%D8%B1%DB%8C%D8%AF') }}
+                        @endif
+                    </button>
                 @else
                     <button type="button" class="btn w-100" disabled style="background:#ccc; color:#fff; border:none; border-radius:var(--radius-sm); padding:12px;">
                         <i class="fas fa-ban me-1"></i> ناموجود
@@ -191,7 +217,11 @@
         </div>
         <div class="mobile-actionbar__info">
             <span class="mobile-actionbar__label">قیمت</span>
-            <span class="mobile-actionbar__price">{{ toPersianNumbers($model->price) }} <small>تومان</small></span>
+            @if($contactPrice)
+                <span class="mobile-actionbar__price" style="font-size:.85rem; color:var(--accent, #ef394e);">{{ contactPriceLabel() }}</span>
+            @else
+                <span class="mobile-actionbar__price">{{ toPersianNumbers($model->price) }} <small>تومان</small></span>
+            @endif
         </div>
         <button type="button" class="mobile-actionbar__btn add-cart-btn" data-id="{{ $model->id }}" data-qty-from="buy-qty">
             <i class="fa fa-cart-plus"></i> افزودن به سبد

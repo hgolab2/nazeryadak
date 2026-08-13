@@ -1,0 +1,711 @@
+/* ==========================================================================
+   ناحیه‌ی حساب کاربری: داشبورد، سفارش‌ها، علاقه‌مندی‌ها، اطلاعات حساب
+   با همان زبان بصری بقیه‌ی سایت (قرمز/سفید) نوشته شده و جای رنگ آبی
+   تم قدیمی را می‌گیرد. جدول‌ها روی هر اندازه‌ی صفحه، کارت هستند.
+   ========================================================================== */
+
+.nx-account {
+    padding: 16px 0 40px;
+    background: var(--nx-bg, #f5f5f5);
+    direction: rtl;
+}
+
+.nx-account *,
+.nx-account *::before,
+.nx-account *::after {
+    box-sizing: border-box;
+}
+
+.nx-account a {
+    text-decoration: none;
+}
+
+.nx-account-layout {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+}
+
+/* ---------- ستون کناری ---------- */
+
+.nx-account-side {
+    position: sticky;
+    top: 14px;
+    min-width: 0;
+    border-radius: 12px;
+    background: #fff;
+    overflow: hidden;
+}
+
+.nx-account-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 16px;
+    border-bottom: 1px solid var(--nx-soft, #f0f0f1);
+}
+
+.nx-account-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: var(--nx-red-soft, #fff1f3);
+    color: var(--nx-red, #ef4056);
+    font-size: 19px;
+}
+
+.nx-account-user b {
+    display: block;
+    color: var(--nx-ink, #23254e);
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.nx-account-user span {
+    display: block;
+    margin-top: 3px;
+    color: var(--nx-muted, #81858b);
+    font-size: 12px;
+}
+
+.nx-account-nav {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 6px 0;
+    list-style: none;
+}
+
+.nx-account-nav a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    color: var(--nx-text, #3f4064);
+    font-size: 13.5px;
+    font-weight: 600;
+    border-right: 3px solid transparent;
+    transition: .16s ease;
+}
+
+.nx-account-nav a i {
+    width: 20px;
+    text-align: center;
+    color: var(--nx-muted, #81858b);
+    font-size: 14px;
+}
+
+.nx-account-nav a:hover {
+    background: #fafafa;
+    color: var(--nx-red, #ef4056);
+}
+
+.nx-account-nav a:hover i {
+    color: var(--nx-red, #ef4056);
+}
+
+.nx-account-nav a.is-active {
+    background: var(--nx-red-soft, #fff1f3);
+    border-right-color: var(--nx-red, #ef4056);
+    color: var(--nx-red, #ef4056);
+    font-weight: 800;
+}
+
+.nx-account-nav a.is-active i {
+    color: var(--nx-red, #ef4056);
+}
+
+.nx-account-nav a.is-logout {
+    border-top: 1px solid var(--nx-soft, #f0f0f1);
+    color: #c62828;
+}
+
+.nx-account-nav a.is-logout i {
+    color: #c62828;
+}
+
+.nx-account-badge {
+    margin-right: auto;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 10px;
+    background: var(--nx-red, #ef4056);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 20px;
+    text-align: center;
+}
+
+/* ---------- ستون محتوا ---------- */
+
+.nx-account-main {
+    min-width: 0;
+}
+
+.nx-account-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.nx-account-grid .nx-card {
+    margin-bottom: 0;
+}
+
+.nx-panel-body {
+    padding: 16px 18px;
+}
+
+.nx-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 38px 18px;
+    text-align: center;
+}
+
+/* فقط آیکن خودِ حالت خالی، نه آیکن‌های داخل دکمه‌ها */
+.nx-empty-state > i {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: var(--nx-soft, #f0f0f1);
+    color: var(--nx-muted, #81858b);
+    font-size: 26px;
+}
+
+.nx-empty-state p {
+    margin: 0;
+    color: var(--nx-muted, #81858b);
+    font-size: 13px;
+}
+
+.nx-btn-red {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    height: 40px;
+    padding: 0 20px;
+    border: 1px solid var(--nx-red, #ef4056);
+    border-radius: var(--nx-radius, 8px);
+    background: var(--nx-red, #ef4056);
+    color: #fff !important;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.nx-btn-red:hover {
+    background: var(--nx-red-dark, #d33449);
+    border-color: var(--nx-red-dark, #d33449);
+}
+
+.nx-btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    height: 38px;
+    padding: 0 16px;
+    border: 1px solid var(--nx-line, #e0e0e2);
+    border-radius: var(--nx-radius, 8px);
+    background: #fff;
+    color: var(--nx-ink, #23254e) !important;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.nx-btn-ghost:hover {
+    border-color: var(--nx-red, #ef4056);
+    color: var(--nx-red, #ef4056) !important;
+}
+
+/* ---------- کارت سفارش (جایگزین جدول) ---------- */
+
+.nx-orders {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+}
+
+.nx-order {
+    border: 1px solid var(--nx-soft, #f0f0f1);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: .16s ease;
+}
+
+.nx-order:hover {
+    border-color: var(--nx-line, #e0e0e2);
+    box-shadow: 0 6px 18px rgba(35, 37, 78, .07);
+}
+
+.nx-order-head {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    padding: 12px 14px;
+    background: #fafafa;
+    border-bottom: 1px solid var(--nx-soft, #f0f0f1);
+}
+
+.nx-order-id {
+    color: var(--nx-ink, #23254e);
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.nx-order-date {
+    color: var(--nx-muted, #81858b);
+    font-size: 12px;
+}
+
+.nx-order-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: auto;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.nx-order-status::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.nx-st-pending   { background: #fff5e6; color: #b26a00; }
+/* سفارش ثبت‌شده‌ی بدون پرداخت آنلاین که منتظر تماس کارشناس است */
+.nx-st-awaitingcall { background: #fff8e1; color: #7a5c00; }
+.nx-st-paid      { background: #e9f7ef; color: #17a566; }
+.nx-st-processing{ background: #e6f8fb; color: #0f8b9a; }
+.nx-st-shipped   { background: #eef0ff; color: #4a4fce; }
+.nx-st-delivered { background: #e9f7ef; color: #12784c; }
+.nx-st-canceled  { background: #ffeef0; color: #c62828; }
+
+/* ردیف‌های مبلغ: روی دسکتاپ کنار هم، روی موبایل زیر هم با برچسب */
+.nx-order-body {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    padding: 14px;
+}
+
+.nx-order-cell span {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--nx-muted, #81858b);
+    font-size: 11.5px;
+}
+
+.nx-order-cell b {
+    color: var(--nx-ink, #23254e);
+    font-size: 13.5px;
+    font-weight: 800;
+}
+
+.nx-order-cell b small {
+    margin-right: 3px;
+    color: var(--nx-muted, #81858b);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.nx-order-foot {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 0 14px 14px;
+}
+
+/* ---------- اقلام سفارش ---------- */
+
+.nx-items {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+}
+
+.nx-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    border: 1px solid var(--nx-soft, #f0f0f1);
+    border-radius: 10px;
+}
+
+.nx-item-thumb {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 64px;
+    height: 64px;
+    padding: 4px;
+    border: 1px solid var(--nx-soft, #f0f0f1);
+    border-radius: 8px;
+    background: #fff;
+}
+
+.nx-item-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.nx-item-info {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.nx-item-info a,
+.nx-item-info b {
+    display: block;
+    color: var(--nx-ink, #23254e);
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.8;
+}
+
+.nx-item-info a:hover {
+    color: var(--nx-red, #ef4056);
+}
+
+.nx-item-meta {
+    margin-top: 4px;
+    color: var(--nx-muted, #81858b);
+    font-size: 11.5px;
+}
+
+.nx-item-price {
+    flex-shrink: 0;
+    text-align: left;
+    color: var(--nx-ink, #23254e);
+    font-size: 13.5px;
+    font-weight: 800;
+}
+
+/* ---------- فهرست اطلاعات (جایگزین جدول دو ستونی) ---------- */
+
+.nx-datalist {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin: 0;
+    padding: 16px;
+    list-style: none;
+}
+
+.nx-datalist li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 44px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: #fafafa;
+    color: var(--nx-ink, #23254e);
+    font-size: 13px;
+}
+
+.nx-datalist li > span {
+    color: var(--nx-muted, #81858b);
+    font-size: 12px;
+}
+
+.nx-datalist li.is-wide {
+    grid-column: 1 / -1;
+}
+
+/* ---------- فرم‌ها ---------- */
+
+.nx-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    padding: 16px;
+}
+
+.nx-form label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--nx-text, #3f4064);
+    font-size: 12.5px;
+    font-weight: 700;
+}
+
+.nx-form input,
+.nx-form select,
+.nx-form textarea {
+    width: 100%;
+    min-height: 42px;
+    padding: 9px 12px;
+    border: 1px solid var(--nx-line, #e0e0e2);
+    border-radius: var(--nx-radius, 8px);
+    background: #fff;
+    color: var(--nx-ink, #23254e);
+    font-family: inherit;
+    font-size: 13px;
+}
+
+.nx-form input:focus,
+.nx-form select:focus,
+.nx-form textarea:focus {
+    border-color: var(--nx-red, #ef4056);
+    outline: none;
+}
+
+.nx-form .is-wide {
+    grid-column: 1 / -1;
+}
+
+/* ---------- اعلان‌ها ---------- */
+
+.nx-notifs {
+    display: flex;
+    flex-direction: column;
+    padding: 8px 0;
+}
+
+.nx-notif {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--nx-soft, #f0f0f1);
+    color: var(--nx-text, #3f4064);
+}
+
+.nx-notif:last-child {
+    border-bottom: 0;
+}
+
+.nx-notif.is-unread {
+    background: var(--nx-red-soft, #fff1f3);
+}
+
+.nx-notif-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #fff;
+    color: var(--nx-red, #ef4056);
+    font-size: 15px;
+}
+
+.nx-notif-body {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.nx-notif-body b {
+    display: block;
+    color: var(--nx-ink, #23254e);
+    font-size: 13.5px;
+    font-weight: 800;
+}
+
+.nx-notif-body p {
+    margin: 5px 0 0;
+    font-size: 12.5px;
+    line-height: 1.9;
+}
+
+.nx-notif-time {
+    flex-shrink: 0;
+    color: var(--nx-muted, #81858b);
+    font-size: 11.5px;
+    white-space: nowrap;
+}
+
+/* زنگوله‌ی هدر */
+.nx-bell {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border: 1px solid var(--nx-line, #e0e0e2);
+    border-radius: var(--nx-radius, 8px);
+    background: #fff;
+    color: var(--nx-ink, #23254e) !important;
+    font-size: 16px;
+}
+
+.nx-bell:hover {
+    border-color: var(--nx-red, #ef4056);
+    color: var(--nx-red, #ef4056) !important;
+}
+
+.nx-bell-count {
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 19px;
+    height: 19px;
+    padding: 0 5px;
+    border-radius: 10px;
+    background: var(--nx-red, #ef4056);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+/* ==========================================================================
+   واکنش‌گرایی
+   ========================================================================== */
+
+@media (max-width: 991px) {
+    /* ستون کناری روی موبایل به نوار افقی تبدیل می‌شود؛ قبلا فهرست کامل و
+       همیشه‌باز بالای محتوا می‌نشست و هر بار باید از رویش رد می‌شدی. */
+    .nx-account-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .nx-account-side {
+        position: static;
+    }
+
+    .nx-account-user {
+        padding: 14px;
+    }
+
+    .nx-account-nav {
+        flex-direction: row;
+        gap: 6px;
+        padding: 10px;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .nx-account-nav::-webkit-scrollbar {
+        display: none;
+    }
+
+    .nx-account-nav a {
+        flex: 0 0 auto;
+        gap: 7px;
+        padding: 9px 14px;
+        border: 1px solid var(--nx-line, #e0e0e2);
+        border-right-width: 1px;
+        border-radius: 20px;
+        font-size: 12.5px;
+        white-space: nowrap;
+    }
+
+    .nx-account-nav a.is-active {
+        border-color: var(--nx-red, #ef4056);
+    }
+
+    .nx-account-nav a.is-logout {
+        border-top: 1px solid var(--nx-line, #e0e0e2);
+    }
+
+    .nx-account-grid,
+    .nx-datalist,
+    .nx-form {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    /* کارت سفارش: هر مبلغ با برچسب خودش زیر هم */
+    .nx-order-body {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 575px) {
+    .nx-account {
+        padding-top: 12px;
+    }
+
+    .nx-order-body {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0;
+    }
+
+    .nx-order-cell {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 9px 0;
+        border-bottom: 1px dashed var(--nx-soft, #f0f0f1);
+    }
+
+    .nx-order-cell:last-child {
+        border-bottom: 0;
+    }
+
+    .nx-order-cell span {
+        margin-bottom: 0;
+    }
+
+    .nx-order-head {
+        gap: 8px;
+    }
+
+    .nx-order-status {
+        margin-right: 0;
+    }
+
+    .nx-order-foot .nx-btn-ghost,
+    .nx-order-foot .nx-btn-red {
+        flex: 1 1 auto;
+    }
+
+    .nx-item {
+        align-items: flex-start;
+    }
+
+    .nx-item-thumb {
+        width: 54px;
+        height: 54px;
+    }
+
+    .nx-item-price {
+        align-self: flex-end;
+    }
+
+    .nx-notif {
+        flex-wrap: wrap;
+        padding: 12px 14px;
+    }
+
+    .nx-notif-time {
+        width: 100%;
+        padding-right: 50px;
+    }
+}

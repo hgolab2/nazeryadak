@@ -48,6 +48,7 @@
                 <select name="status" id="status" class="form-control">
                     <option value="">{{ l('همه') }}</option>
                     <option value="pending">در انتظار پرداخت</option>
+                    <option value="awaiting_call">در انتظار تماس کارشناس</option>
                     <option value="paid">پرداخت شده</option>
                     <option value="processing">در حال آماده‌سازی</option>
                     <option value="shipped">ارسال شده</option>

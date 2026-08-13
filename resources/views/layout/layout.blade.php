@@ -138,6 +138,7 @@
     <link rel="stylesheet" href="/assets/css/home-digikala.css">
     <link rel="stylesheet" href="/assets/css/mobile-appbar.css">
     <link rel="stylesheet" href="/assets/css/mobile-checkout.css">
+    <link rel="stylesheet" href="/assets/css/account.css">
 
     @if(!empty($seoAnalytics['gtm']))
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','{{ $seoAnalytics['gtm'] }}');</script>
@@ -156,6 +157,7 @@
             <div class="d-flex align-items-center gap-4">
                 <span><i class="fas fa-phone-alt"></i> مشاوره و پشتیبانی: علی حاجی ناظری - ۰۹۱۲۷۴۷۱۶۳۱</span>
                 <span><i class="fas fa-clock"></i> ساعت کاری: شنبه تا پنج‌شنبه ۹ الی ۱۸</span>
+                <a href="https://www.instagram.com/nazeryadak.ir" target="_blank" rel="noopener noreferrer" title="اینستاگرام ناظر یدک"><i class="fab fa-instagram"></i> اینستاگرام: nazeryadak.ir</a>
             </div>
         </div>
     </div>
@@ -223,6 +225,15 @@
                             </ul>
                             @endif
                         </div>
+                        @if(!empty(Auth::guard('customer')->user()))
+                            @php $headerUnread = \App\Models\CustomerNotification::unreadCountFor(Auth::guard('customer')->id()); @endphp
+                            <a href="/profile/notifications" class="nx-bell" title="اعلان‌ها" aria-label="اعلان‌ها">
+                                <i class="fas fa-bell"></i>
+                                @if($headerUnread > 0)
+                                    <span class="nx-bell-count">{{ toPersianNumbers($headerUnread, false) }}</span>
+                                @endif
+                            </a>
+                        @endif
                         <a href="#shopping-cart" class="header-cart-btn" data-bs-toggle="offcanvas">
                             <img src="/assets/images/cart.png" alt="سبد خرید" width="28" height="28" loading="lazy" decoding="async">
                             <div class="count cart-count" id="cart-count">0</div>
@@ -290,6 +301,7 @@
                                 <li><a href="/blog"><i class="fas fa-newspaper me-2" style="color:var(--primary);"></i> مجله یدکی</a></li>
                                 <li><a href="/about-us"><i class="fas fa-info-circle me-2" style="color:var(--primary);"></i> درباره ما</a></li>
                                 <li><a href="/contact-us"><i class="fas fa-envelope me-2" style="color:var(--primary);"></i> تماس با ما</a></li>
+                                <li><a href="https://www.instagram.com/nazeryadak.ir" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram me-2" style="color:#e1306c;"></i> اینستاگرام ما</a></li>
                             </ul>
                             @if(!empty(Auth::guard('customer')->user()))
                             <div class="mobile-menu-divider"></div>
@@ -453,6 +465,7 @@
                             <div class="footer-contact-info">
                                 <div><i class="fas fa-phone-alt"></i> <span>۰۹۱۲۷۴۷۱۶۳۱</span></div>
                                 <div><i class="fas fa-clock"></i> <span>شنبه تا پنج‌شنبه ۹ الی ۱۸</span></div>
+                                <div><i class="fab fa-instagram"></i> <a href="https://www.instagram.com/nazeryadak.ir" target="_blank" rel="noopener noreferrer">nazeryadak.ir</a></div>
                             </div>
                         </div>
                     </div>
@@ -483,7 +496,8 @@
                         </div>
                         <p class="footer-title mt-4">ما را دنبال کنید</p>
                         <div class="footer-social">
-                            <a href="https://wa.me/989127471631" class="footer-social-btn" title="واتساپ" target="_blank"><i class="fab fa-whatsapp"></i></a>
+                            <a href="https://wa.me/989127471631" class="footer-social-btn" title="واتساپ" target="_blank" rel="noopener noreferrer"><i class="fab fa-whatsapp"></i></a>
+                            <a href="https://www.instagram.com/nazeryadak.ir" class="footer-social-btn footer-social-instagram" title="اینستاگرام ناظر یدک" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a>
                             <a href="tel:09127471631" class="footer-social-btn" title="تماس تلفنی"><i class="fas fa-phone-alt"></i></a>
                         </div>
                     </div>
@@ -723,7 +737,7 @@ function loadCart() {
                             <span class="number">${item.quantity} عدد</span>
                         </div>
                         <div class="col-6 d-flex justify-content-end">
-                            <p class="cart-product-price">${item.price.toLocaleString()} تومان</p>
+                            <p class="cart-product-price">${item.contact_price ? 'تماس بگیرید' : item.price.toLocaleString() + ' تومان'}</p>
                         </div>
                     </div>
                 `;

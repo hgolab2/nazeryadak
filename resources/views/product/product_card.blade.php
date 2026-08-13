@@ -6,10 +6,12 @@
     $mainImage = $images->count() ? $images->first()->path : $product->image();
     $galleryCount = max($images->count(), 1);
     $cardStock = (int) $product->stock;
+    // قطعات شاسی و بدنه قیمت ثابت ندارند؛ به‌جای عدد، دعوت به تماس نشان داده می‌شود.
+    $contactPrice = $product->isContactPrice();
 @endphp
 <div class="item">
     <article class="card custom-card dk-product-card position-relative">
-        @if($hasDiscount)
+        @if($hasDiscount && !$contactPrice)
             <span class="product-discount-badge">{{ toPersianNumbers(round($discountPercent), false) }}%</span>
         @endif
 
@@ -43,10 +45,14 @@
             </div>
 
             <div class="product-price-row">
-                @if($product->compareAtPrice())
-                    <del class="product-old-price">{{toPersianNumbers($product->compareAtPrice())}}</del>
+                @if($contactPrice)
+                    <span class="product-price is-contact-price"><i class="fas fa-phone-alt me-1"></i>{{ contactPriceLabel() }}</span>
+                @else
+                    @if($product->compareAtPrice())
+                        <del class="product-old-price">{{toPersianNumbers($product->compareAtPrice())}}</del>
+                    @endif
+                    <span class="product-price">{{toPersianNumbers($product->price)}} <small>{{ $fa('%D8%AA%D9%88%D9%85%D8%A7%D9%86') }}</small></span>
                 @endif
-                <span class="product-price">{{toPersianNumbers($product->price)}} <small>{{ $fa('%D8%AA%D9%88%D9%85%D8%A7%D9%86') }}</small></span>
             </div>
 
             @if($cardStock > 0)

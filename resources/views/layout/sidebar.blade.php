@@ -1,45 +1,36 @@
-<div class="col-lg-3">
-    <div class="cart-content p-0">
-        <div class="sidebar-user-header">
-            <div class="sidebar-user-avatar">
-                <i class="fas fa-user"></i>
-            </div>
-            <div>
-                <span class="sidebar-user-name">
-                    {{ Auth::guard('customer')->user()->fullName() != '' ? Auth::guard('customer')->user()->fullName() : Auth::guard('customer')->user()->phone }}
-                </span>
-            </div>
+@php
+    $accountUser = Auth::guard('customer')->user();
+    $accountName = $accountUser && $accountUser->fullName() !== '' ? $accountUser->fullName() : ($accountUser->phone ?? '');
+    $unreadNotifications = \App\Models\CustomerNotification::unreadCountFor($accountUser->id ?? null);
+
+    $accountLinks = [
+        ['menu' => 'dashboard',  'url' => '/dashboard',             'icon' => 'fa-gauge-high', 'label' => 'داشبورد'],
+        ['menu' => 'orders',     'url' => '/profile/orders',        'icon' => 'fa-box',        'label' => 'سفارش‌های من'],
+        ['menu' => 'notifs',     'url' => '/profile/notifications', 'icon' => 'fa-bell',       'label' => 'اعلان‌ها', 'badge' => $unreadNotifications],
+        ['menu' => 'favourits',  'url' => '/favorite',              'icon' => 'fa-heart',      'label' => 'علاقه‌مندی‌ها'],
+        ['menu' => 'info',       'url' => '/profile/info',          'icon' => 'fa-user-pen',   'label' => 'اطلاعات حساب'],
+    ];
+@endphp
+
+<aside class="nx-account-side">
+    <div class="nx-account-user">
+        <span class="nx-account-avatar"><i class="fas fa-user"></i></span>
+        <div>
+            <b>{{ $accountName }}</b>
+            <span>حساب کاربری</span>
         </div>
-        <ul class="list-unstyled mb-0">
-            <li>
-                <a href="/dashboard" class="d-flex align-items-center gap-2 px-3 py-3 font-13 {{ $menu == 'dashboard' ? 'fw-bold' : '' }}"
-                   style="{{ $menu == 'dashboard' ? 'color:var(--primary); background:var(--primary-lighter); border-right:3px solid var(--primary);' : 'color:var(--text-dark);' }}">
-                    <i class="fas fa-tachometer-alt" style="width:20px; text-align:center;"></i> داشبورد
-                </a>
-            </li>
-            <li style="border-top:1px solid var(--border-color);">
-                <a href="/profile/orders" class="d-flex align-items-center gap-2 px-3 py-3 font-13 {{ $menu == 'orders' ? 'fw-bold' : '' }}"
-                   style="{{ $menu == 'orders' ? 'color:var(--primary); background:var(--primary-lighter); border-right:3px solid var(--primary);' : 'color:var(--text-dark);' }}">
-                    <i class="fas fa-box" style="width:20px; text-align:center;"></i> سفارش‌های من
-                </a>
-            </li>
-            <li style="border-top:1px solid var(--border-color);">
-                <a href="/favorite" class="d-flex align-items-center gap-2 px-3 py-3 font-13 {{ $menu == 'favourits' ? 'fw-bold' : '' }}"
-                   style="{{ $menu == 'favourits' ? 'color:var(--primary); background:var(--primary-lighter); border-right:3px solid var(--primary);' : 'color:var(--text-dark);' }}">
-                    <i class="fas fa-heart" style="width:20px; text-align:center;"></i> علاقه‌مندی‌ها
-                </a>
-            </li>
-            <li style="border-top:1px solid var(--border-color);">
-                <a href="/profile/info" class="d-flex align-items-center gap-2 px-3 py-3 font-13 {{ $menu == 'info' ? 'fw-bold' : '' }}"
-                   style="{{ $menu == 'info' ? 'color:var(--primary); background:var(--primary-lighter); border-right:3px solid var(--primary);' : 'color:var(--text-dark);' }}">
-                    <i class="fas fa-user-edit" style="width:20px; text-align:center;"></i> اطلاعات حساب
-                </a>
-            </li>
-            <li style="border-top:1px solid var(--border-color);">
-                <a href="/logout" class="d-flex align-items-center gap-2 px-3 py-3 font-13" style="color:var(--danger);">
-                    <i class="fas fa-sign-out-alt" style="width:20px; text-align:center;"></i> خروج
-                </a>
-            </li>
-        </ul>
     </div>
-</div>
+
+    <nav class="nx-account-nav" aria-label="منوی حساب کاربری">
+        @foreach($accountLinks as $link)
+            <a href="{{ $link['url'] }}" class="{{ ($menu ?? '') === $link['menu'] ? 'is-active' : '' }}">
+                <i class="fas {{ $link['icon'] }}"></i>
+                {{ $link['label'] }}
+                @if(!empty($link['badge']))
+                    <span class="nx-account-badge">{{ toPersianNumbers($link['badge'], false) }}</span>
+                @endif
+            </a>
+        @endforeach
+        <a href="/logout" class="is-logout"><i class="fas fa-arrow-right-from-bracket"></i> خروج</a>
+    </nav>
+</aside>

@@ -20,9 +20,11 @@
     $discountPercent = $product->discountPercent();
     $hasDiscount = $discountPercent > 0;
     $cardStock = (int) $product->stock;
+    // قطعات شاسی و بدنه قیمت ثابت ندارند؛ به‌جای عدد، دعوت به تماس نشان داده می‌شود.
+    $contactPrice = $product->isContactPrice();
 @endphp
 <article class="nx-gcard">
-    @if($hasDiscount)
+    @if($hasDiscount && !$contactPrice)
         <span class="product-discount-badge">{{ toPersianNumbers(round($discountPercent), false) }}%</span>
     @endif
 
@@ -61,10 +63,14 @@
         </div>
 
         <div class="product-price-row">
-            @if($product->compareAtPrice())
-                <del class="product-old-price">{{ toPersianNumbers($product->compareAtPrice()) }}</del>
+            @if($contactPrice)
+                <span class="product-price is-contact-price"><i class="fas fa-phone-alt me-1"></i>{{ contactPriceLabel() }}</span>
+            @else
+                @if($product->compareAtPrice())
+                    <del class="product-old-price">{{ toPersianNumbers($product->compareAtPrice()) }}</del>
+                @endif
+                <span class="product-price">{{ toPersianNumbers($product->price) }} <small>تومان</small></span>
             @endif
-            <span class="product-price">{{ toPersianNumbers($product->price) }} <small>تومان</small></span>
         </div>
 
         @if($cardStock > 0)

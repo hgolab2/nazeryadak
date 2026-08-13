@@ -148,12 +148,19 @@ Route::group(['namespace' => 'Frontend', 'middleware' => [ShareDataInFrontend::c
     // ثبت نهایی سفارش
     Route::post('/order/confirm', [CheckoutController::class, 'confirmOrder'])->name('order.confirm');
 
+    // مسیر بدون پرداخت آنلاین: ثبت سفارش و صدور پیش‌فاکتور
+    Route::post('/order/place/{id}', [CheckoutController::class, 'place'])->name('order.place');
+    Route::get('/order/invoice/{id}', [CheckoutController::class, 'invoice'])->name('order.invoice');
+
     Route::get('/profile/order/{id}', [OrderController::class, 'view'])->name('order.view');
     Route::get('/profile/orders', [OrderController::class, 'orders'])->name('order.orders');
     Route::get('/profile/orderDetail/{id}', [OrderController::class, 'orderDetails'])->name('order.orderDetails');
     Route::get('/profile/info', [OrderController::class, 'info'])->name('profile.info');
     Route::put('/profile/infoUpdate', [OrderController::class, 'infoUpdate'])->name('customer.profile.update');
     Route::get('/favorite', [ProductController::class, 'favorite'])->name('favorite');
+
+    Route::get('/profile/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('profile.notifications');
+    Route::get('/profile/notifications/count', [\App\Http\Controllers\NotificationController::class, 'unreadCount'])->name('profile.notifications.count');
 
     Route::get('/dashboard', [HomeController::class, 'dashboard'])->name('dashboard');
 

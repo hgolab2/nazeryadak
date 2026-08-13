@@ -72,7 +72,9 @@ class ProductController extends Controller
             ->select('product_in_category.category_id', \DB::raw('count(*) as cnt'))
             ->groupBy('product_in_category.category_id')
             ->pluck('cnt', 'product_in_category.category_id');
-        $query = Product::where('is_active', 1);
+        // categories همراه محصول لود می‌شود تا تشخیص «قطعه‌ی استعلامی» در کارت‌ها
+        // به ازای هر محصول یک کوئری جدا نزند.
+        $query = Product::with('categories')->where('is_active', 1);
         if ($request->filled('title')) {
             // Search part name, SKU, and car model together.
             $query->searchText($request->title);
@@ -131,7 +133,7 @@ class ProductController extends Controller
 
     public function getProduct($count)
     {
-        return Product::orderBy('id' , 'desc')->where('is_active' , '1')->where('file_path' ,'!=', '')->paginate($count);
+        return Product::with('categories')->orderBy('id' , 'desc')->where('is_active' , '1')->where('file_path' ,'!=', '')->paginate($count);
     }
 
     function show($id, $slug = null)
@@ -166,7 +168,7 @@ class ProductController extends Controller
         $products = Product::whereHas('favorites', function ($q) use ($user) {
                 $q->where('product_favorites.user_id', $user->id);
             })
-            ->with(['favorites' => function ($q) use ($user) {
+            ->with(['categories', 'favorites' => function ($q) use ($user) {
                 $q->where('product_favorites.user_id', $user->id);
             }])
             ->latest()

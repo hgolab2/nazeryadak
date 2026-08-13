@@ -136,6 +136,39 @@ function getShippingRules()
 }
 
 /**
+ * آیا پرداخت آنلاین (درگاه زرین‌پال) فعال است؟
+ *
+ * از همان جدول shipping_settings خوانده می‌شود تا مدیر بتواند هر وقت خواست
+ * از پنل تنظیمات، پرداخت اینترنتی کل سایت را روشن/خاموش کند. وقتی خاموش
+ * است، سفارش ثبت می‌شود و کاربر یک «پیش‌فاکتور» می‌بیند و کارشناسان برای
+ * هماهنگی پرداخت با او تماس می‌گیرند. پیش‌فرض: خاموش.
+ */
+function onlinePaymentEnabled(): bool
+{
+    $settings = getShippingSettings();
+
+    return (string) ($settings['online_payment_enabled'] ?? '0') === '1';
+}
+
+/** متنی که به‌جای قیمتِ قطعات استعلامی (شاسی و بدنه) نشان داده می‌شود. */
+function contactPriceLabel(): string
+{
+    return 'لطفا تماس بگیرید';
+}
+
+/** شماره‌ی تماس فروشگاه برای دکمه‌های «تماس بگیرید» (tel:). */
+function shopContactPhone(): string
+{
+    return (string) seo_config('business.phone', '+989127471631');
+}
+
+/** همان شماره برای نمایش، با ارقام فارسی. */
+function shopContactPhoneDisplay(): string
+{
+    return (string) seo_config('business.phone_display', '۰۹۱۲۷۴۷۱۶۳۱');
+}
+
+/**
  * نام استان محلی از جدول استان‌ها؛ اگر پیدا نشد «قم» به عنوان پیش‌فرض.
  */
 function getLocalProvinceName($provinceId)
@@ -1165,7 +1198,10 @@ function seo_price(?int $toman): ?string
 function seo_product_schema($product, array $images = [], ?array $breadcrumb = null): array
 {
     $url = seo_url($product->url());
-    $price = seo_price((int) $product->price);
+    // قطعات استعلامی (شاسی و بدنه) قیمت نمایشی ندارند، پس Offer هم برایشان
+    // ساخته نمی‌شود؛ وگرنه گوگل قیمتی را نشان می‌داد که در سایت دیده نمی‌شود.
+    $contactPrice = method_exists($product, 'isContactPrice') && $product->isContactPrice();
+    $price = $contactPrice ? null : seo_price((int) $product->price);
     $inStock = ! isset($product->stock) || $product->stock === null
         ? true
         : ((int) $product->stock) > 0;

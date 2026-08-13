@@ -7,6 +7,16 @@ use Illuminate\Support\Str;
 
 class Product extends Model
 {
+    /**
+     * دسته‌ی «شاسی و بدنه» (ProductCategory::CHASSIS_BODY). قیمت این قطعات
+     * به کاربر نمایش داده نمی‌شود و به‌جای آن «لطفا تماس بگیرید» می‌آید،
+     * چون قیمتشان بسته به رنگ، کیفیت و موجودی روز تعیین می‌شود.
+     */
+    public const CONTACT_PRICE_CATEGORY_ID = 3;
+
+    /** کش درون‌درخواستی نتیجه‌ی isContactPrice برای محصولاتی که رابطه‌شان لود نشده. */
+    private static array $contactPriceCache = [];
+
     protected $table = 'products';
 
     protected $primaryKey = 'id';
@@ -212,6 +222,41 @@ class Product extends Model
     public function favorites()
     {
         return $this->belongsToMany(User::class, 'product_favorites', 'product_id', 'user_id')->withPivot('pin')->withTimestamps();
+    }
+
+    /**
+     * آیا این محصول از دسته‌ی «شاسی و بدنه» است و باید به‌جای قیمت،
+     * «لطفا تماس بگیرید» نمایش داده شود؟
+     *
+     * اگر رابطه‌ی categories از قبل لود شده باشد (فهرست‌ها و صفحه‌ی اصلی این
+     * کار را می‌کنند) هیچ کوئری‌ای نمی‌زند؛ در غیر این صورت نتیجه‌ی همان
+     * محصول را برای بقیه‌ی درخواست کش می‌کند.
+     */
+    public function isContactPrice(): bool
+    {
+        if ($this->relationLoaded('categories')) {
+            return $this->categories->contains(
+                fn ($row) => (int) $row->category_id === self::CONTACT_PRICE_CATEGORY_ID
+            );
+        }
+
+        $id = (int) $this->id;
+        if ($id <= 0) {
+            return false;
+        }
+
+        return self::$contactPriceCache[$id] ??= ProductInCategory::where('product_id', $id)
+            ->where('category_id', self::CONTACT_PRICE_CATEGORY_ID)
+            ->exists();
+    }
+
+    /**
+     * قیمتی که در سبد و سفارش ثبت می‌شود؛ برای قطعات استعلامی صفر است تا
+     * نه در جمع کل بیاید و نه از طریق API سبد به کاربر نشت کند.
+     */
+    public function sellablePrice(): int
+    {
+        return $this->isContactPrice() ? 0 : (int) $this->price;
     }
 
     /**

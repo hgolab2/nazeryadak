@@ -32,7 +32,9 @@ class OrderController extends Controller
         if (! $user) {
             return redirect('/login');
         }
-        $orders = Order::where('customer_id', $user->id)->latest()->paginate(10);
+        // کارت سفارش تعداد اقلام را نشان می‌دهد؛ بدون eager load به ازای هر
+        // سفارش یک کوئری جدا اجرا می‌شد.
+        $orders = Order::with('items')->where('customer_id', $user->id)->latest()->paginate(10);
         return View('order.orders', compact('orders'));
     }
 

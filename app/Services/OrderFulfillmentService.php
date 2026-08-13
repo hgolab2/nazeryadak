@@ -68,15 +68,13 @@ class OrderFulfillmentService
         $count  = $order->items->count();
 
         $customerPhone = $order->customer?->phone;
-        if ($customerPhone) {
-            try {
-                sendSms(
-                    $customerPhone,
-                    "ناظر یدک\nسفارش شما به شماره {$order->id} ثبت شد.\nمبلغ: {$amount} تومان\nپیگیری: " . url('/profile/orders')
-                );
-            } catch (\Throwable $e) {
-                Log::error('Order SMS to customer failed', ['order_id' => $order->id, 'message' => $e->getMessage()]);
-            }
+
+        // پیامک و اعلانِ داخل سایتِ مشتری از یک نقطه ساخته می‌شوند تا متن‌ها
+        // با اطلاع‌رسانی تغییر وضعیت یکی بماند.
+        try {
+            (new OrderNotifier())->orderPlaced($order);
+        } catch (\Throwable $e) {
+            Log::error('Order notification to customer failed', ['order_id' => $order->id, 'message' => $e->getMessage()]);
         }
 
         $adminPhone = config('payment.notify_mobile');

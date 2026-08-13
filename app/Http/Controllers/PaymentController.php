@@ -42,6 +42,19 @@ class PaymentController extends Controller
                 ->with('error', 'این سفارش برای پرداخت در دسترس نیست.');
         }
 
+        // پرداخت آنلاین از پنل مدیریت خاموش شده است؛ سفارش باید از مسیر
+        // پیش‌فاکتور و تماس کارشناس نهایی شود.
+        if (! onlinePaymentEnabled()) {
+            return redirect()->route('order.payment', $order->id)
+                ->with('error', 'پرداخت اینترنتی در حال حاضر فعال نیست. سفارش خود را ثبت کنید تا کارشناسان ما با شما تماس بگیرند.');
+        }
+
+        // قلم استعلامی مبلغ ندارد و نباید ناقص پرداخت شود.
+        if ($order->hasContactPriceItems()) {
+            return redirect()->route('order.payment', $order->id)
+                ->with('error', 'سفارش شما قطعه‌ی بدنه و شاسی دارد که قیمتش تلفنی اعلام می‌شود؛ لطفا سفارش را ثبت کنید تا کارشناسان با شما تماس بگیرند.');
+        }
+
         if ((int) $order->total_price <= 0) {
             return redirect()->route('order.payment', $order->id)
                 ->with('error', 'مبلغ سفارش نامعتبر است. لطفا با پشتیبانی تماس بگیرید.');

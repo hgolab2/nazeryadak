@@ -140,6 +140,8 @@ class OrderAdminController extends Controller
             return back()->withErrors($validator)->withInput();
         }
 
+        $previousStatus = $order->status;
+
         $order->update($request->only([
             'customer_id',
             'address_id',
@@ -149,6 +151,19 @@ class OrderAdminController extends Controller
             'final_price',
             'status',
         ]));
+
+        // اطلاع‌رسانی فقط وقتی وضعیت واقعا عوض شده باشد؛ ویرایش مبلغ یا آدرس
+        // نباید برای مشتری پیامک بفرستد. خطای درگاه هم نباید ذخیره را بشکند.
+        if ($previousStatus !== $order->status) {
+            try {
+                (new \App\Services\OrderNotifier())->statusChanged($order->fresh('customer'), $previousStatus);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('اطلاع‌رسانی تغییر وضعیت سفارش ناموفق بود', [
+                    'order_id' => $order->id,
+                    'message'  => $e->getMessage(),
+                ]);
+            }
+        }
 
         return redirect('/admin/orders/list')
             ->with('success', 'سفارش با موفقیت بروزرسانی شد');

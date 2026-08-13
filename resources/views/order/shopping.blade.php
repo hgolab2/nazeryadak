@@ -1,3 +1,10 @@
+@php
+    /* وقتی پرداخت آنلاین خاموش است، مرحله‌ی بعد «بازبینی و ثبت سفارش» است نه
+       پرداخت؛ متن دکمه‌ها باید همان چیزی را بگوید که واقعا اتفاق می‌افتد. */
+    $onlinePayment = onlinePaymentEnabled();
+    $nextStepLabel = $onlinePayment ? 'ادامه و پرداخت' : 'ادامه و ثبت سفارش';
+    $amountLabel   = $onlinePayment ? 'مبلغ قابل پرداخت' : 'جمع سفارش';
+@endphp
 @extends('layout.layout', ['title' => 'اطلاعات ارسال | ناظر یدک', 'robots' => seo_robots_tag(false, true), 'noBaseSchema' => true, 'bodyClass' => 'has-actionbar'])
 @section('main_content')
 <div class="container">
@@ -6,7 +13,7 @@
             <div class="cart-content py-3 px-4 mb-3">
                 <ul class="checkout-steps mb-0">
                     <li class="is-completed"><a href="javascript:void(0)" class="checkout-steps-active active-link-shopping">اطلاعات ارسال</a></li>
-                    <li class="is-completed"><a href="javascript:void(0)" class="checkout-steps-item active-link">پرداخت</a></li>
+                    <li class="is-completed"><a href="javascript:void(0)" class="checkout-steps-item active-link">{{ $onlinePayment ? "پرداخت" : "بازبینی سفارش" }}</a></li>
                     <li class="is-active"><a href="javascript:void(0)" class="checkout-steps-item active-link">اتمام خرید</a></li>
                 </ul>
             </div>
@@ -98,6 +105,13 @@
                         <span class="text-muted">مبلغ محصولات</span>
                         <span>{{ number_format($order->final_price) }} تومان</span>
                     </div>
+                    @if($order->hasContactPriceItems())
+                    {{-- قطعات بدنه و شاسی مبلغ اعلامی ندارند و در جمع بالا نیستند --}}
+                    <div class="font-12 p-2 mb-1" style="background:#fff8e1; border-radius:var(--radius-sm); color:#7a5c00; line-height:1.9;">
+                        <i class="fas fa-phone-alt me-1"></i>
+                        مبلغ قطعات <b>بدنه و شاسی</b> در این جمع نیامده و توسط کارشناس تلفنی اعلام می‌شود.
+                    </div>
+                    @endif
                     <div class="d-flex justify-content-between py-2 font-13 border-bottom">
                         <span class="text-muted"><i class="fas fa-truck me-1"></i> هزینه ارسال</span>
                         <span id="shippingCost">
@@ -117,12 +131,12 @@
                         </span>
                     </div>
                     <div class="d-flex justify-content-between py-3">
-                        <span class="fw-bold" style="font-size:.95rem;">مبلغ قابل پرداخت</span>
+                        <span class="fw-bold" style="font-size:.95rem;">{{ $amountLabel }}</span>
                         <span class="fw-bold" style="font-size:1.1rem; color:var(--primary);" id="finalPrice">{{ number_format($order->total_price) }} <small class="font-12 fw-normal">تومان</small></span>
                     </div>
                     @if($address)
                     <a href="/order/payment/{{ $order->id }}" id="proceedPayment" class="btn add-cart-btn2 text-center d-block font-13 fw-bold hide-on-mobile-buy">
-                        <i class="fas fa-arrow-left me-1"></i> ادامه و پرداخت
+                        <i class="fas fa-arrow-left me-1"></i> {{ $nextStepLabel }}
                     </a>
                     @else
                     <button type="button" class="btn text-center d-block w-100 font-13 fw-bold hide-on-mobile-buy" disabled
@@ -140,12 +154,12 @@
      مجبور نباشد دنبال دکمه‌ی «ثبت آدرس» در بالای صفحه بگردد --}}
 <div class="mobile-actionbar" role="region" aria-label="ادامه به پرداخت">
     <div class="mobile-actionbar__info">
-        <span class="mobile-actionbar__label">مبلغ قابل پرداخت</span>
+        <span class="mobile-actionbar__label">{{ $amountLabel }}</span>
         <span class="mobile-actionbar__price" id="finalPriceMobile">{{ number_format($order->total_price) }} <small>تومان</small></span>
     </div>
     <a href="/order/payment/{{ $order->id }}" id="proceedPaymentMobile"
        class="mobile-actionbar__btn {{ $address ? '' : 'd-none' }}">
-        <i class="fas fa-arrow-left"></i> ادامه و پرداخت
+        <i class="fas fa-arrow-left"></i> {{ $nextStepLabel }}
     </a>
     <button type="button" id="openAddressMobile" data-bs-toggle="modal" data-bs-target="#change-address-modal"
             class="mobile-actionbar__btn {{ $address ? 'd-none' : '' }}" style="background:var(--accent, #ef394e);">
@@ -188,7 +202,7 @@ $('#saveAddressBtn').click(function () {
                 toast.fire({ icon: 'success', title: 'آدرس با موفقیت ثبت شد' });
                 recalcShipping();
 
-                // روی موبایل دکمه‌ی نوار چسبان بلافاصله به «ادامه و پرداخت»
+                // روی موبایل دکمه‌ی نوار چسبان بلافاصله به دکمه‌ی مرحله‌ی بعد
                 // تبدیل می‌شود و نیازی به بارگذاری دوباره‌ی صفحه نیست
                 $('#openAddressMobile').addClass('d-none');
                 $('#proceedPaymentMobile').removeClass('d-none');
