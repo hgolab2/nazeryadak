@@ -63,7 +63,12 @@ body {
 }
 
 /* جعبه جستجو: زمینه خاکستری روشن، دکمه قرمز در انتهای فیلد.
-   دکمه از حالت absolute خارج و به آیتم فلکس تبدیل می‌شود تا همیشه داخل کادر بماند. */
+   دکمه از حالت absolute خارج و به آیتم فلکس تبدیل می‌شود تا همیشه داخل کادر بماند.
+
+   overflow اینجا نباید hidden باشد: پنل پیشنهاد جستجو (.nx-suggest) درست زیر
+   همین جعبه باز می‌شود و با hidden کامل بریده می‌شد؛ سرویس صدا زده می‌شد،
+   جواب هم می‌آمد، ولی کاربر هیچ‌چیز نمی‌دید. گوشه‌ی دکمه به‌جای بریده‌شدن با
+   پدر، خودش گرد می‌شود. */
 .search-box-header {
     display: flex !important;
     align-items: center;
@@ -71,7 +76,6 @@ body {
     background: var(--nx-soft) !important;
     border: 1px solid transparent !important;
     border-radius: var(--nx-radius) !important;
-    overflow: hidden;
     transition: border-color .18s ease;
 }
 
@@ -100,7 +104,8 @@ body {
     height: 44px !important;
     min-width: 98px;
     justify-content: center;
-    border-radius: 0 !important;
+    /* سایت RTL است، پس دکمه لبه‌ی چپِ جعبه است و فقط دو گوشه‌ی چپش گرد می‌شود */
+    border-radius: var(--nx-radius) 0 0 var(--nx-radius) !important;
     background: var(--nx-red) !important;
     border-color: var(--nx-red) !important;
     font-size: 13px !important;
