@@ -68,7 +68,8 @@ class Article1 extends Model
     }
     public function getUrl()
     {
-        return '/blog/'.$this->articleid.'.html';
+        $slug = seo_slug($this->titr ?: ('article-' . $this->articleid), (string) $this->articleid);
+        return '/blog/' . $this->articleid . '/' . $slug;
     }
     public function get_full_tags()
     {

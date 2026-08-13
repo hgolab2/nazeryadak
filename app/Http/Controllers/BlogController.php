@@ -53,7 +53,7 @@ class BlogController extends Controller
         }
     }
 
-    public function view(Request $request , $articleid)
+    public function view(Request $request , $articleid, $slug = null)
     {
         if (!ctype_digit($articleid)) {
             return response()->view('errors.404', [], 404);
@@ -61,6 +61,13 @@ class BlogController extends Controller
         $result = $this->viewShow($request , $articleid);
         if(is_array($result))
         {
+            $currentPath = rawurldecode($request->path());
+            if ($slug !== null && $currentPath !== ltrim($result['info']->getUrl(), '/')) {
+                return redirect($result['info']->getUrl(), 301);
+            }
+            if (str_ends_with($request->path(), '.html')) {
+                return redirect($result['info']->getUrl(), 301);
+            }
             return View('article.show' , $result);
         }
         else

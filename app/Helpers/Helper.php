@@ -600,6 +600,19 @@ function seo_default_keywords(): string
     return 'خرید لوازم یدکی خودرو, قطعات ایساکو, لوازم یدکی ایساکو, خرید قطعات اصلی ایساکو, نمایندگی قطعات ایساکو, قطعات اصلی خودرو, خرید قطعات خودرو, فروشگاه لوازم یدکی, قطعات پژو 206, قطعات پژو 405, قطعات سمند, قطعات دنا, قطعات پراید, کد فنی قطعه خودرو';
 }
 
+function seo_slug(?string $text, string $fallback = 'item'): string
+{
+    $text = trim((string) $text);
+    $text = strtr($text, [
+        'ي' => 'ی', 'ك' => 'ک', 'ة' => 'ه', 'ۀ' => 'ه', 'ؤ' => 'و', 'إ' => 'ا', 'أ' => 'ا', 'آ' => 'آ',
+        "\u{200C}" => '-', "\u{200F}" => '', "\u{200E}" => '',
+    ]);
+    $text = preg_replace('/[^\p{L}\p{N}]+/u', '-', $text);
+    $text = trim(preg_replace('/-+/u', '-', $text), '-');
+
+    return $text !== '' ? mb_strtolower($text) : $fallback;
+}
+
 function seo_store_schema(): array
 {
     return [

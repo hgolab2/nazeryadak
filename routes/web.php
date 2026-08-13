@@ -76,6 +76,7 @@ Route::group(['namespace' => 'Frontend', 'middleware' => [ShareDataInFrontend::c
     Route::get('/blog', [BlogController::class, 'lists']);
     Route::get('/article/lists/{categoryid}', [BlogController::class, 'lists']);
     Route::get('/blog/{articleid}.html', [BlogController::class, 'view']);
+    Route::get('/blog/{articleid}/{slug?}', [BlogController::class, 'view']);
     //Route::get('/blog', [HomeController::class, 'blog']);
 
 
@@ -129,6 +130,7 @@ Route::group(['namespace' => 'Frontend', 'middleware' => [ShareDataInFrontend::c
         Route::put('/admin/product/update/{id}', [ProductAdminController::class, 'admin_update']);
         Route::get('/admin/product/status/{product_id}', [ProductAdminController::class, 'statusProduct']);
         Route::post('/admin/product/upload-image/{id}', [ProductAdminController::class, 'uploadImage']);
+        Route::post('/admin/product/{id}/image/{imageId}/primary', [ProductAdminController::class, 'setPrimaryImage']);
         Route::delete('/admin/product/delete-image/{id}', [ProductAdminController::class, 'deleteImage']);
         Route::delete('/admin/product/{id}', [ProductAdminController::class, 'destroy']);
 

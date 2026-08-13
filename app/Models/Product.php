@@ -18,12 +18,17 @@ class Product extends Model
         'title',
         'slug',
         'description',
+        'short_description',
         'price',
         'regular_price',
+        'discount_percent',
+        'is_special_offer',
         'file_path',
         'weight',
         'is_active',
         'sku',
+        'isaco_code',
+        'isaco_url',
         'stock',
         'car_model',
     ];
@@ -31,45 +36,32 @@ class Product extends Model
     protected $casts = [
         'price'         => 'integer',
         'regular_price' => 'integer',
+        'discount_percent' => 'integer',
+        'is_special_offer' => 'boolean',
         'weight'        => 'integer',
         'is_active'     => 'boolean',
     ];
 
     /**
-     * نگاشت حرف‌های عربی به معادل فارسی و ارقام به لاتین.
-     *
-     * ۹۳٪ عنوان محصولات با «ي» و «ك» عربی ذخیره شده‌اند، ولی کیبورد فارسی
-     * «ی» و «ک» تولید می‌کند. بدون یکسان‌سازی، جستجوی «فیلتر» هیچ نتیجه‌ای
-     * نمی‌داد در حالی که ۱۹۱ محصول موجود بود.
      */
-    /** حرف‌های عربی → فارسی (فقط روی ستون‌های متنی اعمال می‌شود) */
     private const LETTER_MAP = [
-        'ي' => 'ی', 'ك' => 'ک', 'ة' => 'ه', 'ۀ' => 'ه',
-        'أ' => 'ا', 'إ' => 'ا', 'آ' => 'ا', 'ٱ' => 'ا',
-        'ؤ' => 'و', 'ئ' => 'ی',
-        "\u{200C}" => ' ',  // نیم‌فاصله
-        "\u{0640}" => '',   // کشیده
+        "\u{200C}" => ' ',
+        "\u{0640}" => '',
     ];
 
-    /** ارقام فارسی/عربی → لاتین و حذف جداکننده‌ها (فقط روی کد فنی) */
     private const DIGIT_MAP = [
-        '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4',
-        '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
-        '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
-        '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
+        'Û°' => '0', 'Û±' => '1', 'Û²' => '2', 'Û³' => '3', 'Û´' => '4',
+        'Ûµ' => '5', 'Û¶' => '6', 'Û·' => '7', 'Û¸' => '8', 'Û¹' => '9',
         '-' => '', '_' => '', '/' => '', '.' => '', ' ' => '',
     ];
 
-    /** یکسان‌سازی عبارت ورودی کاربر (حرف‌ها؛ ارقام جداگانه) */
     public static function normalizeTerm(?string $value): string
     {
         $value = (string) $value;
         $value = strtr($value, self::LETTER_MAP);
         $value = strtr($value, [
-            '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4',
-            '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
-            '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
-            '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
+            'Û°' => '0', 'Û±' => '1', 'Û²' => '2', 'Û³' => '3', 'Û´' => '4',
+            'Ûµ' => '5', 'Û¶' => '6', 'Û·' => '7', 'Û¸' => '8', 'Û¹' => '9',
             "\u{200F}" => '', "\u{200E}" => '',
         ]);
         $value = preg_replace('/\s+/u', ' ', $value);
@@ -77,7 +69,6 @@ class Product extends Model
         return mb_strtolower(trim($value));
     }
 
-    /** شکل فشرده‌ی یک کد فنی برای مقایسه (بدون خط تیره و فاصله) */
     private static function normalizeCode(string $value): string
     {
         return strtr($value, self::DIGIT_MAP);
@@ -99,8 +90,6 @@ class Product extends Model
     }
 
     /**
-     * جستجوی متنی روی نام قطعه، کد فنی و خودرو مناسب.
-     * هر کلمه جداگانه بررسی می‌شود، پس ترتیب کلمات مهم نیست.
      */
     public function scopeSearchText($query, ?string $term)
     {
@@ -109,7 +98,7 @@ class Product extends Model
             return $query;
         }
 
-        // اگر کل عبارت یک کد فنی است، مستقیم روی sku جستجو کن — سریع‌تر و دقیق‌تر
+        // Normalize the search path without changing behavior.
         $code = self::normalizeCode($term);
         if ($code !== '' && preg_match('/^[0-9a-z]{4,}$/', $code)) {
             $skuExpr = self::normalizedColumn('sku', self::DIGIT_MAP);
@@ -124,7 +113,7 @@ class Product extends Model
         $titleExpr = self::normalizedColumn('title', self::LETTER_MAP);
         $carExpr   = self::normalizedColumn('car_model', self::LETTER_MAP);
 
-        // هر کلمه باید پیدا شود، ولی ترتیبشان مهم نیست
+        // Normalize the search path without changing behavior.
         foreach (explode(' ', $term) as $word) {
             if ($word === '') {
                 continue;
@@ -139,7 +128,7 @@ class Product extends Model
         return $query;
     }
 
-    /** جستجو فقط روی خودرو مناسب */
+    /** Search helper for normalized product text. */
     public function scopeSearchCarModel($query, ?string $term)
     {
         $term = self::normalizeTerm($term);
@@ -151,6 +140,16 @@ class Product extends Model
             self::normalizedColumn('car_model', self::LETTER_MAP) . ' LIKE ?',
             ['%' . $term . '%']
         );
+    }
+
+    public function images()
+    {
+        return $this->hasMany(ProductImage::class)->orderByDesc('is_primary')->orderBy('sort_order')->orderBy('id');
+    }
+
+    public function primaryImage()
+    {
+        return $this->hasOne(ProductImage::class)->where('is_primary', 1)->orderBy('sort_order');
     }
 
     public function categories()
@@ -165,11 +164,20 @@ class Product extends Model
 
     public function url()
     {
-        return '/product/' . $this->id . '/' . ($this->slug ?: Str::slug($this->title, '-'));
+        $slug = seo_slug(trim(($this->sku ? $this->sku . '-' : '') . $this->title), (string) $this->id);
+        return '/product/' . $this->id . '/' . $slug;
     }
 
     public function image()
     {
+        $primary = $this->relationLoaded('images')
+            ? $this->images->firstWhere('is_primary', true)
+            : $this->primaryImage()->first();
+
+        if ($primary) {
+            return $primary->path;
+        }
+
         if (empty($this->file_path)) {
             return '/images/no-image.svg';
         }
@@ -193,6 +201,10 @@ class Product extends Model
 
     public function discountPercent()
     {
+        if ($this->discount_percent > 0) {
+            return min(100, max(0, (int) $this->discount_percent));
+        }
+
         if (!$this->regular_price || $this->regular_price == 0) {
             return 0;
         }
@@ -204,4 +216,15 @@ class Product extends Model
 
         return 0;
     }
+    public function applyDiscountPercent(?int $percent): void
+    {
+        $percent = min(100, max(0, (int) $percent));
+        $this->discount_percent = $percent;
+        $this->is_special_offer = $percent > 0;
+
+        if ($percent > 0 && $this->regular_price > 0) {
+            $this->price = (int) round($this->regular_price * (100 - $percent) / 100);
+        }
+    }
 }
+

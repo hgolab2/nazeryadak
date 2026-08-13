@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Article1;
 use App\Models\Category;
+use App\Models\File;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 
 class ArticleAdminController extends Controller
@@ -64,9 +66,13 @@ class ArticleAdminController extends Controller
 
         $article = Article1::create($this->articleData($request, true));
         $this->syncCategory($article->articleid, $request->categoryid ?: $this->blogCategoryId);
-        $this->storeImage($request, $article);
+        try {
+            $this->storeImage($request, $article);
+        } catch (\RuntimeException $exception) {
+            return back()->withErrors(['file' => $exception->getMessage()])->withInput();
+        }
 
-        return redirect('/admin/article/list')->with('success', 'Ù…Ø·Ù„Ø¨ Ø¨Ø§ Ù…ÙˆÙÙ‚ÛŒØª Ø«Ø¨Øª Ø´Ø¯');
+        return redirect('/admin/article/list')->with('success', 'مطلب با موفقیت ثبت شد');
     }
 
     public function admin_edit($id)
@@ -96,9 +102,13 @@ class ArticleAdminController extends Controller
 
         $article->update($this->articleData($request, false));
         $this->syncCategory($article->articleid, $request->categoryid ?: $this->blogCategoryId);
-        $this->storeImage($request, $article);
+        try {
+            $this->storeImage($request, $article);
+        } catch (\RuntimeException $exception) {
+            return back()->withErrors(['file' => $exception->getMessage()])->withInput();
+        }
 
-        return redirect('/admin/article/list')->with('success', 'Ù…Ø·Ù„Ø¨ Ø¨Ø§ Ù…ÙˆÙÙ‚ÛŒØª ÙˆÛŒØ±Ø§ÛŒØ´ Ø´Ø¯');
+        return redirect('/admin/article/list')->with('success', 'مطلب با موفقیت ویرایش شد');
     }
 
     public function toggleStatus($id)
@@ -148,7 +158,7 @@ class ArticleAdminController extends Controller
             'showdate' => 'nullable|date',
             'hidden' => 'required|boolean',
             'categoryid' => 'nullable|integer',
-            'file' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:4096',
+            'file' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:10240',
         ]);
     }
 
@@ -207,25 +217,71 @@ class ArticleAdminController extends Controller
 
     private function storeImage(Request $request, Article1 $article): void
     {
-        if (!$request->hasFile('file') || !$request->file('file')->isValid()) {
+        if (!$request->hasFile('file')) {
             return;
         }
 
-        $baseDir = public_path('imgArticle/upload');
-        if (!is_dir($baseDir)) {
-            mkdir($baseDir, 0755, true);
+        $uploadedFile = $request->file('file');
+        if (!$uploadedFile->isValid()) {
+            throw new \RuntimeException('فایل تصویر به درستی ارسال نشد. لطفا دوباره انتخاب کنید.');
         }
 
-        $fileId = uploader($request->file('file'), [
-            'grouptype' => 1,
+        $extension = strtolower($uploadedFile->getClientOriginalExtension() ?: $uploadedFile->extension());
+        if (!in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true)) {
+            throw new \RuntimeException('فرمت تصویر مجاز نیست. jpg، png، gif یا webp انتخاب کنید.');
+        }
+
+        $savedAt = now();
+        $relativeDir = 'imgArticle/upload/' . $savedAt->format('Y') . '/' . $savedAt->format('m');
+        $targetDir = $this->publicUploadPath($relativeDir);
+
+        if (!is_dir($targetDir) && !mkdir($targetDir, 0755, true) && !is_dir($targetDir)) {
+            throw new \RuntimeException('امکان ساخت پوشه آپلود تصویر وجود ندارد. دسترسی public_html/imgArticle را بررسی کنید.');
+        }
+
+        $originalName = pathinfo($uploadedFile->getClientOriginalName(), PATHINFO_FILENAME);
+        $safeName = Str::slug($originalName) ?: 'article-image';
+        $fileName = $safeName . '-' . uniqid() . '.' . $extension;
+
+        $fileRecord = File::create([
+            'title' => $article->titr,
             'description' => $article->titr,
+            'filetype' => $extension,
+            'extension' => $extension,
+            'filepath' => $fileName,
+            'savedate' => $savedAt->format('Y-m-d H:i:s'),
+            'savedby' => Auth::id(),
+            'filesize' => $uploadedFile->getSize(),
+            'grouptype' => 1,
             'width' => 0,
             'height' => 0,
         ]);
 
-        if ($fileId) {
-            $article->update(['image' => $fileId, 'imageId' => $fileId]);
+        $uploadedFile->move($targetDir, $fileRecord->fileId . '_' . $fileName);
+        $path = $targetDir . DIRECTORY_SEPARATOR . $fileRecord->fileId . '_' . $fileName;
+
+        $size = @getimagesize($path);
+        if ($size) {
+            $fileRecord->update(['width' => $size[0], 'height' => $size[1]]);
         }
+
+        $article->update(['image' => $fileRecord->fileId, 'imageId' => $fileRecord->fileId]);
+    }
+    private function publicUploadPath(string $relativeDir): string
+    {
+        $relativeDir = trim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $relativeDir), DIRECTORY_SEPARATOR);
+        $documentRoot = $_SERVER['DOCUMENT_ROOT'] ?? null;
+
+        if ($documentRoot && is_dir($documentRoot)) {
+            return rtrim($documentRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $relativeDir;
+        }
+
+        $siblingPublicHtml = dirname(public_path()) . DIRECTORY_SEPARATOR . 'public_html';
+        if (is_dir($siblingPublicHtml)) {
+            return $siblingPublicHtml . DIRECTORY_SEPARATOR . $relativeDir;
+        }
+
+        return public_path($relativeDir);
     }
 }
 

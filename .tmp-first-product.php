@@ -1,0 +1,6 @@
+﻿<?php
+require __DIR__.'/vendor/autoload.php';
+$app = require __DIR__.'/bootstrap/app.php';
+$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+$p = App\Models\Product::query()->select('id')->first();
+echo $p ? $p->id : 'none';

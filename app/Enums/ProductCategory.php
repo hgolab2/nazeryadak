@@ -20,14 +20,14 @@ enum ProductCategory: int
     {
         return match ($this) {
             self::ENGINE => 'موتور و اجزای متعلقه',
-            self::CONSUMABLES => 'قطعات مصرفی (روغن، فیلتر، تسمه، لنت)',
+            self::CONSUMABLES => 'قطعات مصرفی',
             self::CHASSIS_BODY => 'شاسی و بدنه',
             self::GEARBOX => 'گیربکس و دیفرانسیل',
             self::FUEL_SYSTEM => 'سوخت‌رسانی و جرقه',
             self::BRAKE_SUSPENSION => 'چرخ، ترمز و جلوبندی',
             self::ELECTRICAL => 'برق و سنسورهای خودرو',
             self::COOLING => 'سیستم خنک‌کننده',
-            self::EXHAUST => 'اگزوز و سیستم تهویه',
+            self::EXHAUST => 'اگزوز و تهویه',
             self::INTERIOR => 'تزئینات داخلی و خارجی',
             self::OTHER => 'سایر قطعات',
         };
@@ -70,9 +70,9 @@ enum ProductCategory: int
     public static function list(): array
     {
         return array_map(fn ($case) => [
-            'id'    => $case->value,
+            'id' => $case->value,
             'label' => $case->label(),
-            'slug'  => $case->slug(),
+            'slug' => $case->slug(),
         ], self::cases());
     }
 
@@ -83,6 +83,7 @@ enum ProductCategory: int
                 return $case;
             }
         }
+
         return null;
     }
 }

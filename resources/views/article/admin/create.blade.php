@@ -1,4 +1,4 @@
-﻿@extends('layout.managmentLayout', [
+@extends('layout.managmentLayout', [
     'title' => !empty($model) ? 'ویرایش مطلب' : 'ثبت مطلب جدید',
     'menu' => !empty($model) ? 'article/list' : 'article/create',
 ])
@@ -12,7 +12,7 @@
 @endphp
 
 <style>
-.article-editor-shell{border:1px solid #d9e2ef;border-radius:8px;background:#fff;overflow:hidden}.article-editor-toolbar{display:flex;flex-wrap:wrap;gap:6px;padding:10px;border-bottom:1px solid #e7edf5;background:#f8fafc}.article-editor-toolbar button,.article-editor-toolbar select{height:34px;border:1px solid #cfd8e3;background:#fff;border-radius:6px;padding:0 10px;color:#263238}.article-editor{min-height:360px;padding:18px;line-height:2;outline:none}.article-editor:focus{box-shadow:inset 0 0 0 2px rgba(13,110,253,.12)}.seo-panel{border:1px solid #d9e2ef;border-radius:8px;background:#fff}.seo-score{display:flex;align-items:center;gap:12px;padding:14px;border-bottom:1px solid #edf2f7}.seo-score-ring{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(#dc3545 0deg,#edf2f7 0deg);font-weight:800}.seo-checks{padding:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}.seo-check{border:1px solid #edf2f7;border-radius:6px;padding:9px 10px;font-size:13px}.seo-check.good{border-color:#badbcc;background:#f0fff4;color:#176b3a}.seo-check.warn{border-color:#ffe69c;background:#fff9db;color:#7a5b00}.seo-check.bad{border-color:#f5c2c7;background:#fff5f5;color:#842029}.snippet-preview{direction:ltr;text-align:left;border:1px solid #e3e8ef;border-radius:8px;padding:14px;background:#fff}.snippet-title{color:#1a0dab;font-size:18px;line-height:1.4}.snippet-url{color:#006621;font-size:13px;word-break:break-all}.snippet-desc{color:#4d5156;font-size:13px;line-height:1.6}.char-counter{font-size:12px;color:#6c757d;margin-top:4px}.image-preview{max-width:220px;border-radius:8px;border:1px solid #e3e8ef;padding:4px;background:#fff}
+.tox-tinymce{border-radius:8px!important;border-color:#d9e2ef!important}.seo-panel{border:1px solid #d9e2ef;border-radius:8px;background:#fff}.seo-score{display:flex;align-items:center;gap:12px;padding:14px;border-bottom:1px solid #edf2f7}.seo-score-ring{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(#dc3545 0deg,#edf2f7 0deg);font-weight:800}.seo-checks{padding:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}.seo-check{border:1px solid #edf2f7;border-radius:6px;padding:9px 10px;font-size:13px}.seo-check.good{border-color:#badbcc;background:#f0fff4;color:#176b3a}.seo-check.warn{border-color:#ffe69c;background:#fff9db;color:#7a5b00}.seo-check.bad{border-color:#f5c2c7;background:#fff5f5;color:#842029}.snippet-preview{direction:ltr;text-align:left;border:1px solid #e3e8ef;border-radius:8px;padding:14px;background:#fff}.snippet-title{color:#1a0dab;font-size:18px;line-height:1.4}.snippet-url{color:#006621;font-size:13px;word-break:break-all}.snippet-desc{color:#4d5156;font-size:13px;line-height:1.6}.char-counter{font-size:12px;color:#6c757d;margin-top:4px}.image-preview{max-width:220px;border-radius:8px;border:1px solid #e3e8ef;padding:4px;background:#fff}
 </style>
 
 <nav class="mb-3 pt-md-3" aria-label="Breadcrumb">
@@ -51,13 +51,7 @@
 
     <section class="admin-card">
         <div class="admin-card-title"><i class="fas fa-align-right"></i> متن مطلب</div>
-        <div class="article-editor-shell">
-            <div class="article-editor-toolbar" role="toolbar">
-                <button type="button" data-cmd="bold"><b>B</b></button><button type="button" data-cmd="italic"><i>I</i></button><button type="button" data-cmd="insertUnorderedList">• لیست</button><button type="button" data-cmd="insertOrderedList">1. لیست</button><button type="button" data-cmd="formatBlock" data-value="h2">H2</button><button type="button" data-cmd="formatBlock" data-value="h3">H3</button><button type="button" id="editorLink">لینک</button><button type="button" data-cmd="removeFormat">پاکسازی</button>
-            </div>
-            <div id="richEditor" class="article-editor" contenteditable="true">{!! old('text', $model->text ?? '') !!}</div>
-            <textarea id="articleText" name="text" class="d-none">{{ old('text', $model->text ?? '') }}</textarea>
-        </div>
+        <textarea id="articleText" name="text" rows="18" class="form-control">{{ old('text', $model->text ?? '') }}</textarea>
     </section>
 
     <section class="admin-card">
@@ -86,18 +80,38 @@
     <div class="d-flex gap-2 mb-4"><button type="submit" class="btn btn-primary btn-lg">{{ !empty($model) ? 'ذخیره تغییرات' : 'ثبت مطلب' }}</button><a href="/admin/article/list" class="btn btn-light btn-lg">بازگشت</a></div>
 </form>
 
+<script src="/vendor/tinymce/tinymce.min.js"></script>
 <script>
 (function(){
-const form=document.querySelector('form'),editor=document.getElementById('richEditor'),hidden=document.getElementById('articleText');
-document.querySelectorAll('[data-cmd]').forEach(btn=>btn.addEventListener('click',()=>{document.execCommand(btn.dataset.cmd,false,btn.dataset.value||null);editor.focus();sync();}));
-document.getElementById('editorLink').addEventListener('click',()=>{const url=prompt('آدرس لینک را وارد کنید');if(url){document.execCommand('createLink',false,url);sync();}});
-function sync(){hidden.value=editor.innerHTML;analyze();} editor.addEventListener('input',sync); form.addEventListener('submit',sync);
+const form=document.querySelector('form'),articleText=document.getElementById('articleText');
+function editorHtml(){const ed=window.tinymce&&tinymce.get('articleText');return ed?ed.getContent():articleText.value;}
+function editorText(){const html=editorHtml();const div=document.createElement('div');div.innerHTML=html;return (div.textContent||div.innerText||'').replace(/\s+/g,' ').trim();}
+function sync(){const ed=window.tinymce&&tinymce.get('articleText');if(ed){ed.save();}analyze();}
+if(window.tinymce){
+    tinymce.init({
+        selector:'#articleText',
+        directionality:'rtl',
+        height:520,
+        menubar:'file edit view insert format tools table help',
+        plugins:'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table wordcount help directionality',
+        toolbar:'undo redo | blocks fontfamily fontsize | bold italic underline forecolor backcolor | alignright aligncenter alignleft alignjustify | rtl ltr | bullist numlist outdent indent | link image media table | removeformat code fullscreen preview',
+        block_formats:'پاراگراف=p; تیتر 2=h2; تیتر 3=h3; تیتر 4=h4; نقل قول=blockquote',
+        branding:false,
+        promotion:false,
+        convert_urls:false,
+        relative_urls:false,
+        remove_script_host:false,
+        content_style:'body{font-family:tahoma,arial,sans-serif;font-size:15px;line-height:2;direction:rtl;text-align:right} img{max-width:100%;height:auto}',
+        setup:function(editor){editor.on('init keyup change input undo redo SetContent',sync);}
+    });
+}
+form.addEventListener('submit',sync);
 const imageInput=document.getElementById('imageInput'),imagePreview=document.getElementById('imagePreview'); imageInput.addEventListener('change',()=>{const f=imageInput.files[0];if(!f)return;imagePreview.src=URL.createObjectURL(f);imagePreview.classList.remove('d-none');});
 const fields=['articleTitle','articleExcerpt','focusKeyword','seoTitle','seoDescription','keywords','canonicalUrl'].map(id=>document.getElementById(id)); fields.forEach(el=>el&&el.addEventListener('input',analyze));
-function text(){return editor.innerText.replace(/\s+/g,' ').trim();} function val(id){return (document.getElementById(id).value||'').trim();}
+function val(id){return (document.getElementById(id).value||'').trim();}
 function addCheck(list,label,ok,warn){list.push({label,cls:ok?'good':(warn?'warn':'bad')});return ok?14:(warn?7:0)}
-function analyze(){const title=val('seoTitle')||val('articleTitle'),desc=val('seoDescription')||val('articleExcerpt'),focus=val('focusKeyword'),body=text(),words=body?body.split(' ').length:0;let checks=[],score=0;score+=addCheck(checks,'کلمه کلیدی اصلی وارد شده باشد',focus.length>0,false);score+=addCheck(checks,'کلمه کلیدی در عنوان سئو باشد',focus&&title.includes(focus),focus&&val('articleTitle').includes(focus));score+=addCheck(checks,'کلمه کلیدی در توضیحات متا باشد',focus&&desc.includes(focus),false);score+=addCheck(checks,'طول عنوان سئو بین 35 تا 60 کاراکتر باشد',title.length>=35&&title.length<=60,title.length>0&&title.length<=70);score+=addCheck(checks,'توضیحات متا بین 120 تا 160 کاراکتر باشد',desc.length>=120&&desc.length<=160,desc.length>=80&&desc.length<=180);score+=addCheck(checks,'متن مقاله حداقل 300 کلمه باشد',words>=300,words>=150);score+=addCheck(checks,'مقاله دارای تیتر H2 باشد',/<h2[\s>]/i.test(editor.innerHTML),false);document.getElementById('seoTitleCount').textContent=title.length+' کاراکتر';document.getElementById('seoDescriptionCount').textContent=desc.length+' کاراکتر';document.getElementById('snippetTitle').textContent=title||'عنوان سئو';document.getElementById('snippetDesc').textContent=desc||'توضیحات متا';document.getElementById('snippetUrl').textContent=val('canonicalUrl')||'{{ $articleUrl }}';const finalScore=Math.min(100,score);const ring=document.getElementById('seoScoreRing');ring.textContent=finalScore;ring.style.background='conic-gradient('+(finalScore>=80?'#198754':finalScore>=50?'#ffc107':'#dc3545')+' '+(finalScore*3.6)+'deg,#edf2f7 0deg)';document.getElementById('seoScoreText').textContent=finalScore>=80?'سئو خوب':finalScore>=50?'قابل بهبود':'نیاز به تکمیل';document.getElementById('seoChecks').innerHTML=checks.map(c=>'<div class="seo-check '+c.cls+'">'+c.label+'</div>').join('');}
-analyze();sync();
+function analyze(){const title=val('seoTitle')||val('articleTitle'),desc=val('seoDescription')||val('articleExcerpt'),focus=val('focusKeyword'),body=editorText(),html=editorHtml(),words=body?body.split(' ').length:0;let checks=[],score=0;score+=addCheck(checks,'کلمه کلیدی اصلی وارد شده باشد',focus.length>0,false);score+=addCheck(checks,'کلمه کلیدی در عنوان سئو باشد',focus&&title.includes(focus),focus&&val('articleTitle').includes(focus));score+=addCheck(checks,'کلمه کلیدی در توضیحات متا باشد',focus&&desc.includes(focus),false);score+=addCheck(checks,'طول عنوان سئو بین 35 تا 60 کاراکتر باشد',title.length>=35&&title.length<=60,title.length>0&&title.length<=70);score+=addCheck(checks,'توضیحات متا بین 120 تا 160 کاراکتر باشد',desc.length>=120&&desc.length<=160,desc.length>=80&&desc.length<=180);score+=addCheck(checks,'متن مقاله حداقل 300 کلمه باشد',words>=300,words>=150);score+=addCheck(checks,'مقاله دارای تیتر H2 باشد',/<h2[\s>]/i.test(html),false);document.getElementById('seoTitleCount').textContent=title.length+' کاراکتر';document.getElementById('seoDescriptionCount').textContent=desc.length+' کاراکتر';document.getElementById('snippetTitle').textContent=title||'عنوان سئو';document.getElementById('snippetDesc').textContent=desc||'توضیحات متا';document.getElementById('snippetUrl').textContent=val('canonicalUrl')||'{{ $articleUrl }}';const finalScore=Math.min(100,score);const ring=document.getElementById('seoScoreRing');ring.textContent=finalScore;ring.style.background='conic-gradient('+(finalScore>=80?'#198754':finalScore>=50?'#ffc107':'#dc3545')+' '+(finalScore*3.6)+'deg,#edf2f7 0deg)';document.getElementById('seoScoreText').textContent=finalScore>=80?'سئو خوب':finalScore>=50?'قابل بهبود':'نیاز به تکمیل';document.getElementById('seoChecks').innerHTML=checks.map(c=>'<div class="seo-check '+c.cls+'">'+c.label+'</div>').join('');}
+analyze();
 })();
 </script>
 @endsection

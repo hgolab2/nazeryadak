@@ -64,11 +64,12 @@
                         <p class="font-13 m-0 fw-bold">خودرو مناسب</p>
                     </div>
                     <div class="position-relative">
-                        <input type="search"
-                            id="search_car_model"
-                            class="form-control"
-                            value="{{ $carModel ?? '' }}"
-                            placeholder="مثلاً: پژو 206، سمند...">
+                        <select id="search_car_model" class="form-control">
+                            <option value="">همه خودروها</option>
+                            @foreach($carCategories as $carCategory)
+                                <option value="{{ $carCategory->id }}" {{ (string) ($carModel ?? '') === (string) $carCategory->id || (string) ($carModel ?? '') === (string) $carCategory->name ? 'selected' : '' }}>{{ $carCategory->name }}</option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
             </div>
@@ -186,11 +187,8 @@
             loadMoreData(1, createQuery());
         }, 500);
     });
-    $('#search_car_model').on('keyup', function () {
-        clearTimeout(window.carModelTimer);
-        window.carModelTimer = setTimeout(function () {
-            loadMoreData(1, createQuery());
-        }, 500);
+    $('#search_car_model').on('change', function () {
+        loadMoreData(1, createQuery());
     });
     $('#sort-select').on('change', function () {
         loadMoreData(1, createQuery());

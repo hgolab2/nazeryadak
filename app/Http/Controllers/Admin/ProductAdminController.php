@@ -7,6 +7,7 @@ use App\Models\EshopCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class ProductAdminController extends Controller
@@ -26,7 +27,9 @@ class ProductAdminController extends Controller
             $query->where('sku', 'like', "%{$request->sku}%");
         }
         if (!empty($request->car_model)) {
-            $query->where('car_model', 'like', "%{$request->car_model}%");
+            $query->whereHas('categories', function ($q) use ($request) {
+                $q->where('category_id', (int) $request->car_model);
+            });
         }
 
         $totalCount = $query->count();
@@ -37,7 +40,8 @@ class ProductAdminController extends Controller
             return response()->json(['html' => $view, 'totalCount' => $totalCount]);
         }
 
-        return view('product.admin.list', compact('model'));
+        $carCategories = EshopCategory::orderBy('name')->get();
+        return view('product.admin.list', compact('model', 'carCategories'));
     }
 
     public function admin_create()
@@ -58,10 +62,13 @@ class ProductAdminController extends Controller
             'sku'           => 'nullable|string|max:100',
             'price'         => 'required|integer|min:0',
             'regular_price' => 'nullable|integer|min:0',
+            'discount_percent' => 'nullable|integer|min:0|max:100',
+            'is_special_offer' => 'nullable|boolean',
             'stock'         => 'nullable|integer|min:0',
             'weight'        => 'nullable|integer|min:0',
             'is_active'     => 'required|boolean',
             'description'   => 'nullable|string',
+            'short_description' => 'nullable|string',
             'car_model'     => 'nullable|string|max:255',
             'file'          => 'nullable|image|max:2048',
         ]);
@@ -71,20 +78,37 @@ class ProductAdminController extends Controller
         }
 
         $data = $request->only([
-            'title', 'sku', 'price', 'regular_price',
-            'stock', 'weight', 'is_active', 'description', 'car_model',
+            'title', 'sku', 'price', 'regular_price', 'discount_percent',
+            'stock', 'weight', 'is_active', 'description', 'short_description', 'car_model',
         ]);
 
         $data['slug'] = Str::slug($request->sku ?: $request->title);
-
-        if ($request->hasFile('file')) {
-            $path = $request->file('file')->store('products', 'public');
-            $data['file_path'] = '/storage/' . $path;
+        $data['is_special_offer'] = $request->boolean('is_special_offer');
+        if ((int) ($data['discount_percent'] ?? 0) > 0) {
+            $data['is_special_offer'] = true;
+            if ((int) ($data['regular_price'] ?? 0) > 0) {
+                $data['price'] = (int) round($data['regular_price'] * (100 - (int) $data['discount_percent']) / 100);
+            }
         }
 
-        Product::create($data);
+        if ($request->hasFile('file')) {
+            $data['file_path'] = $this->storeUploadedProductImage($request);
+        }
 
-        return redirect('/admin/product/list')->with('success', 'محصول با موفقیت ایجاد شد');
+        $product = Product::create($data);
+        if (!empty($data['file_path'])) {
+            DB::table('product_images')->insert([
+                'product_id' => $product->id,
+                'path' => $data['file_path'],
+                'alt' => $product->title,
+                'is_primary' => 1,
+                'sort_order' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        return redirect('/admin/product/list')->with('success', 'Product saved successfully');
     }
 
     public function admin_edit($id)
@@ -92,7 +116,7 @@ class ProductAdminController extends Controller
         if (!Auth::user()) return redirect('/loginAdmin');
         access(388);
 
-        $model = Product::findOrFail($id);
+        $model = Product::with('images')->findOrFail($id);
         $categories = EshopCategory::orderBy('name')->get();
         return view('product.admin.create', compact('model', 'categories'));
     }
@@ -109,10 +133,13 @@ class ProductAdminController extends Controller
             'sku'           => 'nullable|string|max:100',
             'price'         => 'required|integer|min:0',
             'regular_price' => 'nullable|integer|min:0',
+            'discount_percent' => 'nullable|integer|min:0|max:100',
+            'is_special_offer' => 'nullable|boolean',
             'stock'         => 'nullable|integer|min:0',
             'weight'        => 'nullable|integer|min:0',
             'is_active'     => 'required|boolean',
             'description'   => 'nullable|string',
+            'short_description' => 'nullable|string',
             'car_model'     => 'nullable|string|max:255',
             'file'          => 'nullable|image|max:2048',
         ]);
@@ -122,18 +149,24 @@ class ProductAdminController extends Controller
         }
 
         $data = $request->only([
-            'title', 'sku', 'price', 'regular_price',
-            'stock', 'weight', 'is_active', 'description', 'car_model',
+            'title', 'sku', 'price', 'regular_price', 'discount_percent',
+            'stock', 'weight', 'is_active', 'description', 'short_description', 'car_model',
         ]);
+        $data['is_special_offer'] = $request->boolean('is_special_offer');
+        if ((int) ($data['discount_percent'] ?? 0) > 0) {
+            $data['is_special_offer'] = true;
+            if ((int) ($data['regular_price'] ?? 0) > 0) {
+                $data['price'] = (int) round($data['regular_price'] * (100 - (int) $data['discount_percent']) / 100);
+            }
+        }
 
         if ($request->hasFile('file')) {
-            $path = $request->file('file')->store('products', 'public');
-            $data['file_path'] = '/storage/' . $path;
+            $data['file_path'] = $this->storeUploadedProductImage($request);
         }
 
         $product->update($data);
 
-        return redirect('/admin/product/list')->with('success', 'محصول با موفقیت بروزرسانی شد');
+        return redirect('/admin/product/list')->with('success', 'Product updated successfully');
     }
 
     public function statusProduct($id)
@@ -144,7 +177,7 @@ class ProductAdminController extends Controller
         $product = Product::findOrFail($id);
         $product->update(['is_active' => !$product->is_active]);
 
-        return back()->with('success', 'وضعیت محصول تغییر کرد');
+        return back()->with('success', 'Product status changed');
     }
 
     public function uploadImage(Request $request, $id)
@@ -156,17 +189,36 @@ class ProductAdminController extends Controller
 
         $request->validate(['file' => 'required|image|max:5120']);
 
-        if ($product->file_path && str_starts_with($product->file_path, '/storage/products/')) {
-            $old = str_replace('/storage/', '', $product->file_path);
-            \Storage::disk('public')->delete($old);
+        $imagePath = $this->storeUploadedProductImage($request);
+        DB::table('product_images')->insert([
+            'product_id' => $product->id,
+            'path' => $imagePath,
+            'alt' => $product->title,
+            'is_primary' => $product->images()->count() === 0 ? 1 : 0,
+            'sort_order' => ($product->images()->max('sort_order') ?? 0) + 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        if (!$product->file_path) {
+            $product->update(['file_path' => $imagePath]);
         }
 
-        $path = $request->file('file')->store('products', 'public');
-        $product->update(['file_path' => '/storage/' . $path]);
-
-        return back()->with('success', 'تصویر محصول بروزرسانی شد');
+        return back()->with('success', 'Product image updated');
     }
+    public function setPrimaryImage($id, $imageId)
+    {
+        if (!Auth::user()) return redirect('/loginAdmin');
+        access(388);
 
+        $product = Product::findOrFail($id);
+        $image = $product->images()->where('id', $imageId)->firstOrFail();
+
+        DB::table('product_images')->where('product_id', $product->id)->update(['is_primary' => 0]);
+        $image->update(['is_primary' => 1]);
+        $product->update(['file_path' => $image->path]);
+
+        return back()->with('success', 'Primary image changed');
+    }
     public function deleteImage($id)
     {
         if (!Auth::user()) return redirect('/loginAdmin');
@@ -181,9 +233,23 @@ class ProductAdminController extends Controller
 
         $product->update(['file_path' => null]);
 
-        return back()->with('success', 'تصویر محصول حذف شد');
+        return back()->with('success', 'Product image deleted');
     }
 
+    private function storeUploadedProductImage(Request $request): string
+    {
+        $file = $request->file('file');
+        $directory = public_path('upload/products/' . date('Y/m'));
+        if (!is_dir($directory)) {
+            mkdir($directory, 0777, true);
+        }
+
+        $extension = strtolower($file->getClientOriginalExtension() ?: 'jpg');
+        $filename = uniqid('product-', true) . '.' . $extension;
+        $file->move($directory, $filename);
+
+        return '/upload/products/' . date('Y/m') . '/' . $filename;
+    }
     public function destroy($id)
     {
         if (!Auth::user()) return redirect('/loginAdmin');
@@ -193,3 +259,6 @@ class ProductAdminController extends Controller
         return response()->json(['success' => true]);
     }
 }
+
+
+

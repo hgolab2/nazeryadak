@@ -189,12 +189,12 @@ class CheckoutController extends Controller
         $changed = false;
         foreach ($cart as $id => &$item) {
             $product = Product::find($id);
-            if (!$product || !$product->is_active) {
+            if (!$product || !$product->is_active || $product->stock <= 0) {
                 unset($cart[$id]);
                 $changed = true;
                 continue;
             }
-            if ($product->stock > 0 && $item['quantity'] > $product->stock) {
+            if ($item['quantity'] > $product->stock) {
                 $item['quantity'] = $product->stock;
                 $changed = true;
             }

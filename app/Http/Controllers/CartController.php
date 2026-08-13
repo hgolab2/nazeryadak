@@ -7,7 +7,7 @@ class CartController extends Controller
 {
     public function add(Request $request)
     {
-        $product = Product::where('id', $request->product_id)->where('is_active', 1)->first();
+        $product = Product::where('id', $request->product_id)->where('is_active', 1)->where('stock', '>', 0)->first();
         if (!$product) {
             return response()->json(['status' => 'error', 'message' => 'محصول یافت نشد'], 404);
         }
