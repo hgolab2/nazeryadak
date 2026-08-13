@@ -12,11 +12,49 @@ use App\Services\IsacoImageService;
 
 class ProductController extends Controller
 {
-    public function index(Request $request)
+    /**
+     * صفحه‌ی دسته‌بندی با آدرس تمیز: /shop/{slug}
+     *
+     * همان index است، فقط دسته از مسیر خوانده می‌شود نه از query string.
+     * اسلاگ ناشناخته ۴۰۴ می‌گیرد تا آدرس‌های ساختگی، صفحه‌ی خالی و
+     * بی‌محتوا تولید نکنند.
+     */
+    public function category(Request $request, string $category)
     {
-        $selectedCategoryIds = [];
-        if ($request->filled('category')) {
+        $slug = rawurldecode($category);
+
+        if (! ProductCategory::fromSlug($slug)) {
+            return response()->view('errors.404', [], 404);
+        }
+
+        // دسته از مسیر می‌آید و عمدا داخل query قرار نمی‌گیرد، وگرنه در
+        // canonical دوباره به‌صورت ?category= ظاهر می‌شود.
+        return $this->index($request, $slug);
+    }
+
+    public function index(Request $request, ?string $categorySlug = null)
+    {
+        /*
+        | آدرس قدیمی /shop?category=X دیگر کانونیکال نیست. اگر کاربر یا
+        | خزنده مستقیم آن را صدا بزند، با 301 به /shop/X می‌رود تا فقط
+        | یک نسخه از این صفحه ایندکس شود. سایر فیلترها (جستجو، مدل
+        | خودرو، صفحه) حفظ می‌شوند.
+        */
+        if ($categorySlug === null && $request->filled('category')) {
             $enum = ProductCategory::fromSlug($request->category);
+            if ($enum) {
+                $query = $request->except('category');
+
+                return redirect(
+                    '/shop/' . rawurlencode($enum->slug()) . ($query ? '?' . http_build_query($query) : ''),
+                    301
+                );
+            }
+        }
+
+        $selectedCategoryIds = [];
+        if ($categorySlug !== null) {
+            $enum = ProductCategory::fromSlug($categorySlug);
             if ($enum) {
                 $selectedCategoryIds[] = $enum->value;
             }
@@ -68,6 +106,13 @@ class ProductController extends Controller
         $orderDirection = strtolower((string) $request->get('orderby', 'desc'));
         $orderDirection = in_array($orderDirection, ['asc', 'desc'], true) ? $orderDirection : 'desc';
 
+        // حدود ۳۶٪ محصولات هنوز عکس ندارند و کارت «بدون تصویر» می‌گیرند؛ در
+        // مرتب‌سازی پیش‌فرض، عکس‌دارها جلو می‌افتند. اگر کاربر خودش ستون
+        // مرتب‌سازی را انتخاب کرده باشد، دخالتی نمی‌کنیم.
+        if ($orderColumn === 'id') {
+            $query->orderByRaw("CASE WHEN file_path IS NULL OR file_path = '' OR file_path = '/images/no-image.svg' THEN 1 ELSE 0 END");
+        }
+
         $query->orderBy($orderColumn, $orderDirection);
         $model = $query->paginate($perPage);
         $totalCount = $model->total();
@@ -81,7 +126,7 @@ class ProductController extends Controller
         }
         $carModel = $request->get('car_model', '');
         $carCategories = EshopCategory::orderBy('name')->get();
-        return view('product.list', compact('model', 'totalCount', 'categories', 'categoryCounts', 'selectedCategoryIds', 'title', 'carModel', 'carCategories'));
+        return view('product.list', compact('model', 'totalCount', 'categories', 'categoryCounts', 'selectedCategoryIds', 'title', 'carModel', 'carCategories', 'categorySlug'));
     }
 
     public function getProduct($count)
@@ -92,15 +137,20 @@ class ProductController extends Controller
     function show($id, $slug = null)
     {
         if(!$id){
-            return view('errors.404');
+            return response()->view('errors.404', [], 404);
         }
         $model = Product::with('images')->where('is_active' , 1)->where('id' , $id)->first();
         if(!$model)
         {
-            return view('errors.404');
+            return response()->view('errors.404', [], 404);
         }
-                $currentPath = rawurldecode(request()->path());
-        if ($slug !== null && $currentPath !== ltrim($model->url(), '/')) {
+        /*
+        | تنها یک آدرس معتبر برای هر محصول: /product/{id}/{slug}
+        | آدرس بدون اسلاگ یا با اسلاگ قدیمی با 301 به نسخه‌ی کانونیکال منتقل
+        | می‌شود تا اعتبار لینک‌ها بین چند نسخه‌ی یک صفحه پخش نشود.
+        */
+        $currentPath = rawurldecode(request()->path());
+        if ($currentPath !== ltrim($model->url(), '/')) {
             return redirect($model->url(), 301);
         }
         $products = $this->getProduct(8);

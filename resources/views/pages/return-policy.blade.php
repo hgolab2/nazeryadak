@@ -1,4 +1,32 @@
-@extends('layout.layout', ['title' => 'رویه بازگرداندن کالا | ناظر یدک'])
+@php
+    $pageTitle = 'رویه بازگرداندن کالا و شرایط مرجوعی | ناظر یدک';
+    $pageDescription = 'شرایط مرجوع کردن قطعه معیوب یا مغایر با سفارش، مهلت اعلام، مراحل بازگشت کالا و نحوه استرداد وجه در فروشگاه لوازم یدکی ناظر یدک.';
+@endphp
+@extends('layout.layout', [
+    'title' => $pageTitle,
+    'metaDescription' => $pageDescription,
+    'keywords' => 'بازگشت کالا لوازم یدکی, مرجوعی قطعات خودرو, ضمانت بازگشت وجه',
+    'canonical' => seo_url('/return-policy'),
+    'schema' => [
+        seo_webpage_schema($pageTitle, $pageDescription, seo_url('/return-policy')),
+        seo_breadcrumb_schema([
+            ['name' => 'ناظر یدک', 'url' => seo_url()],
+            ['name' => 'رویه بازگرداندن کالا', 'url' => null],
+        ]),
+        [
+            '@context' => 'https://schema.org',
+            '@type' => 'MerchantReturnPolicy',
+            '@id' => seo_url('/return-policy') . '#policy',
+            'name' => 'رویه بازگرداندن کالا در ناظر یدک',
+            'merchantReturnLink' => seo_url('/return-policy'),
+            'applicableCountry' => 'IR',
+            'returnPolicyCategory' => 'https://schema.org/MerchantReturnFiniteReturnWindow',
+            'merchantReturnDays' => 7,
+            'returnMethod' => 'https://schema.org/ReturnByMail',
+            'returnFees' => 'https://schema.org/ReturnShippingFees',
+        ],
+    ],
+])
 @section('main_content')
 <main>
     <div class="container">

@@ -1,4 +1,20 @@
-@extends('layout.layout', ['title' => 'شیوه‌های پرداخت | ناظر یدک'])
+@php
+    $pageTitle = 'شیوه‌های پرداخت امن سفارش | ناظر یدک';
+    $pageDescription = 'پرداخت آنلاین از درگاه بانکی امن، پرداخت در محل و کارت به کارت؛ همه روش‌های پرداخت سفارش لوازم یدکی در فروشگاه ناظر یدک.';
+@endphp
+@extends('layout.layout', [
+    'title' => $pageTitle,
+    'metaDescription' => $pageDescription,
+    'keywords' => 'پرداخت آنلاین لوازم یدکی, درگاه بانکی امن, پرداخت در محل قطعات خودرو',
+    'canonical' => seo_url('/payment-methods'),
+    'schema' => [
+        seo_webpage_schema($pageTitle, $pageDescription, seo_url('/payment-methods')),
+        seo_breadcrumb_schema([
+            ['name' => 'ناظر یدک', 'url' => seo_url()],
+            ['name' => 'شیوه‌های پرداخت', 'url' => null],
+        ]),
+    ],
+])
 @section('main_content')
 <main>
     <div class="container">

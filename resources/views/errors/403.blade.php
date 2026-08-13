@@ -1,4 +1,4 @@
-@extends('layout.layout',['title'=>'403','type'=>'error'])
+@extends('layout.layout', ['title' => 'دسترسی مجاز نیست | ناظر یدک', 'type' => 'error', 'robots' => seo_robots_tag(false, true), 'noBaseSchema' => true])
 @section('main_content')
 <main class="page-wrapper">
     <!-- Page content-->

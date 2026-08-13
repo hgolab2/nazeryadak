@@ -80,10 +80,111 @@ function file_get_contents_curl($url) {
 }
 function getShippingSettings()
 {
-    static $cache = null;
-    if ($cache !== null) return $cache;
-    $cache = \DB::table('shipping_settings')->pluck('setting_value', 'setting_key')->toArray();
-    return $cache;
+    if (isset($GLOBALS['__shipping_settings_cache'])) {
+        return $GLOBALS['__shipping_settings_cache'];
+    }
+
+    try {
+        $settings = \DB::table('shipping_settings')->pluck('setting_value', 'setting_key')->toArray();
+    } catch (\Throwable $e) {
+        // اگر جدول هنوز ساخته نشده باشد، مقادیر پیش‌فرض getShippingRules() به کار می‌رود.
+        $settings = [];
+    }
+
+    return $GLOBALS['__shipping_settings_cache'] = $settings;
+}
+
+/**
+ * پاک‌کردن کش درون‌درخواستیِ تنظیمات ارسال؛ بعد از ذخیره‌ی فرم مدیریت لازم است
+ * تا همان درخواست مقادیر تازه را ببیند.
+ */
+function forgetShippingSettings()
+{
+    unset($GLOBALS['__shipping_settings_cache'], $GLOBALS['__shipping_rules_cache']);
+}
+
+/**
+ * قواعد ارسال بر حسب «تومان».
+ *
+ * مقادیر جدول shipping_settings به ریال ذخیره شده‌اند (توضیح هر ردیف هم همین
+ * را می‌گوید) ولی قیمت محصولات و مبلغ سفارش در کل سایت تومان است. بدون این
+ * تبدیل، آستانه‌ی ارسال رایگان ده برابر واقعی و هزینه‌ی پیک قم به جای
+ * ۵۰٬۰۰۰ تومان، ۵۰۰٬۰۰۰ تومان حساب می‌شد.
+ */
+function getShippingRules()
+{
+    if (isset($GLOBALS['__shipping_rules_cache'])) {
+        return $GLOBALS['__shipping_rules_cache'];
+    }
+
+    $settings = getShippingSettings();
+
+    $toToman = function ($key, $default) use ($settings) {
+        $rial = (int) ($settings[$key] ?? $default);
+        return (int) round($rial / 10);
+    };
+
+    $localProvinceId = (int) ($settings['local_province_id'] ?? 19);
+
+    return $GLOBALS['__shipping_rules_cache'] = [
+        'local_province_id'       => $localProvinceId,
+        'local_province_name'     => getLocalProvinceName($localProvinceId),
+        'local_free_threshold'    => $toToman('local_free_threshold', 50000000),
+        'local_shipping_cost'     => $toToman('local_shipping_cost', 500000),
+        'national_free_threshold' => $toToman('national_free_threshold', 200000000),
+    ];
+}
+
+/**
+ * نام استان محلی از جدول استان‌ها؛ اگر پیدا نشد «قم» به عنوان پیش‌فرض.
+ */
+function getLocalProvinceName($provinceId)
+{
+    try {
+        $name = \App\Models\Province::where('id', $provinceId)->value('name');
+    } catch (\Throwable $e) {
+        $name = null;
+    }
+
+    return $name ?: 'قم';
+}
+
+/**
+ * نمایش فشرده‌ی مبلغ برای جاهایی مثل نوار مزایای فوتر: ۵ میلیون → «۵M».
+ * ورودی به تومان.
+ */
+function shippingAmountShort($toman)
+{
+    $toman = (int) $toman;
+
+    if ($toman >= 1000000) {
+        $millions = $toman / 1000000;
+        $value    = fmod($millions, 1) == 0 ? (string) (int) $millions : number_format($millions, 1);
+        return toPersianNumbers($value, false) . 'M';
+    }
+
+    if ($toman >= 1000) {
+        return toPersianNumbers((string) (int) round($toman / 1000), false) . 'K';
+    }
+
+    return toPersianNumbers($toman);
+}
+
+/**
+ * نمایش خوانا‌ی مبلغ برای متن‌های توضیحی: «۵ میلیون تومان».
+ * ورودی به تومان.
+ */
+function shippingAmountWords($toman)
+{
+    $toman = (int) $toman;
+
+    if ($toman >= 1000000 && $toman % 100000 === 0) {
+        $millions = $toman / 1000000;
+        $value    = fmod($millions, 1) == 0 ? (string) (int) $millions : number_format($millions, 1);
+        return toPersianNumbers($value, false) . ' میلیون تومان';
+    }
+
+    return toPersianNumbers($toman) . ' تومان';
 }
 
 function postCalculation($orderid)
@@ -95,11 +196,12 @@ function postCalculation($orderid)
 
 function getShippingInfo($order)
 {
-    $settings = getShippingSettings();
-    $localProvinceId      = (int) ($settings['local_province_id'] ?? 19);
-    $localFreeThreshold   = (int) ($settings['local_free_threshold'] ?? 50000000);
-    $localShippingCost    = (int) ($settings['local_shipping_cost'] ?? 500000);
-    $nationalFreeThreshold = (int) ($settings['national_free_threshold'] ?? 200000000);
+    $rules = getShippingRules();
+    $localProvinceId      = $rules['local_province_id'];
+    $localProvinceName    = $rules['local_province_name'];
+    $localFreeThreshold   = $rules['local_free_threshold'];
+    $localShippingCost    = $rules['local_shipping_cost'];
+    $nationalFreeThreshold = $rules['national_free_threshold'];
 
     $address = null;
     if ($order && $order->address_id) {
@@ -128,9 +230,9 @@ function getShippingInfo($order)
 
     if ($isLocal) {
         if ($orderTotal >= $localFreeThreshold) {
-            return ['cost' => 0, 'type' => 'free', 'label' => 'ارسال رایگان (قم)'];
+            return ['cost' => 0, 'type' => 'free', 'label' => 'ارسال رایگان (' . $localProvinceName . ')'];
         }
-        return ['cost' => $localShippingCost, 'type' => 'local', 'label' => number_format($localShippingCost) . ' تومان (پیک در قم)'];
+        return ['cost' => $localShippingCost, 'type' => 'local', 'label' => number_format($localShippingCost) . ' تومان (پیک در ' . $localProvinceName . ')'];
     }
 
     if ($orderTotal >= $nationalFreeThreshold) {
@@ -598,35 +700,214 @@ function resizeMainImage($BaseFilename, $_w, $_h, $cache = FALSE, $cache_key = '
         if ($cache) return env('DOMAIN') . '/cache/imgs/' . pathinfo($filenameEnd)['basename'];
     }
 }
+
+/*
+|--------------------------------------------------------------------------
+| توابع سئو
+|--------------------------------------------------------------------------
+| همه‌ی خروجی‌های متا، Schema.org و آدرس‌های کانونیکال از این توابع می‌آیند.
+| مقادیر پایه در config/seo.php نگهداری می‌شوند.
+*/
+
+function seo_config(string $key, $default = null)
+{
+    return config('seo.' . $key, $default);
+}
+
 function seo_site_name(): string
 {
-    return 'ناظر یدک';
+    return (string) seo_config('site_name', 'ناظر یدک');
 }
 
 function seo_base_url(): string
 {
-    return rtrim(config('app.url') ?: url('/'), '/');
+    $base = seo_config('base_url') ?: (config('app.url') ?: url('/'));
+
+    return rtrim($base, '/');
 }
 
+/**
+ * آدرس مطلق و نرمال‌شده.
+ *
+ * خروجی همیشه percent-encode می‌شود تا آدرسی که در canonical، og:url،
+ * Schema و نقشه‌ی سایت می‌آید دقیقا یکسان باشد؛ اگر یکی خام و دیگری
+ * انکدشده باشد، گوگل آن‌ها را دو صفحه‌ی جدا حساب می‌کند.
+ */
 function seo_url(string $path = ''): string
 {
-    return seo_base_url() . '/' . ltrim($path, '/');
+    if ($path === '' || $path === '/') {
+        return seo_base_url() . '/';
+    }
+
+    if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+        return seo_xml_url($path);
+    }
+
+    return seo_xml_url(seo_base_url() . '/' . ltrim($path, '/'));
 }
 
-function seo_description(string $text, int $limit = 155): string
+/**
+ * آدرس مطلقِ یک تصویر. مسیرهای نسبی به دامنه‌ی اصلی چسبانده می‌شوند تا
+ * og:image و Schema هرگز آدرس نسبی نگیرند (گوگل آن را نادیده می‌گیرد).
+ */
+function seo_image_url(?string $path): string
+{
+    $path = trim((string) $path);
+
+    if ($path === '') {
+        return seo_url(seo_config('default_image', '/assets/images/logo.png'));
+    }
+
+    if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+        return $path;
+    }
+
+    if (str_starts_with($path, '//')) {
+        return 'https:' . $path;
+    }
+
+    return seo_url($path);
+}
+
+/**
+ * آدرس آماده برای <loc> در نقشه‌ی سایت.
+ *
+ * اسلاگ‌های فارسی باید percent-encode شوند؛ استاندارد Sitemap فقط آدرس
+ * escape‌شده را معتبر می‌داند و اعتبارسنج‌ها روی آدرس خام خطا می‌دهند.
+ */
+function seo_xml_url(string $url): string
+{
+    $parts = parse_url($url);
+    if ($parts === false || empty($parts['host'])) {
+        return $url;
+    }
+
+    $encoded = ($parts['scheme'] ?? 'https') . '://' . $parts['host'];
+    if (! empty($parts['port'])) {
+        $encoded .= ':' . $parts['port'];
+    }
+
+    if (! empty($parts['path'])) {
+        $segments = array_map(
+            fn($segment) => rawurlencode(rawurldecode($segment)),
+            explode('/', $parts['path'])
+        );
+        $encoded .= implode('/', $segments);
+    }
+
+    if (! empty($parts['query'])) {
+        // «=» و «&» ساختار کوئری‌اند و نباید انکد شوند.
+        parse_str($parts['query'], $query);
+        $encoded .= '?' . http_build_query($query);
+    }
+
+    // فرگمنت باید حفظ شود؛ شناسه‌های Schema (مثل #organization) روی همین
+    // بخش بنا شده‌اند و حذف آن، همه‌ی @id ها را به یک آدرس یکسان تبدیل
+    // می‌کند و گراف داده‌ی ساختاریافته را خراب می‌کند.
+    if (isset($parts['fragment']) && $parts['fragment'] !== '') {
+        $encoded .= '#' . $parts['fragment'];
+    }
+
+    return $encoded;
+}
+
+/**
+ * مسیر نسخه‌ی WebP یک تصویر، در صورت وجود.
+ *
+ * دستور «php artisan images:webp» کنار هر jpg/png یک فایل .webp می‌سازد.
+ * اینجا فقط بررسی می‌کنیم آن فایل روی دیسک هست یا نه؛ اگر نبود null
+ * برمی‌گردد و قالب به تصویر اصلی بسنده می‌کند.
+ */
+function webp_variant(?string $path): ?string
+{
+    $path = trim((string) $path);
+
+    if ($path === '' || ! preg_match('/\.(jpe?g|png)$/i', $path)) {
+        return null;
+    }
+
+    // تصاویر روی دامنه‌های بیرونی را نمی‌توانیم بررسی کنیم.
+    if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+        return null;
+    }
+
+    $webpPath = preg_replace('/\.(jpe?g|png)$/i', '.webp', $path);
+    $file = public_path(ltrim(rawurldecode(parse_url($webpPath, PHP_URL_PATH) ?: $webpPath), '/'));
+
+    // نتیجه در حافظه‌ی همین درخواست کش می‌شود تا صفحه‌ی فهرست با ۲۴ محصول
+    // ده‌ها بار is_file() صدا نزند.
+    static $cache = [];
+    if (! array_key_exists($file, $cache)) {
+        $cache[$file] = is_file($file);
+    }
+
+    return $cache[$file] ? $webpPath : null;
+}
+
+function seo_description(string $text, int $limit = 158): string
+{
+    $text = strip_tags(str_replace(['<br>', '<br/>', '<br />', '</p>'], ' ', $text));
+    $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $text = trim(preg_replace('/\s+/u', ' ', $text));
+
+    if (mb_strlen($text) <= $limit) {
+        return $text;
+    }
+
+    // برش روی مرز کلمه تا توضیحات وسط واژه قطع نشود.
+    $cut = mb_substr($text, 0, $limit - 1);
+    $lastSpace = mb_strrpos($cut, ' ');
+    if ($lastSpace !== false && $lastSpace > $limit * 0.6) {
+        $cut = mb_substr($cut, 0, $lastSpace);
+    }
+
+    return rtrim($cut, ' ،,.-') . '…';
+}
+
+/** عنوان استاندارد: حداکثر ۶۰ کاراکتر مفید + نام برند. */
+function seo_title(string $text, bool $withBrand = true): string
 {
     $text = trim(preg_replace('/\s+/u', ' ', strip_tags($text)));
-    return mb_strlen($text) > $limit ? mb_substr($text, 0, $limit - 1) . '…' : $text;
+    $brand = seo_site_name();
+
+    if ($withBrand && ! str_contains($text, $brand)) {
+        $max = 60 - mb_strlen($brand) - 3;
+        if (mb_strlen($text) > $max) {
+            $text = rtrim(mb_substr($text, 0, $max)) . '…';
+        }
+        return $text . ' | ' . $brand;
+    }
+
+    return $text;
 }
 
 function seo_json_ld(array $data): string
 {
-    return json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+    return json_encode(
+        seo_array_clean($data),
+        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP
+    );
+}
+
+/** حذف کلیدهای خالی تا Schema بدون فیلد null/'' تحویل گوگل شود. */
+function seo_array_clean(array $data): array
+{
+    foreach ($data as $key => $value) {
+        if (is_array($value)) {
+            $value = seo_array_clean($value);
+            $data[$key] = $value;
+        }
+        if ($value === null || $value === '' || $value === []) {
+            unset($data[$key]);
+        }
+    }
+
+    return $data;
 }
 
 function seo_default_keywords(): string
 {
-    return 'خرید لوازم یدکی خودرو, قطعات ایساکو, لوازم یدکی ایساکو, خرید قطعات اصلی ایساکو, نمایندگی قطعات ایساکو, قطعات اصلی خودرو, خرید قطعات خودرو, فروشگاه لوازم یدکی, قطعات پژو 206, قطعات پژو 405, قطعات سمند, قطعات دنا, قطعات پراید, کد فنی قطعه خودرو';
+    return (string) seo_config('default_keywords', '');
 }
 
 function seo_slug(?string $text, string $fallback = 'item'): string
@@ -642,34 +923,466 @@ function seo_slug(?string $text, string $fallback = 'item'): string
     return $text !== '' ? mb_strtolower($text) : $fallback;
 }
 
+/**
+ * آدرس کانونیکالِ صفحه‌ی جاری. فقط پارامترهای مجاز (صفحه‌بندی، دسته و مدل
+ * خودرو) نگه داشته می‌شوند؛ بقیه‌ی فیلترها و پارامترهای ردیابی حذف می‌شوند
+ * تا صفحات فیلترشده محتوای تکراری نسازند.
+ */
+function seo_canonical(?string $path = null, array $extraAllowed = []): string
+{
+    $request = request();
+    $path = $path ?? '/' . ltrim($request?->path() ?? '', '/');
+
+    if ($path === '/' || $path === '') {
+        $path = '/';
+    }
+
+    $allowed = array_merge((array) seo_config('canonical_query_whitelist', []), $extraAllowed);
+    $query = [];
+
+    foreach ($allowed as $param) {
+        $value = $request?->query($param);
+        if ($value === null || $value === '' || is_array($value)) {
+            continue;
+        }
+        if ($param === 'page' && (int) $value <= 1) {
+            continue;
+        }
+        $query[$param] = $value;
+    }
+
+    $url = seo_url($path);
+
+    return $query ? $url . '?' . http_build_query($query) : $url;
+}
+
+/** آیا صفحه‌ی جاری فیلتر/جستجوی سنگین دارد و باید noindex شود؟ */
+function seo_should_noindex(array $indexableParams = []): bool
+{
+    $request = request();
+    if (! $request) {
+        return false;
+    }
+
+    $indexableParams = array_merge($indexableParams, (array) seo_config('canonical_query_whitelist', []));
+
+    foreach ($request->query() as $key => $value) {
+        if ($value === '' || $value === null) {
+            continue;
+        }
+        if (! in_array($key, $indexableParams, true)) {
+            return true;
+        }
+    }
+
+    // صفحات عمیقِ صفحه‌بندی ارزش ایندکس ندارند.
+    return (int) $request->query('page', 1) > 15;
+}
+
+function seo_robots_tag(bool $index = true, bool $follow = true): string
+{
+    return ($index ? 'index' : 'noindex') . ',' . ($follow ? 'follow' : 'nofollow')
+        . ',max-image-preview:large,max-snippet:-1,max-video-preview:-1';
+}
+
+/*
+|--------------------------------------------------------------------------
+| Schema.org
+|--------------------------------------------------------------------------
+*/
+
+function seo_organization_schema(): array
+{
+    $b = (array) seo_config('business', []);
+    $social = array_values(array_filter((array) seo_config('social', [])));
+
+    return [
+        '@context' => 'https://schema.org',
+        '@type' => 'Organization',
+        '@id' => seo_url('#organization'),
+        'name' => seo_site_name(),
+        'legalName' => $b['legal_name'] ?? null,
+        'alternateName' => seo_config('alternate_name'),
+        'url' => seo_url(),
+        'logo' => [
+            '@type' => 'ImageObject',
+            '@id' => seo_url('#logo'),
+            'url' => seo_image_url(seo_config('logo')),
+            'width' => seo_config('default_image_width'),
+            'height' => seo_config('default_image_height'),
+            'caption' => seo_site_name(),
+        ],
+        'image' => ['@id' => seo_url('#logo')],
+        'foundingDate' => $b['founding_date'] ?? null,
+        'founder' => empty($b['founder']) ? null : ['@type' => 'Person', 'name' => $b['founder']],
+        'email' => $b['email'] ?? null,
+        'telephone' => $b['phone'] ?? null,
+        'address' => [
+            '@type' => 'PostalAddress',
+            'streetAddress' => $b['street'] ?? null,
+            'addressLocality' => $b['city'] ?? null,
+            'addressRegion' => $b['region'] ?? null,
+            'postalCode' => $b['postal_code'] ?? null,
+            'addressCountry' => $b['country'] ?? 'IR',
+        ],
+        'contactPoint' => [[
+            '@type' => 'ContactPoint',
+            'telephone' => $b['phone'] ?? null,
+            'contactType' => 'customer service',
+            'areaServed' => $b['area_served'] ?? 'IR',
+            'availableLanguage' => ['fa', 'Persian'],
+            'email' => $b['email'] ?? null,
+        ]],
+        'sameAs' => $social,
+    ];
+}
+
 function seo_store_schema(): array
 {
+    $b = (array) seo_config('business', []);
+    $social = array_values(array_filter((array) seo_config('social', [])));
+
+    $hours = [];
+    foreach ((array) ($b['opening_hours'] ?? []) as $spec) {
+        $hours[] = [
+            '@type' => 'OpeningHoursSpecification',
+            'dayOfWeek' => $spec['days'],
+            'opens' => $spec['opens'],
+            'closes' => $spec['closes'],
+        ];
+    }
+
     return [
         '@context' => 'https://schema.org',
         '@type' => 'AutoPartsStore',
         '@id' => seo_url('#store'),
         'name' => seo_site_name(),
-        'alternateName' => ['nazeryadak', 'فروشگاه قطعات ایساکو'],
+        'alternateName' => seo_config('alternate_name'),
         'description' => 'فروشگاه تخصصی لوازم یدکی خودرو با تمرکز ویژه بر قطعات اصلی ایساکو و ارسال سراسر کشور.',
         'url' => seo_url(),
-        'logo' => seo_url('/assets/images/logo.png'),
-        'image' => seo_url('/assets/images/logo.png'),
-        'telephone' => '+989127471631',
-        'priceRange' => '$',
-        'areaServed' => 'IR',
-        'address' => ['@type' => 'PostalAddress', 'addressCountry' => 'IR', 'addressRegion' => 'قم'],
-        'sameAs' => ['https://wa.me/989127471631'],
+        'logo' => seo_image_url(seo_config('logo')),
+        'image' => seo_image_url(seo_config('default_image')),
+        'telephone' => $b['phone'] ?? null,
+        'email' => $b['email'] ?? null,
+        'priceRange' => $b['price_range'] ?? '$$',
+        'currenciesAccepted' => $b['currency'] ?? 'IRR',
+        'paymentAccepted' => 'کارت بانکی، پرداخت آنلاین، پرداخت در محل',
+        'areaServed' => ['@type' => 'Country', 'name' => 'ایران'],
+        'address' => [
+            '@type' => 'PostalAddress',
+            'streetAddress' => $b['street'] ?? null,
+            'addressLocality' => $b['city'] ?? null,
+            'addressRegion' => $b['region'] ?? null,
+            'postalCode' => $b['postal_code'] ?? null,
+            'addressCountry' => $b['country'] ?? 'IR',
+        ],
+        'geo' => empty($b['latitude']) ? null : [
+            '@type' => 'GeoCoordinates',
+            'latitude' => $b['latitude'],
+            'longitude' => $b['longitude'],
+        ],
+        'openingHoursSpecification' => $hours,
+        'parentOrganization' => ['@id' => seo_url('#organization')],
+        'sameAs' => $social,
+    ];
+}
+
+/** WebSite + SearchAction برای فعال‌شدن Sitelinks Searchbox در گوگل. */
+function seo_website_schema(): array
+{
+    return [
+        '@context' => 'https://schema.org',
+        '@type' => 'WebSite',
+        '@id' => seo_url('#website'),
+        'name' => seo_site_name(),
+        'alternateName' => seo_config('site_name_en'),
+        'url' => seo_url(),
+        'inLanguage' => seo_config('language', 'fa-IR'),
+        'publisher' => ['@id' => seo_url('#organization')],
+        'potentialAction' => [[
+            '@type' => 'SearchAction',
+            'target' => [
+                '@type' => 'EntryPoint',
+                'urlTemplate' => seo_url('/shop') . '?title={search_term_string}',
+            ],
+            'query-input' => 'required name=search_term_string',
+        ]],
+    ];
+}
+
+function seo_webpage_schema(string $name, string $description, ?string $url = null, string $type = 'WebPage'): array
+{
+    return [
+        '@context' => 'https://schema.org',
+        '@type' => $type,
+        '@id' => ($url ?? seo_canonical()) . '#webpage',
+        'url' => $url ?? seo_canonical(),
+        'name' => $name,
+        'description' => $description,
+        'inLanguage' => seo_config('language', 'fa-IR'),
+        'isPartOf' => ['@id' => seo_url('#website')],
+        'about' => ['@id' => seo_url('#organization')],
+        'publisher' => ['@id' => seo_url('#organization')],
     ];
 }
 
 function seo_breadcrumb_schema(array $items): array
 {
+    $items = array_values($items);
+
     return [
         '@context' => 'https://schema.org',
         '@type' => 'BreadcrumbList',
         'itemListElement' => array_map(function ($item, $index) {
-            return ['@type' => 'ListItem', 'position' => $index + 1, 'name' => $item['name'], 'item' => $item['url']];
-        }, array_values($items), array_keys(array_values($items))),
+            $element = [
+                '@type' => 'ListItem',
+                'position' => $index + 1,
+                'name' => $item['name'],
+            ];
+            // آخرین مورد (صفحه‌ی جاری) طبق مستندات گوگل نباید item داشته باشد.
+            if (! empty($item['url'])) {
+                $element['item'] = $item['url'];
+            }
+            return $element;
+        }, $items, array_keys($items)),
     ];
 }
-?>
+
+/** تبدیل قیمت تومانِ دیتابیس به ریال (واحد ISO) برای Schema. */
+function seo_price(?int $toman): ?string
+{
+    if ($toman === null || $toman <= 0) {
+        return null;
+    }
+
+    return (string) ($toman * (int) seo_config('business.currency_multiplier', 10));
+}
+
+/**
+ * Schema کامل محصول شامل Offer، برند، کد فنی، گالری تصاویر و سیاست
+ * مرجوعی؛ همان چیزی که برای Rich Result محصول در گوگل لازم است.
+ */
+function seo_product_schema($product, array $images = [], ?array $breadcrumb = null): array
+{
+    $url = seo_url($product->url());
+    $price = seo_price((int) $product->price);
+    $inStock = ! isset($product->stock) || $product->stock === null
+        ? true
+        : ((int) $product->stock) > 0;
+
+    $imageUrls = [];
+    foreach ($images as $image) {
+        $path = is_string($image) ? $image : ($image->path ?? null);
+        if ($path) {
+            $imageUrls[] = seo_image_url($path);
+        }
+    }
+    if (! $imageUrls) {
+        $imageUrls[] = seo_image_url($product->image());
+    }
+    $imageUrls = array_values(array_unique($imageUrls));
+
+    $description = seo_description(
+        $product->description ?: ($product->short_description ?: ($product->title . ' اصل، مناسب خرید از فروشگاه ناظر یدک')),
+        300
+    );
+
+    $brand = ! empty($product->isaco_code) ? 'ایساکو' : seo_site_name();
+
+    $schema = [
+        '@context' => 'https://schema.org',
+        '@type' => 'Product',
+        '@id' => $url . '#product',
+        'name' => $product->title,
+        'description' => $description,
+        'image' => $imageUrls,
+        'url' => $url,
+        'sku' => $product->sku ?: (string) $product->id,
+        'mpn' => $product->isaco_code ?: ($product->sku ?: null),
+        'productID' => (string) $product->id,
+        'category' => method_exists($product, 'categoryLabel') ? $product->categoryLabel() : null,
+        'brand' => ['@type' => 'Brand', 'name' => $brand],
+        'manufacturer' => ['@type' => 'Organization', 'name' => $brand],
+        'itemCondition' => 'https://schema.org/NewCondition',
+        'isAccessoryOrSparePartFor' => empty($product->car_model) ? null : [
+            '@type' => 'Product',
+            'name' => $product->car_model,
+        ],
+        'weight' => empty($product->weight) ? null : [
+            '@type' => 'QuantitativeValue',
+            'value' => (string) $product->weight,
+            'unitCode' => 'GRM',
+        ],
+    ];
+
+    if ($price !== null) {
+        $schema['offers'] = seo_array_clean([
+            '@type' => 'Offer',
+            '@id' => $url . '#offer',
+            'url' => $url,
+            'price' => $price,
+            'priceCurrency' => seo_config('business.currency', 'IRR'),
+            'availability' => $inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+            'itemCondition' => 'https://schema.org/NewCondition',
+            'priceValidUntil' => now()->addMonths(3)->format('Y-m-d'),
+            'seller' => ['@id' => seo_url('#organization')],
+            'hasMerchantReturnPolicy' => [
+                '@type' => 'MerchantReturnPolicy',
+                'applicableCountry' => 'IR',
+                'returnPolicyCategory' => 'https://schema.org/MerchantReturnFiniteReturnWindow',
+                'merchantReturnDays' => 7,
+                'returnMethod' => 'https://schema.org/ReturnByMail',
+                'returnFees' => 'https://schema.org/ReturnShippingFees',
+                'merchantReturnLink' => seo_url('/return-policy'),
+            ],
+            'shippingDetails' => [
+                '@type' => 'OfferShippingDetails',
+                'shippingDestination' => ['@type' => 'DefinedRegion', 'addressCountry' => 'IR'],
+                'deliveryTime' => [
+                    '@type' => 'ShippingDeliveryTime',
+                    'handlingTime' => ['@type' => 'QuantitativeValue', 'minValue' => 0, 'maxValue' => 1, 'unitCode' => 'DAY'],
+                    'transitTime' => ['@type' => 'QuantitativeValue', 'minValue' => 1, 'maxValue' => 5, 'unitCode' => 'DAY'],
+                ],
+            ],
+        ]);
+    }
+
+    if ($breadcrumb) {
+        $schema['breadcrumb'] = ['@id' => $url . '#breadcrumb'];
+    }
+
+    return $schema;
+}
+
+/** فهرست محصولات/مقالات به‌صورت ItemList برای صفحات آرشیو. */
+function seo_itemlist_schema(string $name, iterable $items, ?string $url = null): array
+{
+    $elements = [];
+    $position = 1;
+
+    foreach ($items as $item) {
+        $itemUrl = $item['url'] ?? null;
+        if (! $itemUrl) {
+            continue;
+        }
+        $elements[] = array_filter([
+            '@type' => 'ListItem',
+            'position' => $position++,
+            'url' => $itemUrl,
+            'name' => $item['name'] ?? null,
+            'image' => $item['image'] ?? null,
+        ]);
+    }
+
+    return [
+        '@context' => 'https://schema.org',
+        '@type' => 'ItemList',
+        '@id' => ($url ?? seo_canonical()) . '#itemlist',
+        'name' => $name,
+        'url' => $url ?? seo_canonical(),
+        'numberOfItems' => count($elements),
+        'itemListOrder' => 'https://schema.org/ItemListOrderAscending',
+        'itemListElement' => $elements,
+    ];
+}
+
+function seo_faq_schema(array $faqs): array
+{
+    return [
+        '@context' => 'https://schema.org',
+        '@type' => 'FAQPage',
+        '@id' => seo_canonical() . '#faq',
+        'mainEntity' => array_map(function ($faq) {
+            return [
+                '@type' => 'Question',
+                'name' => $faq['q'],
+                'acceptedAnswer' => [
+                    '@type' => 'Answer',
+                    'text' => $faq['a'],
+                ],
+            ];
+        }, array_values($faqs)),
+    ];
+}
+
+function seo_article_schema(array $data): array
+{
+    return [
+        '@context' => 'https://schema.org',
+        '@type' => $data['type'] ?? 'BlogPosting',
+        '@id' => $data['url'] . '#article',
+        'mainEntityOfPage' => ['@type' => 'WebPage', '@id' => $data['url']],
+        'headline' => mb_substr($data['title'], 0, 110),
+        'name' => $data['title'],
+        'description' => $data['description'] ?? null,
+        'image' => empty($data['image']) ? null : [
+            '@type' => 'ImageObject',
+            'url' => $data['image'],
+        ],
+        'datePublished' => $data['published'] ?? null,
+        'dateModified' => $data['modified'] ?? ($data['published'] ?? null),
+        'inLanguage' => seo_config('language', 'fa-IR'),
+        'articleSection' => $data['section'] ?? null,
+        'keywords' => $data['keywords'] ?? null,
+        'wordCount' => $data['word_count'] ?? null,
+        'author' => [
+            '@type' => 'Organization',
+            'name' => $data['author'] ?? seo_site_name(),
+            'url' => seo_url(),
+        ],
+        'publisher' => ['@id' => seo_url('#organization')],
+        'isPartOf' => ['@id' => seo_url('#website')],
+        'speakable' => [
+            '@type' => 'SpeakableSpecification',
+            'cssSelector' => ['h1', '.blog-article-title'],
+        ],
+    ];
+}
+
+/** بسته‌ی پایه‌ای که در همه‌ی صفحات تکرار می‌شود. */
+function seo_base_schema(): array
+{
+    return [seo_organization_schema(), seo_website_schema(), seo_store_schema()];
+}
+
+/**
+ * کاور اختصاصی مقاله برای صفحه‌ی اول.
+ * عکس‌های قدیمیِ نامرتبط حذف شده‌اند؛ به جای آن‌ها بر اساس موضوعِ عنوان
+ * یکی از تصاویر برداریِ طراحی‌شده‌ی سایت انتخاب می‌شود تا چیدمان صفحه حفظ شود.
+ */
+function article_cover_map(): array
+{
+    // ترتیب کلیدها مهم است: موضوع‌های خاص‌تر اول بررسی می‌شوند.
+    return [
+        'brake'      => ['ترمز', 'لنت', 'کاسه چرخ'],
+        'cooling'    => ['رادیاتور', 'واتر پمپ', 'ترموستات', 'فن ', 'شلنگ', 'خنک', 'بخاری', 'فشنگی'],
+        'filter'     => ['فیلتر', 'روغن', 'سرویس دوره'],
+        'electric'   => ['باتری', 'دینام', 'ecu', 'رله', 'کویل', 'شمع', 'استپر', 'انژکتور', 'پمپ بنزین', 'سنسور', 'برقی', 'سیم کلاچ', 'سیم گاز'],
+        'light'      => ['چراغ', 'مه شکن'],
+        'suspension' => ['جلوبندی', 'کمک فنر', 'بلبرینگ', 'پلوس', 'کلاچ', 'چرخ'],
+        'body'       => ['سپر', 'بدنه', 'قالپاق', 'جلو پنجره', 'شبکه', 'دستگیره', 'قفل', 'برف پاک کن', 'قاب', 'آینه'],
+        'engine'     => ['موتور', 'تسمه تایم', 'سرسیلندر', 'اگزوز', 'کاتالیزور', 'کاسه نمد', 'اورینگ', 'سوخت'],
+        'quality'    => ['کد فنی', 'اصل', 'ایساکو', 'مطمئن', 'تقلبی', 'گارانتی'],
+        'guide'      => ['راهنما', 'چک لیست', 'انتخاب', 'خرید', 'نکات'],
+    ];
+}
+
+/** آدرس کاور مقاله؛ اگر عنوان با هیچ موضوعی جور نشد، بر اساس شناسه‌ی مقاله ثابت انتخاب می‌شود. */
+function article_cover($article): string
+{
+    $title = is_object($article) ? (string) ($article->titr ?? '') : (string) $article;
+    $title = mb_strtolower($title, 'UTF-8');
+
+    foreach (article_cover_map() as $cover => $keywords) {
+        foreach ($keywords as $keyword) {
+            if ($keyword !== '' && mb_strpos($title, mb_strtolower($keyword, 'UTF-8')) !== false) {
+                return '/assets/images/blog/' . $cover . '.svg';
+            }
+        }
+    }
+
+    $covers = array_keys(article_cover_map());
+    $id = is_object($article) ? (int) ($article->articleid ?? 0) : 0;
+
+    return '/assets/images/blog/' . $covers[$id % count($covers)] . '.svg';
+}

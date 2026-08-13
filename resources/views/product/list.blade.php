@@ -1,123 +1,199 @@
 @php
-    $shopTitle = $title ? ('خرید ' . $title . ' | فروشگاه لوازم یدکی ناظر یدک') : 'خرید لوازم یدکی خودرو | قطعات اصلی ایساکو در ناظر یدک';
-    $shopDescription = $title ? seo_description('جستجو و خرید ' . $title . ' در فروشگاه ناظر یدک؛ قطعات اصلی خودرو با امکان بررسی کد فنی، قیمت روز، ضمانت اصالت و ارسال سراسر کشور.') : 'خرید آنلاین لوازم یدکی خودرو با تمرکز ویژه بر قطعات اصلی ایساکو؛ قطعات موتوری، مصرفی، برقی، بدنه، جلوبندی و ترمز با قیمت روز و ارسال سراسر کشور از ناظر یدک.';
+    /* --- سئوی صفحه‌ی فهرست محصولات --- */
+    $shopPage = max(1, (int) request('page', 1));
+    $shopCarModel = trim((string) request('car_model'));
+    // دسته‌بندی از مسیر آدرس می‌آید (/shop/{slug})، نه از query string.
+    $shopCategorySlug = trim((string) ($categorySlug ?? ''));
+    $shopCategoryLabel = null;
+    foreach (\App\Enums\ProductCategory::cases() as $shopCase) {
+        if ($shopCase->slug() === $shopCategorySlug) { $shopCategoryLabel = $shopCase->label(); break; }
+    }
+
+    // عنوان به ترتیب اولویت: دسته‌بندی ← مدل خودرو ← عبارت جستجو ← عمومی
+    if ($shopCategoryLabel) {
+        $shopTitle = 'خرید ' . $shopCategoryLabel . ' | قطعات اصلی ایساکو';
+        $shopDescription = seo_description('خرید ' . $shopCategoryLabel . ' اصل و باکیفیت در ناظر یدک؛ قیمت روز، ضمانت اصالت کالا، بررسی کد فنی و ارسال سریع به سراسر ایران.');
+    } elseif ($shopCarModel) {
+        $shopTitle = 'قطعات ' . $shopCarModel . ' | خرید لوازم یدکی ' . $shopCarModel;
+        $shopDescription = seo_description('لیست کامل قطعات یدکی ' . $shopCarModel . ' شامل قطعات موتوری، مصرفی، برقی، ترمز و بدنه با ضمانت اصالت و ارسال سراسر کشور از ناظر یدک.');
+    } elseif ($title) {
+        $shopTitle = 'خرید ' . $title . ' | فروشگاه لوازم یدکی ناظر یدک';
+        $shopDescription = seo_description('جستجو و خرید ' . $title . ' در فروشگاه ناظر یدک؛ قطعات اصلی خودرو با امکان بررسی کد فنی، قیمت روز، ضمانت اصالت و ارسال سراسر کشور.');
+    } else {
+        $shopTitle = 'خرید لوازم یدکی خودرو | قطعات اصلی ایساکو در ناظر یدک';
+        $shopDescription = 'خرید آنلاین لوازم یدکی خودرو با تمرکز ویژه بر قطعات اصلی ایساکو؛ قطعات موتوری، مصرفی، برقی، بدنه، جلوبندی و ترمز با قیمت روز و ارسال سراسر کشور از ناظر یدک.';
+    }
+
+    if ($shopPage > 1) {
+        $shopTitle = $shopTitle . ' - صفحه ' . $shopPage;
+    }
+
+    /* صفحه‌ی دسته‌بندی آدرس اختصاصی خودش را دارد؛ canonical باید همان باشد
+       نه /shop، وگرنه گوگل این صفحه را نسخه‌ی تکراری فروشگاه می‌بیند. */
+    $shopCanonical = $shopCategorySlug
+        ? seo_canonical('/shop/' . $shopCategorySlug)
+        : seo_canonical('/shop');
+
+    // مسیر راهنما
+    $shopCrumbs = [['name' => 'ناظر یدک', 'url' => seo_url()], ['name' => 'فروشگاه لوازم یدکی', 'url' => seo_url('/shop')]];
+    if ($shopCategoryLabel) {
+        $shopCrumbs[] = ['name' => $shopCategoryLabel, 'url' => null];
+    } elseif ($shopCarModel) {
+        $shopCrumbs[] = ['name' => 'قطعات ' . $shopCarModel, 'url' => null];
+    } elseif ($title) {
+        $shopCrumbs[] = ['name' => $title, 'url' => null];
+    }
+
+    // فهرست محصولات این صفحه برای ItemList
+    $shopItems = collect($model->items() ?? [])->map(fn($p) => [
+        'name'  => $p->title,
+        'url'   => seo_url($p->url()),
+        'image' => seo_image_url($p->image()),
+    ])->all();
+
+    // صفحه‌بندی: prev/next برای کشف بهتر و canonical خودارجاع در هر صفحه
+    $shopPrev = $model->currentPage() > 1 ? $model->previousPageUrl() : null;
+    $shopNext = $model->hasMorePages() ? $model->nextPageUrl() : null;
+
+    /* جستجوهای آزاد و ترکیب فیلترها محتوای تکراری تولید می‌کنند؛ فقط
+       دسته‌بندی، مدل خودرو و صفحه‌بندی اجازه‌ی ایندکس دارند. */
+    $shopRobots = seo_robots_tag(!seo_should_noindex() && $model->total() > 0);
 @endphp
 @extends('layout.layout', [
     'title' => $shopTitle,
     'metaDescription' => $shopDescription,
-    'keywords' => seo_default_keywords(),
-    'canonical' => seo_url('/shop'),
-    'schema' => [seo_store_schema(), ['@context' => 'https://schema.org', '@type' => 'CollectionPage', 'name' => $shopTitle, 'description' => $shopDescription, 'url' => seo_url('/shop')], seo_breadcrumb_schema([['name' => 'ناظر یدک', 'url' => seo_url()], ['name' => 'فروشگاه لوازم یدکی', 'url' => seo_url('/shop')]])],
+    'keywords' => trim(implode(', ', array_filter([$shopCategoryLabel, $shopCarModel ? 'قطعات ' . $shopCarModel : null, $title, seo_default_keywords()])), ', '),
+    'canonical' => $shopCanonical,
+    'robots' => $shopRobots,
+    'prevPage' => $shopPrev,
+    'nextPage' => $shopNext,
+    'ogType' => 'website',
+    'schema' => [
+        seo_webpage_schema($shopTitle, $shopDescription, $shopCanonical, 'CollectionPage'),
+        seo_breadcrumb_schema($shopCrumbs),
+        seo_itemlist_schema($shopTitle, $shopItems, $shopCanonical),
+    ],
 ])
 @section('main_content')
-<div class="container">
-    <div class="row mt-3">
-        <div class="col-12">
-            <ul class="breadcrumb">
-                <li class="breadcrumb-item"><a href="/" class="breadcrumb-custom">ناظر یدک</a></li>
-                <li class="breadcrumb-item"><a href="/shop" class="breadcrumb-custom">فروشگاه قطعات</a></li>
-            </ul>
-        </div>
-    </div>
-</div>
-<main>
-    <div class="container">
-        <div class="row">
-            {{-- سایدبار: در موبایل بعد از محصولات می‌آید تا کاربر
-                 مجبور نباشد از روی فیلترها رد شود --}}
-            <div class="col-lg-3 order-2 order-lg-1">
-                <div class="custom-sidebar mb-3">
-                    <div class="d-flex align-items-center gap-2 border-bottom pb-2 mb-2">
-                        <i class="fas fa-filter" style="color: var(--primary);"></i>
-                        <p class="font-13 m-0 fw-bold">دسته‌بندی قطعات</p>
-                    </div>
-                    <ul class="ps-0 mb-0">
-                        @foreach($categories as $cat)
-                            <li class="mt-1">
-                                <label class="font-12 d-flex align-items-center gap-2 py-1 px-2 rounded category-filter-label">
-                                    <input type="checkbox"
-                                        class="form-check-input category-filter m-0"
-                                        value="{{ $cat->value }}"
-                                        {{ in_array($cat->value, $selectedCategoryIds ?? []) ? 'checked' : '' }}>
-                                    <i class="fas {{ $cat->icon() }}" style="color: var(--primary); width: 18px; text-align: center; font-size: 0.8rem;"></i>
-                                    {{ $cat->label() }}
-                                    <span class="badge bg-light text-muted ms-auto" style="font-size: 0.7rem;">{{ $categoryCounts[$cat->value] ?? 0 }}</span>
-                                </label>
-                            </li>
-                        @endforeach
-                    </ul>
-                </div>
-                <div class="custom-sidebar">
-                    <div class="d-flex align-items-center gap-2 border-bottom pb-2 mb-3">
-                        <i class="fas fa-search" style="color: var(--primary);"></i>
-                        <p class="font-13 m-0 fw-bold">جستجو در قطعات</p>
-                    </div>
-                    <div class="position-relative mb-3">
-                        <input type="search"
-                            id="search_title"
-                            class="form-control"
-                            value="{{$title}}"
-                            placeholder="نام قطعه یا کد فنی...">
-                    </div>
-                    <div class="d-flex align-items-center gap-2 border-bottom pb-2 mb-3">
-                        <i class="fas fa-car" style="color: var(--primary);"></i>
-                        <p class="font-13 m-0 fw-bold">خودرو مناسب</p>
-                    </div>
-                    <div class="position-relative">
-                        <select id="search_car_model" class="form-control">
-                            <option value="">همه خودروها</option>
-                            @foreach($carCategories as $carCategory)
-                                <option value="{{ $carCategory->id }}" {{ (string) ($carModel ?? '') === (string) $carCategory->id || (string) ($carModel ?? '') === (string) $carCategory->name ? 'selected' : '' }}>{{ $carCategory->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-            </div>
+<main class="nx-home nx-shop">
+    <div class="nx-wrap">
 
-            {{-- محصولات --}}
-            <div class="col-lg-9 order-1 order-lg-2">
-                <div class="product-items">
-                    <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-3 px-1">
-                        <div class="d-flex align-items-center gap-2">
-                            <i class="fas fa-th-large" style="color: var(--primary);"></i>
-                            <span class="font-13 fw-bold" id="total-count-text">{{ $totalCount }} قطعه یافت شد</span>
+        <nav class="nx-breadcrumb" aria-label="مسیر صفحه">
+            <a href="/">ناظر یدک</a>
+            <i class="fas fa-chevron-left"></i>
+            <a href="/shop">فروشگاه قطعات</a>
+            @if($title)
+                <i class="fas fa-chevron-left"></i>
+                <b>{{ $title }}</b>
+            @endif
+        </nav>
+
+        <div class="nx-shop-layout">
+
+            {{-- سایدبار فیلترها: در موبایل بعد از محصولات می‌آید تا کاربر
+                 مجبور نباشد از روی فیلترها رد شود --}}
+            <aside class="nx-shop-side">
+                <section class="nx-card nx-side-card">
+                    <div class="nx-card-head">
+                        <h2><i class="fas fa-search"></i> جستجو در قطعات</h2>
+                    </div>
+                    <div class="nx-side-body">
+                        <div class="nx-field">
+                            <i class="fas fa-search"></i>
+                            <input type="search"
+                                id="search_title"
+                                value="{{ $title }}"
+                                placeholder="نام قطعه یا کد فنی...">
                         </div>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="font-12 text-muted">مرتب‌سازی:</span>
-                            <select class="form-select form-select-sm" id="sort-select" style="width: auto; font-size: 0.82rem;">
-                                <option value="id-desc">جدیدترین</option>
-                                <option value="price-asc">ارزان‌ترین</option>
-                                <option value="price-desc">گران‌ترین</option>
+                        <label class="nx-field-label"><i class="fas fa-car"></i> خودرو مناسب</label>
+                        <div class="nx-field nx-field-select">
+                            <select id="search_car_model">
+                                <option value="">همه خودروها</option>
+                                @foreach($carCategories as $carCategory)
+                                    <option value="{{ $carCategory->id }}" {{ (string) ($carModel ?? '') === (string) $carCategory->id || (string) ($carModel ?? '') === (string) $carCategory->name ? 'selected' : '' }}>{{ $carCategory->name }}</option>
+                                @endforeach
                             </select>
+                            <i class="fas fa-chevron-down"></i>
                         </div>
                     </div>
-                    <div class="row" id="content-wrapper">
+                </section>
+
+                <section class="nx-card nx-side-card">
+                    <div class="nx-card-head">
+                        <h2><i class="fas fa-filter"></i> دسته‌بندی قطعات</h2>
+                    </div>
+                    <div class="nx-side-body">
+                        <ul class="nx-filter-list">
+                            @foreach($categories as $cat)
+                                <li>
+                                    <label class="nx-filter-item">
+                                        <input type="checkbox"
+                                            class="category-filter"
+                                            value="{{ $cat->value }}"
+                                            {{ in_array($cat->value, $selectedCategoryIds ?? []) ? 'checked' : '' }}>
+                                        <i class="fas {{ $cat->icon() }}"></i>
+                                        <span>{{ $cat->label() }}</span>
+                                        <b>{{ toPersianNumbers($categoryCounts[$cat->value] ?? 0) }}</b>
+                                    </label>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                </section>
+
+                <a href="/contact-us" class="nx-banner nx-banner-support nx-side-banner">
+                    <i class="fas fa-headset"></i>
+                    <span>
+                        <strong>قطعه‌تان را پیدا نکردید؟</strong>
+                        <p>با کد فنی یا مدل خودرو راهنمایی می‌شوید</p>
+                        <span class="nx-banner-cta">تماس با کارشناس <i class="fas fa-chevron-left"></i></span>
+                    </span>
+                </a>
+            </aside>
+
+            {{-- نتایج --}}
+            <div class="nx-shop-main">
+                {{-- H1 پویا: موضوع دقیق همین صفحه (دسته، مدل خودرو یا جستجو)
+                     را به گوگل اعلام می‌کند، نه یک عنوان ثابت برای همه. --}}
+                <h1 class="nx-page-title">
+                    @if($shopCategoryLabel)
+                        خرید {{ $shopCategoryLabel }}
+                    @elseif($shopCarModel)
+                        قطعات یدکی {{ $shopCarModel }}
+                    @elseif($title)
+                        نتایج جستجوی «{{ $title }}»
+                    @else
+                        فروشگاه لوازم یدکی خودرو و قطعات ایساکو
+                    @endif
+                </h1>
+
+                <section class="nx-card">
+                    <div class="nx-card-head nx-results-head">
+                        <h2><i class="fas fa-th-large"></i> <span id="total-count-text">{{ toPersianNumbers($totalCount) }} قطعه یافت شد</span></h2>
+                        <div class="nx-sort">
+                            <span>مرتب‌سازی:</span>
+                            <div class="nx-field nx-field-select nx-sort-field">
+                                <select id="sort-select">
+                                    <option value="id-desc">جدیدترین</option>
+                                    <option value="price-asc">ارزان‌ترین</option>
+                                    <option value="price-desc">گران‌ترین</option>
+                                </select>
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="nx-grid" id="content-wrapper">
                         @include('product.list_type', compact('model'))
                     </div>
-                    <ul class="custom-pagination mt-4" aria-label="Pagination" id="pagination"></ul>
-                </div>
+
+                    <ul class="custom-pagination nx-pagination" aria-label="Pagination" id="pagination"></ul>
+                </section>
             </div>
+
         </div>
     </div>
 </main>
-<style>
-.product-title {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    line-height: 1.6;
-    min-height: calc(1.6em * 2);
-}
-.category-filter-label {
-    cursor: pointer;
-    transition: background 0.2s;
-}
-.category-filter-label:hover {
-    background: var(--primary-lighter);
-}
-</style>
 @endsection
 @section('js')
 <script src="/js/paging.js"></script>
@@ -150,6 +226,12 @@
         }
         return params.join('&');
     }
+    // ارقام شمارنده باید مثل بقیه‌ی صفحه فارسی بماند
+    function toFaDigits(value) {
+        return String(value).replace(/\d/g, function (d) {
+            return String.fromCharCode(1776 + Number(d));
+        });
+    }
     function loadMoreData(page, type)
     {
         if(page==1){
@@ -162,9 +244,10 @@
             .done(function(data) {
                 if (data.length == 0) return;
                 $("#content-wrapper").html(data.html);
+                $("#total-count-text").text(toFaDigits(Number(data.totalCount).toLocaleString('en-US')) + ' قطعه یافت شد');
                 var result = Paging(pagin, 12, data.totalCount, "myClass", "myDisableClass");
                 $("#pagination").html(result);
-                $('html, body').animate({ scrollTop: $('#content-wrapper').offset().top - 80 }, 500);
+                $('html, body').animate({ scrollTop: $('#content-wrapper').offset().top - 90 }, 500);
             });
     }
     $(document).ready(function() {
@@ -179,18 +262,22 @@
         });
     });
     $('.category-filter').on('change', function () {
+        pagin = 1;
         loadMoreData(1, createQuery());
     });
     $('#search_title').on('keyup', function () {
         clearTimeout(window.searchTimer);
         window.searchTimer = setTimeout(function () {
+            pagin = 1;
             loadMoreData(1, createQuery());
         }, 500);
     });
     $('#search_car_model').on('change', function () {
+        pagin = 1;
         loadMoreData(1, createQuery());
     });
     $('#sort-select').on('change', function () {
+        pagin = 1;
         loadMoreData(1, createQuery());
     });
 </script>

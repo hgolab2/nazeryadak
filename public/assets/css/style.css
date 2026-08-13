@@ -1,11 +1,15 @@
 @font-face {
     font-family:vazir-med;
+    /* font-display: swap تا متن بلافاصله با فونت جایگزین دیده شود
+       و صفحه در زمان دانلود فونت خالی نماند (بهبود FCP و CLS). */
+    font-display: swap;
     src: url(/assets/font/IRANSans/IRANSansWeb.eot);
     src: url(/assets/font/IRANSans/IRANSansWeb.eot) format('embedded-opentype'), url('/assets/font/IRANSans/IRANSansWeb(FaNum).woff') format('woff'), url(/assets/font/IRANSans/IRANSansWeb.ttf) format('truetype');
 }
 
 @font-face {
     font-family:vazir-fa-med;
+    font-display: swap;
     src: url(/assets/font/IRANSans/IRANSansWeb.eot);
     src: url(/assets/font/IRANSans/IRANSansWeb.eot) format('embedded-opentype'), url('/assets/font/IRANSans/IRANSansWeb(FaNum).woff') format('woff'), url(/assets/font/IRANSans/IRANSansWeb.ttf) format('truetype');
 }
@@ -1782,6 +1786,84 @@ main{
     margin-left: 4px;
     color: var(--primary);
     font-size: 0.7rem;
+}
+
+/* ----- کارت متنی مجله (مقالات بدون عکس) ----- */
+
+.blog-card-text {
+    position: relative;
+    padding-top: 4px;
+}
+
+.blog-card-text::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary), #19bfd3);
+}
+
+.blog-card-text .card-body {
+    padding: 16px 16px 14px;
+}
+
+.blog-card-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 10px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: var(--primary-lighter, #f4f6fb);
+    color: var(--primary);
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.blog-card-text .card-body > a {
+    font-size: 0.92rem;
+    font-weight: 700;
+    line-height: 1.95;
+    margin-bottom: 8px;
+}
+
+.blog-card-text .blog-card-excerpt {
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.blog-card-more {
+    margin-right: auto;
+    color: var(--primary);
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.blog-card-more i {
+    font-size: 0.65rem;
+}
+
+.blog-card-more:hover {
+    color: var(--primary-dark, var(--primary));
+}
+
+/* گلوله‌ی جایگزین تصویر در «مطالب پیشنهادی» */
+.blog-sidebar-item-bullet {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--primary-lighter, #f4f6fb);
+    color: var(--primary);
+    font-size: 0.8rem;
 }
 
 /* ----- blog article detail ----- */
@@ -6645,3 +6727,52 @@ footer .container { width: min(1320px, calc(100% - 32px)); max-width: none; }
 .footer-bottom-links a:hover { color: #ef394e !important; }
 @media (max-width: 991px) { footer .container { width: min(100% - 24px, 720px); } .footer-brand { padding-left: 0 !important; } .footer-box { text-align: right !important; } .footer-box ul { padding-right: 0 !important; } }
 @media (max-width: 575px) { .footer-features { padding: 20px 0 !important; } .footer-feature-item { min-height: 76px !important; } .footer-main { padding: 26px 0 16px !important; } .footer-bottom { text-align: center; } .footer-bottom-links { justify-content: center; margin-top: 8px; } }
+
+/* عنوان H1 صفحات فهرست و خانه: از نظر بصری کم‌حجم اما در ساختار سند
+   یک عنوان اصلی کامل است (H1 پنهان‌شده با display:none توسط گوگل
+   بی‌ارزش تلقی می‌شود، پس قابل‌مشاهده نگه داشته شده است). */
+.nx-page-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--primary-dark, #002f5b);
+    margin: 14px 4px 10px;
+    line-height: 1.9;
+}
+
+@media (max-width: 576px) {
+    .nx-page-title { font-size: .95rem; margin: 10px 4px 8px; }
+}
+
+/* بلوک لینک‌های داخلی فوتر (دسته‌بندی‌ها و مدل خودروها) */
+.footer-seo-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 18px 30px;
+    padding: 20px 0 6px;
+    border-top: 1px solid rgba(255, 255, 255, .12);
+}
+
+.footer-tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.footer-tag-list a {
+    display: inline-block;
+    font-size: .78rem;
+    line-height: 1.9;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .08);
+    color: inherit;
+    text-decoration: none;
+    transition: background .2s;
+}
+
+.footer-tag-list a:hover {
+    background: rgba(255, 255, 255, .18);
+}

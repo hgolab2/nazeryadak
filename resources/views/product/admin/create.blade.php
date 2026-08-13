@@ -12,6 +12,18 @@
 
 <div class="mb-4"><h2 class="h5 mb-0">{{ !empty($model) ? 'ویرایش محصول' : 'ثبت محصول جدید' }}</h2></div>
 
+{{-- بدون این بخش، فرم پس از خطای اعتبارسنجی بدون هیچ توضیحی دوباره نمایش داده می‌شد --}}
+@if(isset($errors) && $errors->any())
+<div class="alert alert-danger">
+    <p class="mb-2 fw-bold"><i class="fa fa-exclamation-triangle me-1"></i> ثبت انجام نشد:</p>
+    <ul class="mb-0 ps-3">
+        @foreach($errors->all() as $error)
+            <li>{{ $error }}</li>
+        @endforeach
+    </ul>
+</div>
+@endif
+
 <form method="POST" enctype="multipart/form-data" action="{{ !empty($model) ? url('/admin/product/update/'.$model->id) : url('/admin/product/store') }}">
     @csrf
     @if(!empty($model)) @method('put') @endif
@@ -23,15 +35,21 @@
                 <label class="form-label">عنوان قطعه *</label>
                 <input type="text" name="title" class="form-control" required value="{{ $model->title ?? '' }}">
             </div>
-            @php use App\Enums\ProductCategory; @endphp
+            @php
+                use App\Enums\ProductCategory;
+                // مقدار انتخاب‌شده از کنترلر می‌آید (ستون محصول یا جدول واسط) و با
+                // == مقایسه می‌شود؛ مقایسه‌ی === با مقدار رشته‌ای دیتابیس هیچ‌وقت درست نمی‌شد
+                $currentCategoryId = old('category_id', $selectedCategoryId ?? ($model->category_id ?? null));
+            @endphp
             <div class="col-sm-6 mb-3">
                 <label class="form-label">دسته‌بندی</label>
                 <select name="category_id" class="form-control">
                     <option value="">انتخاب کنید</option>
                     @foreach(ProductCategory::cases() as $category)
-                        <option value="{{ $category->value }}" {{ ($model->category_id ?? null) === $category->value ? 'selected' : '' }}>{{ $category->label() }}</option>
+                        <option value="{{ $category->value }}" {{ $currentCategoryId == $category->value ? 'selected' : '' }}>{{ $category->label() }}</option>
                     @endforeach
                 </select>
+                <small class="text-muted">تعیین دسته باعث می‌شود قطعه در فیلتر دسته‌بندی فروشگاه دیده شود.</small>
             </div>
             <div class="col-sm-4 mb-3">
                 <label>خودرو مناسب</label>
@@ -42,16 +60,19 @@
                 <input type="text" name="sku" class="form-control" value="{{ $model->sku ?? '' }}">
             </div>
             <div class="col-sm-4 mb-3">
-                <label>موجودی</label>
-                <input type="number" name="stock" class="form-control" value="{{ $model->stock ?? '' }}">
+                <label>موجودی (تعداد) *</label>
+                {{-- موجودی خالی یعنی محصول در فروشگاه دیده می‌شود ولی به سبد اضافه نمی‌شود --}}
+                <input type="number" name="stock" min="0" required class="form-control" value="{{ old('stock', $model->stock ?? 0) }}">
+                <small class="text-muted">با مقدار صفر، محصول «ناموجود» نمایش داده می‌شود.</small>
             </div>
         </div>
 
         <h6 class="border-bottom pb-2 mb-3 mt-3">قیمت، تخفیف و فروش ویژه</h6>
         <div class="row">
             <div class="col-sm-3 mb-3">
-                <label>قیمت اصلی (تومان)</label>
+                <label>قیمت خرید (تومان)</label>
                 <input type="number" name="regular_price" class="form-control" value="{{ $model->regular_price ?? '' }}">
+                <small class="text-muted">فقط برای محاسبه‌ی سود؛ به مشتری نمایش داده نمی‌شود.</small>
             </div>
             <div class="col-sm-3 mb-3">
                 <label>قیمت فروش (تومان)</label>
@@ -60,7 +81,7 @@
             <div class="col-sm-3 mb-3">
                 <label>درصد تخفیف</label>
                 <input type="number" name="discount_percent" min="0" max="100" class="form-control" value="{{ $model->discount_percent ?? 0 }}">
-                <small class="text-muted">اگر بیشتر از صفر باشد، قیمت فروش از قیمت اصلی محاسبه می‌شود.</small>
+                <small class="text-muted">روی «قیمت فروش» اعمال می‌شود و قیمت پیش از تخفیف، خط‌خورده به مشتری نشان داده می‌شود.</small>
             </div>
             <div class="col-sm-3 mb-3">
                 <label>فروش ویژه</label>

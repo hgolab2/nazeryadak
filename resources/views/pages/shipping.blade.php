@@ -1,5 +1,22 @@
-@extends('layout.layout', ['title' => 'رویه ارسال سفارش | ناظر یدک'])
+@php
+    $pageTitle = 'رویه و هزینه ارسال سفارش لوازم یدکی | ناظر یدک';
+    $pageDescription = 'زمان آماده‌سازی، روش‌های ارسال (پیک، تیپاکس و پست)، هزینه ارسال بر اساس شهر مقصد و شرایط ارسال رایگان سفارش‌های فروشگاه ناظر یدک.';
+@endphp
+@extends('layout.layout', [
+    'title' => $pageTitle,
+    'metaDescription' => $pageDescription,
+    'keywords' => 'هزینه ارسال لوازم یدکی, زمان ارسال سفارش, ارسال رایگان قطعات خودرو, تیپاکس',
+    'canonical' => seo_url('/shipping'),
+    'schema' => [
+        seo_webpage_schema($pageTitle, $pageDescription, seo_url('/shipping')),
+        seo_breadcrumb_schema([
+            ['name' => 'ناظر یدک', 'url' => seo_url()],
+            ['name' => 'رویه ارسال سفارش', 'url' => null],
+        ]),
+    ],
+])
 @section('main_content')
+@php $shippingRules = getShippingRules(); @endphp
 <main>
     <div class="container">
         <div class="row mt-3 mb-2">
@@ -22,8 +39,8 @@
                         <div class="col-md-6 mb-3">
                             <div class="text-center p-3" style="background:var(--primary-lighter); border-radius:var(--radius); height:100%;">
                                 <i class="fas fa-motorcycle mb-2" style="font-size:1.5rem; color:var(--accent);"></i>
-                                <h6 class="font-13 fw-bold">پیک در قم</h6>
-                                <p class="font-12 text-muted mb-0">تحویل درب منزل در شهر قم</p>
+                                <h6 class="font-13 fw-bold">پیک در {{ $shippingRules['local_province_name'] }}</h6>
+                                <p class="font-12 text-muted mb-0">تحویل درب منزل در شهر {{ $shippingRules['local_province_name'] }}</p>
                             </div>
                         </div>
                         <div class="col-md-6 mb-3">
@@ -46,23 +63,23 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td>قم</td>
-                                <td>بالای ۵ میلیون تومان</td>
+                                <td>{{ $shippingRules['local_province_name'] }}</td>
+                                <td>بالای {{ shippingAmountWords($shippingRules['local_free_threshold']) }}</td>
                                 <td><span class="text-success fw-bold">رایگان</span></td>
                             </tr>
                             <tr>
-                                <td>قم</td>
-                                <td>کمتر از ۵ میلیون تومان</td>
-                                <td>۵۰,۰۰۰ تومان</td>
+                                <td>{{ $shippingRules['local_province_name'] }}</td>
+                                <td>کمتر از {{ shippingAmountWords($shippingRules['local_free_threshold']) }}</td>
+                                <td>{{ toPersianNumbers($shippingRules['local_shipping_cost']) }} تومان</td>
                             </tr>
                             <tr>
                                 <td>سایر شهرها</td>
-                                <td>بالای ۲۰ میلیون تومان</td>
+                                <td>بالای {{ shippingAmountWords($shippingRules['national_free_threshold']) }}</td>
                                 <td><span class="text-success fw-bold">رایگان</span></td>
                             </tr>
                             <tr>
                                 <td>سایر شهرها</td>
-                                <td>کمتر از ۲۰ میلیون تومان</td>
+                                <td>کمتر از {{ shippingAmountWords($shippingRules['national_free_threshold']) }}</td>
                                 <td>تیپاکس (پسکرایه از گیرنده)</td>
                             </tr>
                         </tbody>

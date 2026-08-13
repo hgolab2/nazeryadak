@@ -1,0 +1,45 @@
+{
+    "name": "ناظر یدک | خرید لوازم یدکی خودرو و قطعات اصلی ایساکو",
+    "short_name": "ناظر یدک",
+    "description": "فروشگاه آنلاین لوازم یدکی خودرو و قطعات اصلی ایساکو با ضمانت اصالت کالا و ارسال سراسر کشور.",
+    "lang": "fa-IR",
+    "dir": "rtl",
+    "start_url": "/?utm_source=pwa",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "portrait",
+    "background_color": "#ffffff",
+    "theme_color": "#ffffff",
+    "categories": ["shopping", "business"],
+    "icons": [
+        {
+            "src": "/assets/images/logo.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/assets/images/logo.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "فروشگاه قطعات",
+            "url": "/shop",
+            "description": "مشاهده همه لوازم یدکی موجود"
+        },
+        {
+            "name": "سبد خرید",
+            "url": "/cart",
+            "description": "مشاهده سبد خرید"
+        },
+        {
+            "name": "سفارش‌های من",
+            "url": "/profile/orders",
+            "description": "پیگیری سفارش‌ها"
+        }
+    ]
+}

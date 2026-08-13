@@ -1,4 +1,19 @@
-@extends('layout.layout', ['title' => 'شرایط استفاده | ناظر یدک'])
+@php
+    $pageTitle = 'شرایط و قوانین استفاده از فروشگاه ناظر یدک';
+    $pageDescription = 'قوانین ثبت سفارش، شرایط خرید، تعهدات فروشگاه و مشتری و ضوابط استفاده از خدمات فروشگاه اینترنتی لوازم یدکی ناظر یدک.';
+@endphp
+@extends('layout.layout', [
+    'title' => $pageTitle,
+    'metaDescription' => $pageDescription,
+    'canonical' => seo_url('/terms'),
+    'schema' => [
+        seo_webpage_schema($pageTitle, $pageDescription, seo_url('/terms')),
+        seo_breadcrumb_schema([
+            ['name' => 'ناظر یدک', 'url' => seo_url()],
+            ['name' => 'شرایط استفاده', 'url' => null],
+        ]),
+    ],
+])
 @section('main_content')
 <main>
     <div class="container">

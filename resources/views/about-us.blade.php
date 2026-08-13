@@ -1,5 +1,19 @@
+@php
+    $pageTitle = 'درباره ناظر یدک | فروشگاه تخصصی لوازم یدکی و قطعات ایساکو';
+    $pageDescription = 'ناظر یدک فروشگاه تخصصی لوازم یدکی خودرو در قم است؛ عرضه‌کننده قطعات اصلی ایساکو با ضمانت اصالت کالا، مشاوره فنی رایگان و ارسال به سراسر ایران.';
+@endphp
 @extends('layout.layout', [
-    'title' => "درباره ناظر یدک | NazerYadak"
+    'title' => $pageTitle,
+    'metaDescription' => $pageDescription,
+    'keywords' => 'درباره ناظر یدک, فروشگاه لوازم یدکی قم, نمایندگی قطعات ایساکو, خرید قطعات اصلی خودرو',
+    'canonical' => seo_url('/about-us'),
+    'schema' => [
+        seo_webpage_schema($pageTitle, $pageDescription, seo_url('/about-us'), 'AboutPage'),
+        seo_breadcrumb_schema([
+            ['name' => 'ناظر یدک', 'url' => seo_url()],
+            ['name' => 'درباره ما', 'url' => null],
+        ]),
+    ],
 ])
 @section('main_content')
 <main>

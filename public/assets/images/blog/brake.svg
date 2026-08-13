@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 340" width="600" height="340" role="img" aria-label="سیستم ترمز">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fefafb"/><stop offset="1" stop-color="#fdeef1"/>
+    </linearGradient>
+    <pattern id="dots" width="18" height="18" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.3" fill="#ef4056" opacity=".14"/>
+    </pattern>
+  </defs>
+  <rect width="600" height="340" fill="url(#bg)"/>
+  <rect width="600" height="340" fill="url(#dots)"/>
+  <circle cx="492" cy="290" r="110" fill="#ef4056" opacity=".07"/>
+  <circle cx="96" cy="56" r="80" fill="#19bfd3" opacity=".08"/>
+  <g fill="none" stroke="#23254e" stroke-width="9" stroke-linecap="round">
+    <circle cx="286" cy="170" r="104"/>
+    <circle cx="286" cy="170" r="44"/>
+    <path d="M286 66v22M286 252v22M182 170h22M368 170h22"/>
+    <path d="M213 97l16 16M343 227l16 16M359 97l-16 16M229 227l-16 16"/>
+  </g>
+  <g fill="none" stroke="#ef4056" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M396 112h44a22 22 0 0 1 22 22v72a22 22 0 0 1-22 22h-44z"/>
+    <path d="M462 170h34"/>
+  </g>
+  <rect y="326" width="600" height="14" fill="#ef4056" opacity=".8"/>
+</svg>

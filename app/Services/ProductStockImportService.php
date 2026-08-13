@@ -49,7 +49,15 @@ class ProductStockImportService
             ];
 
             if ($product) {
+                // قیمت تازه، قیمتِ پیش از تخفیف است؛ اگر محصول تخفیف فعال دارد
+                // باید دوباره روی همین مبنا اعمال شود وگرنه ایمپورت تخفیف را پاک می‌کند.
+                $activeDiscount = (int) $product->discount_percent;
+                $product->compare_at_price = null;
                 $product->update($data);
+                if ($activeDiscount > 0) {
+                    $product->applyDiscountPercent($activeDiscount);
+                    $product->save();
+                }
                 $updated++;
 
                 $matches->where('id', '!=', $product->id)

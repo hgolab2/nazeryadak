@@ -1,4 +1,4 @@
-@extends('layout.layout', ['title' => 'پرداخت | ناظر یدک'])
+@extends('layout.layout', ['title' => 'پرداخت | ناظر یدک', 'robots' => seo_robots_tag(false, true), 'noBaseSchema' => true, 'bodyClass' => 'has-actionbar'])
 @section('main_content')
 <div class="container">
     <div class="row mt-3 mb-2">
@@ -114,11 +114,19 @@
                             @endif
                         </span>
                     </div>
+                    @if(!empty($shippingInfo) && $shippingInfo['type'] === 'tipax')
+                    {{-- کرایه‌ی تیپاکس در فاکتور اینترنتی نیست؛ کاربر باید پیش از
+                         پرداخت بداند مبلغ دیگری هنگام تحویل می‌پردازد --}}
+                    <p class="font-12 text-muted py-2 mb-0" style="line-height:1.9;">
+                        <i class="fas fa-info-circle me-1" style="color:var(--accent);"></i>
+                        کرایه‌ی تیپاکس در این فاکتور محاسبه نشده و هنگام تحویل مرسوله از گیرنده دریافت می‌شود.
+                    </p>
+                    @endif
                     <div class="d-flex justify-content-between py-3">
                         <span class="fw-bold">مبلغ قابل پرداخت</span>
                         <span class="fw-bold" style="font-size:1.1rem; color:var(--primary);">{{ number_format($order->total_price) }} <small class="font-12 fw-normal">تومان</small></span>
                     </div>
-                    <a href="/payment/zarinpal/{{ $order->id }}" class="btn add-cart-btn2 text-center d-block font-13 fw-bold" style="background:linear-gradient(135deg, var(--success), #43a047);">
+                    <a href="/payment/zarinpal/{{ $order->id }}" class="btn add-cart-btn2 text-center d-block font-13 fw-bold hide-on-mobile-buy" style="background:linear-gradient(135deg, var(--success), #43a047);">
                         <i class="fas fa-lock me-1"></i> پرداخت امن
                     </a>
                     <div class="text-center mt-3">
@@ -129,4 +137,15 @@
         </div>
     </div>
 </main>
+
+{{-- نوار چسبان موبایل: مبلغ نهایی و دکمه‌ی پرداخت همیشه در دسترس --}}
+<div class="mobile-actionbar" role="region" aria-label="پرداخت سفارش">
+    <div class="mobile-actionbar__info">
+        <span class="mobile-actionbar__label">مبلغ قابل پرداخت</span>
+        <span class="mobile-actionbar__price">{{ number_format($order->total_price) }} <small>تومان</small></span>
+    </div>
+    <a href="/payment/zarinpal/{{ $order->id }}" class="mobile-actionbar__btn is-pay">
+        <i class="fas fa-lock"></i> پرداخت امن
+    </a>
+</div>
 @endsection

@@ -15,52 +15,107 @@ use App\Http\Controllers\Admin\AdvertisementAdminController;
 use App\Http\Controllers\Admin\UserAdminController;
 use App\Http\Controllers\Admin\ImportController;
 use App\Http\Controllers\Admin\ArticleAdminController;
+use App\Http\Controllers\Admin\SettingAdminController;
 
+use App\Http\Controllers\SitemapController;
 use App\Http\Middleware\ShareDataInFrontend;
-Route::get('/sitemap.xml', function () {
-    $urls = collect([
-        ['loc' => seo_url(), 'priority' => '1.0', 'changefreq' => 'daily'],
-        ['loc' => seo_url('/shop'), 'priority' => '0.9', 'changefreq' => 'daily'],
-        ['loc' => seo_url('/blog'), 'priority' => '0.7', 'changefreq' => 'weekly'],
-        ['loc' => seo_url('/about-us'), 'priority' => '0.5', 'changefreq' => 'monthly'],
-        ['loc' => seo_url('/contact-us'), 'priority' => '0.5', 'changefreq' => 'monthly'],
-        ['loc' => seo_url('/faq'), 'priority' => '0.5', 'changefreq' => 'monthly'],
-    ]);
 
-    $importantShopUrls = [
-        '/shop?title=ایساکو',
-        '/shop?title=لنت ترمز',
-        '/shop?title=فیلتر روغن',
-        '/shop?title=تسمه تایم',
-        '/shop?title=سنسور',
-        '/shop?car_model=پژو 206',
-        '/shop?car_model=پژو 405',
-        '/shop?car_model=سمند',
-        '/shop?car_model=دنا',
-        '/shop?car_model=پراید',
+/*
+| نقشه‌ی سایت و robots. خروجی‌ها کش می‌شوند؛ برای پاک‌سازی فوری کش
+| بعد از تغییرات انبوه: php artisan cache:clear
+*/
+Route::get('/sitemap.xml', [SitemapController::class, 'index']);
+Route::get('/sitemap-static.xml', [SitemapController::class, 'static']);
+Route::get('/sitemap-categories.xml', [SitemapController::class, 'categories']);
+Route::get('/sitemap-articles.xml', [SitemapController::class, 'articles']);
+Route::get('/sitemap-images.xml', [SitemapController::class, 'images']);
+Route::get('/sitemap-products-{page}.xml', [SitemapController::class, 'products'])->where('page', '[0-9]+');
+Route::get('/robots.txt', [SitemapController::class, 'robots']);
+
+/*
+| مانیفست PWA — هویت اپلیکیشن از config/seo.php خوانده می‌شود تا با بقیه‌ی
+| متاتگ‌های سایت هماهنگ بماند و تغییر نام یا رنگ فقط در یک جا انجام شود.
+*/
+Route::get('/site.webmanifest', function () {
+    $icon = fn (int $size, string $purpose = 'any') => [
+        'src'     => "/assets/images/pwa/" . ($purpose === 'maskable' ? 'maskable' : 'icon') . "-{$size}.png",
+        'sizes'   => "{$size}x{$size}",
+        'type'    => 'image/png',
+        'purpose' => $purpose,
     ];
-    foreach ($importantShopUrls as $shopUrl) {
-        $urls->push(['loc' => seo_url($shopUrl), 'priority' => '0.75', 'changefreq' => 'daily']);
-    }
-    foreach (\App\Enums\ProductCategory::cases() as $category) {
-        $urls->push(['loc' => seo_url('/shop?category=' . $category->slug()), 'priority' => '0.75', 'changefreq' => 'daily']);
-    }
-    \App\Models\Product::where('is_active', 1)->select(['id', 'title', 'slug', 'updated_at'])->latest('updated_at')->chunk(500, function ($products) use (&$urls) {
-        foreach ($products as $product) {
-            $urls->push(['loc' => seo_url($product->url()), 'lastmod' => optional($product->updated_at)->toAtomString(), 'priority' => '0.8', 'changefreq' => 'weekly']);
-        }
-    });
 
-    return response(view('sitemap', compact('urls'))->render(), 200)->header('Content-Type', 'application/xml; charset=UTF-8');
+    $shortcut = fn (string $name, string $url, string $description) => [
+        'name'        => $name,
+        'short_name'  => $name,
+        'description' => $description,
+        'url'         => $url . '?source=pwa',
+        'icons'       => [$icon(192)],
+    ];
+
+    $manifest = [
+        'id'               => '/',
+        'name'             => seo_config('default_title', seo_site_name()),
+        'short_name'       => seo_site_name(),
+        'description'      => seo_config('default_description'),
+        'lang'             => seo_config('language', 'fa-IR'),
+        'dir'              => 'rtl',
+        'start_url'        => '/?source=pwa',
+        'scope'            => '/',
+        'display'          => 'standalone',
+        'orientation'      => 'portrait-primary',
+        'background_color' => '#ffffff',
+        'theme_color'      => seo_config('theme_color', '#ffffff'),
+        'categories'       => ['shopping', 'business'],
+        'icons'            => [
+            $icon(96), $icon(128), $icon(144), $icon(152),
+            $icon(192), $icon(256), $icon(384), $icon(512),
+            $icon(192, 'maskable'), $icon(512, 'maskable'),
+        ],
+        'shortcuts'        => [
+            $shortcut('فروشگاه', '/shop', 'مشاهده همه محصولات'),
+            $shortcut('سبد خرید', '/cart', 'مشاهده سبد خرید'),
+            $shortcut('سفارش‌های من', '/profile/orders', 'پیگیری سفارش‌ها'),
+            $shortcut('تماس با ما', '/contact-us', 'راه‌های ارتباطی'),
+        ],
+    ];
+
+    return response()
+        ->json($manifest, 200, [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+        ->header('Content-Type', 'application/manifest+json; charset=UTF-8')
+        ->header('Cache-Control', 'public, max-age=86400');
 });
+
 Route::group(['namespace' => 'Frontend', 'middleware' => [ShareDataInFrontend::class]], function () {
     Route::get('/payment/zarinpal/{id}', [PaymentController::class, 'request'])->name('payment.request');
     Route::get('/payment/zarinpal/callback', [PaymentController::class, 'callback'])->name('payment.callback');
 
     Route::get('/', [HomeController::class, 'home']);
-    Route::get('view', [HomeController::class, 'view']);
-    Route::get('search', [HomeController::class, 'search']);
+
+    /*
+    | این دو مسیر به ویوهایی اشاره می‌کردند که وجود ندارند و خطای ۵۰۰
+    | برمی‌گرداندند؛ خطای سرور روی مسیرهای عمومی، بودجه‌ی خزش را هدر می‌دهد
+    | و کیفیت سایت را نزد گوگل پایین می‌آورد. حالا با 301 به فروشگاه می‌روند
+    | تا لینک‌های قدیمی هم حفظ شوند.
+    */
+    Route::get('view', fn() => redirect('/shop', 301));
+    Route::get('search', fn(\Illuminate\Http\Request $request) => redirect(
+        '/shop' . ($request->filled('q') ? '?title=' . urlencode($request->q) : ''),
+        301
+    ));
+
     Route::get('shop', [ProductController::class, 'index']);
+
+    /*
+    | آدرس تمیز دسته‌بندی: /shop/لنت-ترمز به‌جای /shop?category=لنت-ترمز
+    |
+    | آدرسی که کلمه‌ی کلیدی را در مسیر دارد هم برای کاربر خواناتر است و هم
+    | گوگل آن را یک صفحه‌ی مستقل می‌بیند، نه نسخه‌ای فیلترشده از فروشگاه.
+    | نسخه‌ی قدیمیِ query string در ProductController با 301 به همین‌جا
+    | هدایت می‌شود تا لینک‌های منتشرشده از بین نروند.
+    */
+    Route::get('shop/{category}', [ProductController::class, 'category'])
+        ->where('category', '[^/]+')
+        ->name('shop.category');
     Route::get('/product/fetch-image/{id}', [ProductController::class, 'fetchImage']);
     Route::get('/product/{id}/{slug?}', [ProductController::class, 'show']);
     Route::get('/about-us', [HomeController::class, 'aboutUs']);
@@ -176,6 +231,10 @@ Route::group(['namespace' => 'Frontend', 'middleware' => [ShareDataInFrontend::c
         Route::put('/admin/user/update/{id}', [UserAdminController::class, 'admin_update']);
         Route::get('/admin/user/list', [UserAdminController::class, 'admin_list']);
         Route::delete('/admin/user/{id}', [UserAdminController::class, 'admin_destroy']);
+
+        /* Settings */
+        Route::get('/admin/settings', [SettingAdminController::class, 'index'])->name('admin.settings');
+        Route::put('/admin/settings', [SettingAdminController::class, 'update'])->name('admin.settings.update');
 
     });
 });

@@ -1,51 +1,262 @@
-﻿@php
-    $fa = fn($s) => urldecode($s);
+@php
+    /* اسکیمای صفحه‌ی اصلی: فهرست دسته‌بندی‌ها + پرسش‌های پرتکرار خانه */
+    $homeCategories = collect(\App\Enums\ProductCategory::cases())->map(fn($c) => [
+        'name' => $c->label(),
+        'url'  => seo_url('/shop/' . rawurlencode($c->slug())),
+    ])->all();
+
+    $homeFaqs = [
+        ['q' => 'آیا قطعات ناظر یدک اصل و دارای ضمانت اصالت هستند؟', 'a' => 'بله. تمام قطعات از تأمین‌کنندگان رسمی مانند ایساکو و سایپا یدک تهیه می‌شوند و روی بسته‌بندی، هولوگرام اصالت کالا وجود دارد.'],
+        ['q' => 'چطور قطعه‌ی مناسب خودرویم را پیدا کنم؟', 'a' => 'می‌توانید بر اساس نام قطعه، مدل خودرو یا کد فنی (OEM) جستجو کنید؛ همچنین دسته‌بندی‌های فروشگاه، قطعات هر بخش از خودرو را جدا کرده‌اند.'],
+        ['q' => 'ارسال سفارش به چه صورت است؟', 'a' => 'سفارش‌های ثبت‌شده تا ساعت ۱۴ همان روز ارسال می‌شوند و بسته به شهر مقصد، بین ۱ تا ۵ روز کاری به دست شما می‌رسد.'],
+    ];
 @endphp
 @extends('layout.layout', [
-    'title' => $fa('%D9%86%D8%A7%D8%B8%D8%B1%20%DB%8C%D8%AF%DA%A9%20%7C%20%D9%81%D8%B1%D9%88%D8%B4%DA%AF%D8%A7%D9%87%20%D9%82%D8%B7%D8%B9%D8%A7%D8%AA%20%DB%8C%D8%AF%DA%A9%DB%8C'),
-    'metaDescription' => $fa('%D9%81%D8%B1%D9%88%D8%B4%DA%AF%D8%A7%D9%87%20%D8%A2%D9%86%D9%84%D8%A7%DB%8C%D9%86%20%D9%82%D8%B7%D8%B9%D8%A7%D8%AA%20%D8%AE%D9%88%D8%AF%D8%B1%D9%88%20%D9%88%20%D9%82%D8%B7%D8%B9%D8%A7%D8%AA%20%D8%A7%D8%B5%D9%84%DB%8C%20%D8%A7%DB%8C%D8%B3%D8%A7%DA%A9%D9%88'),
-    'keywords' => seo_default_keywords(), 'canonical' => seo_url(), 'ogImage' => seo_url('/assets/images/logo.png'),
-    'schema' => [seo_store_schema()]
+    'title' => 'ناظر یدک | خرید لوازم یدکی خودرو و قطعات اصلی ایساکو',
+    'metaDescription' => 'خرید آنلاین لوازم یدکی خودرو و قطعات اصلی ایساکو با ضمانت اصالت، قیمت روز و ارسال سراسر کشور؛ قطعات پژو، سمند، دنا، پراید و تیبا.',
+    'keywords' => seo_default_keywords(),
+    'canonical' => seo_url(),
+    'ogImage' => seo_config('default_image'),
+    'ogImageAlt' => 'فروشگاه اینترنتی لوازم یدکی ناظر یدک',
+    'schema' => [
+        seo_webpage_schema(
+            'ناظر یدک | خرید لوازم یدکی خودرو و قطعات اصلی ایساکو',
+            'خرید آنلاین لوازم یدکی خودرو و قطعات اصلی ایساکو با ضمانت اصالت کالا و ارسال سراسر کشور.',
+            seo_url(),
+            'CollectionPage'
+        ),
+        seo_itemlist_schema('دسته‌بندی قطعات یدکی خودرو', $homeCategories, seo_url()),
+        seo_faq_schema($homeFaqs),
+    ],
 ])
+
 @section('main_content')
-<style>
-/* Isolated marketplace homepage. */
-.market-home{--m-red:#ef394e;--m-red-dark:#d92f43;--m-cyan:#19bfd3;--m-ink:#3f4064;--m-muted:#81858b;--m-line:#e0e0e6;--m-bg:#f1f2f4;background:var(--m-bg);padding:16px 0 34px;direction:rtl}
-.market-home,.market-home *{box-sizing:border-box}.market-home .market-shell{width:min(1320px,calc(100% - 32px));margin:auto}.market-home a{text-decoration:none}.market-home .owl-carousel{direction:rtl}
-.market-home .market-hero{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:16px;margin-bottom:16px}.market-home .market-slider{height:320px;overflow:hidden;border-radius:8px;background:#fff}.market-home .market-slider .owl-stage-outer,.market-home .market-slider .owl-stage,.market-home .market-slider .owl-item,.market-home .market-slide{height:320px}.market-home .market-slide{position:relative;display:flex;align-items:flex-end;padding:32px 38px;color:#fff;overflow:hidden;background:#177c96}.market-home .market-slide img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.market-home .market-slide:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(18,37,66,.72),rgba(18,37,66,.08));}.market-home .market-slide-content{position:relative;z-index:1;max-width:440px}.market-home .market-slide small{display:block;margin-bottom:9px;font-size:13px}.market-home .market-slide strong{display:block;font-size:30px;line-height:1.55;font-weight:900}.market-home .market-slide span{display:block;margin-top:6px;font-size:14px;line-height:2}.market-home .market-slider .owl-nav button{position:absolute;top:calc(50% - 20px);z-index:3;width:40px;height:40px;border:0!important;border-radius:50%!important;background:#fff!important;color:var(--m-ink)!important}.market-home .market-slider .owl-next{left:14px}.market-home .market-slider .owl-prev{right:14px}.market-home .market-slider .owl-dots{position:absolute;z-index:3;bottom:12px;right:24px}.market-home .market-slider .owl-dot span{background:#fff!important}.market-home .market-slider .owl-dot.active span{background:var(--m-red)!important}
-.market-home .market-isaco{height:320px;padding:24px 20px;border:1px solid var(--m-line);border-radius:8px;background:#fff;text-align:center;display:flex;align-items:center;justify-content:center;flex-direction:column}.market-home .market-isaco img{width:132px;height:70px;object-fit:contain;margin-bottom:18px}.market-home .market-isaco strong{color:var(--m-ink);font-size:16px;font-weight:900}.market-home .market-isaco p{margin:9px 0 18px;color:var(--m-muted);font-size:13px;line-height:1.9}.market-home .market-isaco a{padding:10px 18px;border-radius:7px;background:var(--m-red);color:#fff;font-size:13px;font-weight:800}
-.market-home .market-shortcuts{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin:0 0 16px}.market-home .market-shortcuts a{min-height:84px;padding:10px 5px;border-radius:8px;background:#fff;color:var(--m-ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;font-size:13px;font-weight:800;border:1px solid transparent}.market-home .market-shortcuts a:hover{border-color:#d6d6dc}.market-home .market-shortcuts i{width:37px;height:37px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#effbfc;color:var(--m-cyan);font-size:16px}
-.market-home .market-section{overflow:hidden;margin:0 0 16px;border:1px solid var(--m-line);border-radius:8px;background:#fff}.market-home .market-title{height:55px;padding:0 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f0f0f1}.market-home .market-title h2{margin:0;color:var(--m-ink);font-size:16px;font-weight:900}.market-home .market-title a{color:var(--m-cyan);font-size:13px;font-weight:800}.market-home .market-title a:after{content:'\2039';margin-right:5px;font-size:18px;vertical-align:-1px}
-.market-home .market-products{padding:10px 8px 14px}.market-home .market-products .owl-stage{display:flex;align-items:stretch}.market-home .market-products .owl-item,.market-home .market-products .item{display:flex;min-width:0}.market-home .market-products .dk-product-card{display:flex!important;flex-direction:column!important;width:100%!important;min-width:0;height:352px!important;min-height:352px!important;max-height:352px!important;border:0!important;border-left:1px solid #f0f0f1!important;border-radius:0!important;box-shadow:none!important;overflow:hidden}.market-home .market-products .dk-product-thumb{display:flex!important;align-items:center!important;justify-content:center!important;flex:0 0 150px!important;width:100%!important;height:150px!important;padding:14px 14px 7px!important;margin:0!important;background:#fff!important;overflow:hidden}.market-home .market-products .dk-product-thumb .slider-pic{width:100%!important;height:126px!important;object-fit:contain!important;background:#fff!important}.market-home .market-products .product-card-body{display:flex!important;flex:1 1 auto!important;flex-direction:column!important;min-height:0!important;padding:8px 14px 12px!important}.market-home .market-products .product-title{min-height:44px!important;max-height:44px!important;overflow:hidden!important;font-size:13px!important;line-height:1.72!important}.market-home .market-products .product-card-meta{min-height:40px!important;max-height:40px!important;overflow:hidden!important}.market-home .market-products .product-price-row{margin-top:auto!important;min-height:39px!important}.market-home .market-products .add-cart-btn{height:36px!important;min-height:36px!important;margin-top:6px!important;background:var(--m-red)!important;border-color:var(--m-red)!important;border-radius:7px!important;font-size:12px!important}
-.market-home .market-amazing{display:grid;grid-template-columns:205px minmax(0,1fr);gap:12px;padding:14px;background:var(--m-red);border:0}.market-home .market-amazing-side{padding:20px 14px;color:#fff;display:flex;align-items:flex-start;justify-content:center;flex-direction:column}.market-home .market-amazing-side strong{font-size:26px;line-height:1.45;font-weight:900}.market-home .market-amazing-side span{margin-top:8px;font-size:13px;line-height:1.9}.market-home .market-amazing-side a{margin-top:18px;padding:8px 14px;border:1px solid rgba(255,255,255,.8);border-radius:7px;color:#fff;font-size:13px}.market-home .market-amazing .market-products{padding:0;background:#fff;border-radius:7px}.market-home .market-amazing .dk-product-card{height:328px!important;min-height:328px!important;max-height:328px!important}
-.market-home .market-car-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;padding:14px}.market-home .market-car{min-height:130px;border:1px solid #edf0f3;border-radius:8px;color:var(--m-ink);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;overflow:hidden}.market-home .market-car:hover{border-color:#c9cbd1}.market-home .market-car img{width:110px;height:58px;object-fit:cover;border-radius:5px}.market-home .market-car i{font-size:28px;color:var(--m-cyan)}.market-home .market-car strong{font-size:13px;font-weight:900}.market-home .market-car span{font-size:11px;color:var(--m-muted)}
-.market-home .market-help{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:0 0 16px;padding:20px 24px;border-radius:8px;background:#19bfd3;color:#fff}.market-home .market-help strong{font-size:17px;font-weight:900}.market-home .market-help span{display:block;margin-top:5px;font-size:13px}.market-home .market-help a{padding:10px 18px;border-radius:7px;background:#fff;color:var(--m-ink);font-size:13px;font-weight:800;white-space:nowrap}.market-home .market-articles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:14px}.market-home .market-article{overflow:hidden;border:1px solid #edf0f3;border-radius:8px;color:var(--m-ink)}.market-home .market-article img,.market-home .market-article .market-article-empty{width:100%;height:142px;object-fit:cover;background:#f1f2f4}.market-home .market-article .market-article-empty{display:flex;align-items:center;justify-content:center;color:var(--m-cyan);font-size:24px}.market-home .market-article div{padding:12px}.market-home .market-article h3{height:45px;overflow:hidden;margin:0;color:var(--m-ink);font-size:13px;line-height:1.75;font-weight:900}.market-home .market-article p{height:39px;overflow:hidden;margin:6px 0 0;color:var(--m-muted);font-size:11px;line-height:1.8}
-@media(max-width:991px){.market-home .market-shell{width:min(720px,calc(100% - 24px))}.market-home .market-hero{grid-template-columns:1fr}.market-home .market-isaco{height:155px}.market-home .market-isaco img{margin-bottom:8px}.market-home .market-isaco p{margin:6px 0 10px}.market-home .market-shortcuts{grid-template-columns:repeat(3,1fr)}.market-home .market-amazing{grid-template-columns:1fr}.market-home .market-amazing-side{min-height:120px;align-items:center;text-align:center}.market-home .market-car-grid{grid-template-columns:repeat(3,1fr)}.market-home .market-articles{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:575px){.market-home{padding-top:10px}.market-home .market-slider,.market-home .market-slider .owl-stage-outer,.market-home .market-slider .owl-stage,.market-home .market-slider .owl-item,.market-home .market-slide{height:220px}.market-home .market-slide{padding:22px}.market-home .market-slide strong{font-size:21px}.market-home .market-slide span{font-size:12px}.market-home .market-shortcuts{gap:8px}.market-home .market-shortcuts a{min-height:72px;font-size:12px}.market-home .market-help{align-items:flex-start;flex-direction:column;padding:18px}.market-home .market-car-grid{grid-template-columns:repeat(2,1fr);gap:8px}.market-home .market-products .dk-product-card{height:336px!important;min-height:336px!important;max-height:336px!important}}
-</style>
-<main class="market-home">
- <div class="market-shell">
-  <section class="market-hero">
-   <section class="market-slider" aria-label="{{ $fa('%D8%A7%D8%B3%D9%84%D8%A7%DB%8C%D8%AF%D8%B1%20%D8%AA%D8%A8%D9%84%DB%8C%D8%BA%D8%A7%D8%AA') }}"><div class="owl-carousel owl-theme home-ad-carousel">
-   @if(isset($advertisements) && $advertisements->count())
-    @foreach($advertisements as $ad) @if($ad->media)<a href="{{ $ad->link ?: '#' }}" class="market-slide"><img src="{{ $ad->media->getPath() }}" alt="{{ $ad->title }}"><span class="market-slide-content"><small>{{ $fa('%D9%88%DB%8C%D8%AA%D8%B1%DB%8C%D9%86%20%D9%86%D8%A7%D8%B8%D8%B1%20%DB%8C%D8%AF%DA%A9') }}</small><strong>{{ $ad->title }}</strong></span></a>@endif @endforeach
-   @else
-    <a href="/shop" class="market-slide"><span class="market-slide-content"><small>{{ $fa('%D8%AE%D8%B1%DB%8C%D8%AF%20%D9%85%D8%B7%D9%85%D8%A6%D9%86') }}</small><strong>{{ $fa('%D9%82%D8%B7%D8%B9%D8%A7%D8%AA%20%D8%A7%D8%B5%D9%84%DB%8C%20%D8%AE%D9%88%D8%AF%D8%B1%D9%88') }}</strong><span>{{ $fa('%D8%AC%D8%B3%D8%AA%D8%AC%D9%88%20%D8%A8%D8%A7%20%DA%A9%D8%AF%20%D9%81%D9%86%DB%8C%D8%8C%20%D9%86%D8%A7%D9%85%20%D9%82%D8%B7%D8%B9%D9%87%20%DB%8C%D8%A7%20%D9%85%D8%AF%D9%84%20%D8%AE%D9%88%D8%AF%D8%B1%D9%88') }}</span></span></a>
-   @endif
-   </div></section>
-   <aside class="market-isaco"><img src="/assets/images/isaco-logo.png" alt="{{ $fa('%D8%A7%DB%8C%D8%B3%D8%A7%DA%A9%D9%88') }}"><strong>{{ $fa('%D9%82%D8%B7%D8%B9%D8%A7%D8%AA%20%D8%A7%D8%B5%D9%84%DB%8C%20%D8%A7%DB%8C%D8%B3%D8%A7%DA%A9%D9%88') }}</strong><p>{{ $fa('%D8%A7%D8%B5%D8%A7%D9%84%D8%AA%D8%8C%20%D9%85%D9%88%D8%AC%D9%88%D8%AF%DB%8C%20%D9%88%20%D8%AE%D8%B1%DB%8C%D8%AF%20%D8%B3%D8%B1%DB%8C%D8%B9') }}</p><a href="/shop">{{ $fa('%D9%88%D8%B1%D9%88%D8%AF%20%D8%A8%D9%87%20%D9%81%D8%B1%D9%88%D8%B4%DA%AF%D8%A7%D9%87') }}</a></aside>
-  </section>
-  <nav class="market-shortcuts" aria-label="{{ $fa('%D8%AF%D8%B3%D8%AA%D8%B1%D8%B3%DB%8C%20%D8%B3%D8%B1%DB%8C%D8%B9') }}">
-   <a href="/shop?title={{ $fa('%D9%84%D9%86%D8%AA%20%D8%AA%D8%B1%D9%85%D8%B2') }}"><i class="fas fa-compact-disc"></i>{{ $fa('%D9%84%D9%86%D8%AA%20%D8%AA%D8%B1%D9%85%D8%B2') }}</a><a href="/shop?title={{ $fa('%D9%81%DB%8C%D9%84%D8%AA%D8%B1%20%D8%B1%D9%88%D8%BA%D9%86') }}"><i class="fas fa-oil-can"></i>{{ $fa('%D9%81%DB%8C%D9%84%D8%AA%D8%B1%20%D8%B1%D9%88%D8%BA%D9%86') }}</a><a href="/shop?title={{ $fa('%D8%AA%D8%B3%D9%85%D9%87%20%D8%AA%D8%A7%DB%8C%D9%85') }}"><i class="fas fa-cogs"></i>{{ $fa('%D8%AA%D8%B3%D9%85%D9%87%20%D8%AA%D8%A7%DB%8C%D9%85') }}</a><a href="/shop?title={{ $fa('%D8%B3%D9%86%D8%B3%D9%88%D8%B1') }}"><i class="fas fa-bolt"></i>{{ $fa('%D8%B3%D9%86%D8%B3%D9%88%D8%B1%D9%87%D8%A7') }}</a><a href="/shop?title={{ $fa('%D8%B3%D9%BE%D8%B1') }}"><i class="fas fa-car-side"></i>{{ $fa('%D8%A8%D8%AF%D9%86%D9%87') }}</a><a href="/shop?title={{ $fa('%DA%86%D8%B1%D8%A7%D8%BA') }}"><i class="fas fa-lightbulb"></i>{{ $fa('%DA%86%D8%B1%D8%A7%D8%BA') }}</a>
-  </nav>
-  @if(isset($specialProducts) && $specialProducts->count())<section class="market-section market-amazing"><div class="market-amazing-side"><strong>{{ $fa('%D9%81%D8%B1%D9%88%D8%B4%20%D9%88%DB%8C%DA%98%D9%87') }}</strong><span>{{ $fa('%D9%BE%DB%8C%D8%B4%D9%86%D9%87%D8%A7%D8%AF%D9%87%D8%A7%DB%8C%20%D8%A7%D9%85%D8%B1%D9%88%D8%B2') }}</span><a href="/shop">{{ $fa('%D9%85%D8%B4%D8%A7%D9%87%D8%AF%D9%87%20%D9%87%D9%85%D9%87') }}</a></div><div class="market-products owl-carousel owl-theme custom-product-slider">@foreach($specialProducts as $product) @include('product.product_card',['product'=>$product]) @endforeach</div></section>@endif
-  <section class="market-section"><div class="market-title"><h2>{{ $fa('%D9%BE%DB%8C%D8%B4%D9%86%D9%87%D8%A7%D8%AF%20%D9%82%D8%B7%D8%B9%D8%A7%D8%AA%20%D8%AE%D9%88%D8%AF%D8%B1%D9%88') }}</h2><a href="/shop">{{ $fa('%D9%85%D8%B4%D8%A7%D9%87%D8%AF%D9%87%20%D9%87%D9%85%D9%87') }}</a></div><div class="market-products owl-carousel owl-theme custom-product-slider">@foreach($products as $product) @include('product.product_card',['product'=>$product]) @endforeach</div></section>
-  @if(isset($carCategories) && $carCategories->count())<section class="market-section"><div class="market-title"><h2>{{ $fa('%D8%AE%D8%B1%DB%8C%D8%AF%20%D8%A8%D8%B1%20%D8%A7%D8%B3%D8%A7%D8%B3%20%D8%AE%D9%88%D8%AF%D8%B1%D9%88') }}</h2><a href="/shop">{{ $fa('%D9%87%D9%85%D9%87') }}</a></div><div class="market-car-grid">@foreach($carCategories as $cat)<a href="/shop?car_model={{ urlencode($cat->name) }}" class="market-car">@if($cat->image)<img src="{{ $cat->image }}" alt="{{ $cat->name }}">@else<i class="fas fa-car"></i>@endif<strong>{{ $cat->name }}</strong><span>{{ number_format($cat->products_count) }} {{ $fa('%D9%82%D8%B7%D8%B9%D9%87') }}</span></a>@endforeach</div></section>@endif
-  <section class="market-help"><div><strong>{{ $fa('%D9%82%D8%B7%D8%B9%D9%87%20%D9%85%D9%86%D8%A7%D8%B3%D8%A8%20%D8%B1%D8%A7%20%D9%BE%DB%8C%D8%AF%D8%A7%20%D9%86%D9%85%DB%8C%E2%80%8C%DA%A9%D9%86%DB%8C%D8%AF%D8%9F') }}</strong><span>{{ $fa('%D8%A8%D8%A7%20%DA%A9%D8%AF%20%D9%81%D9%86%DB%8C%20%DB%8C%D8%A7%20%D9%85%D8%AF%D9%84%20%D8%AE%D9%88%D8%AF%D8%B1%D9%88%20%D8%B1%D8%A7%D9%87%D9%86%D9%85%D8%A7%DB%8C%DB%8C%20%D9%85%DB%8C%E2%80%8C%D8%B4%D9%88%DB%8C%D8%AF.') }}</span></div><a href="/contact-us">{{ $fa('%D8%AA%D9%85%D8%A7%D8%B3%20%D8%A8%D8%A7%20%DA%A9%D8%A7%D8%B1%D8%B4%D9%86%D8%A7%D8%B3') }}</a></section>
-  <section class="market-section"><div class="market-title"><h2>{{ $fa('%D9%85%D8%AC%D9%84%D9%87%20%D9%86%D8%A7%D8%B8%D8%B1%20%DB%8C%D8%AF%DA%A9') }}</h2><a href="/blog">{{ $fa('%D9%85%D8%B4%D8%A7%D9%87%D8%AF%D9%87%20%D9%87%D9%85%D9%87') }}</a></div><div class="market-articles">@foreach($articles as $article)<a href="{{ $article->getUrl() }}" class="market-article">@if($article->image && $article->images)<img src="{{ $article->images->getPath() }}" alt="{{ $article->titr }}">@else<div class="market-article-empty"><i class="fas fa-cogs"></i></div>@endif<div><h3>{{ $article->titr }}</h3>@if($article->sutitr)<p>{{ Str::limit($article->sutitr,72) }}</p>@endif</div></a>@endforeach</div></section>
- </div>
+<main class="nx-home">
+    <div class="nx-wrap">
+
+        {{-- اسلایدر اصلی --}}
+        <section class="nx-hero" aria-label="اسلایدر تبلیغات">
+            <div class="owl-carousel owl-theme nx-hero-slider">
+                @php
+                    $heroAds = isset($advertisements)
+                        ? $advertisements->filter(fn($ad) => $ad->media)
+                        : collect();
+                @endphp
+
+                @if($heroAds->count())
+                    @foreach($heroAds as $ad)
+                        <a href="{{ $ad->link ?: '/shop' }}" class="nx-slide">
+                            <img src="{{ $ad->media->getPath() }}" alt="{{ $ad->title ?: 'پیشنهاد ویژه ناظر یدک' }}" width="1200" height="400" fetchpriority="high" decoding="async">
+                        </a>
+                    @endforeach
+                @else
+                    <a href="/shop" class="nx-slide nx-slide-promo">
+                        <span class="nx-slide-copy">
+                            <small><i class="fas fa-shield-alt"></i> ضمانت اصالت کالا</small>
+                            <strong>قطعات اصلی خودرو، مستقیم از ناظر یدک</strong>
+                            <p>جستجو با کد فنی، نام قطعه یا مدل خودرو در میان هزاران قطعه موجود</p>
+                            <span class="nx-slide-cta">ورود به فروشگاه <i class="fas fa-chevron-left"></i></span>
+                        </span>
+                        <i class="fas fa-car-side nx-slide-art"></i>
+                    </a>
+                    <a href="/shop" class="nx-slide nx-slide-promo nx-slide-promo-2">
+                        <span class="nx-slide-copy">
+                            <small><i class="fas fa-truck"></i> ارسال به سراسر کشور</small>
+                            <strong>قطعات مصرفی و سرویس دوره‌ای</strong>
+                            <p>لنت، فیلتر، تسمه تایم و روغن‌ موتور با قیمت و موجودی به‌روز</p>
+                            <span class="nx-slide-cta">مشاهده قطعات <i class="fas fa-chevron-left"></i></span>
+                        </span>
+                        <i class="fas fa-oil-can nx-slide-art"></i>
+                    </a>
+                    <a href="/contact-us" class="nx-slide nx-slide-promo nx-slide-promo-3">
+                        <span class="nx-slide-copy">
+                            <small><i class="fas fa-headset"></i> مشاوره تخصصی</small>
+                            <strong>قطعه مناسب خودرویتان را پیدا نمی‌کنید؟</strong>
+                            <p>با کد فنی یا مدل خودرو تماس بگیرید تا کارشناس ما راهنمایی‌تان کند</p>
+                            <span class="nx-slide-cta">تماس با کارشناس <i class="fas fa-chevron-left"></i></span>
+                        </span>
+                        <i class="fas fa-headset nx-slide-art"></i>
+                    </a>
+                @endif
+            </div>
+        </section>
+
+        {{-- دسترسی سریع --}}
+        <nav class="nx-circles" aria-label="دسترسی سریع به دسته‌ها">
+            <a href="/shop?title={{ urlencode('لنت ترمز') }}" class="nx-circle nx-t1">
+                <i class="fas fa-compact-disc"></i> لنت ترمز
+            </a>
+            <a href="/shop?title={{ urlencode('فیلتر روغن') }}" class="nx-circle nx-t2">
+                <i class="fas fa-oil-can"></i> فیلتر روغن
+            </a>
+            <a href="/shop?title={{ urlencode('تسمه تایم') }}" class="nx-circle nx-t3">
+                <i class="fas fa-cogs"></i> تسمه تایم
+            </a>
+            <a href="/shop?title={{ urlencode('سنسور') }}" class="nx-circle nx-t4">
+                <i class="fas fa-bolt"></i> سنسورها
+            </a>
+            <a href="/shop?title={{ urlencode('سپر') }}" class="nx-circle nx-t5">
+                <i class="fas fa-car-side"></i> قطعات بدنه
+            </a>
+            <a href="/shop?title={{ urlencode('چراغ') }}" class="nx-circle nx-t6">
+                <i class="fas fa-lightbulb"></i> چراغ و روشنایی
+            </a>
+            <a href="/shop?title={{ urlencode('باتری') }}" class="nx-circle nx-t7">
+                <i class="fas fa-car-battery"></i> باتری و برق
+            </a>
+            <a href="/shop?title={{ urlencode('کمک فنر') }}" class="nx-circle nx-t8">
+                <i class="fas fa-life-ring"></i> جلوبندی و تعلیق
+            </a>
+        </nav>
+
+        {{-- پیشنهاد ویژه --}}
+        @if(isset($specialProducts) && $specialProducts->count())
+            <section class="nx-amazing" aria-label="پیشنهاد ویژه">
+                <div class="nx-amazing-side">
+                    <i class="fas fa-bolt"></i>
+                    <strong>{{ !empty($specialHasDiscount) ? 'شگفت‌انگیز' : 'پیشنهاد ویژه' }}</strong>
+                    <span>{{ !empty($specialHasDiscount) ? 'تخفیف‌های امروز ناظر یدک' : 'منتخب قطعات اصلی و پرفروش' }}</span>
+                    <a href="/shop">مشاهده همه <i class="fas fa-chevron-left"></i></a>
+                </div>
+                <div class="nx-rail owl-carousel owl-theme nx-slider">
+                    @foreach($specialProducts as $product)
+                        @include('product.product_card', ['product' => $product])
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
+        {{-- بنرهای میانی --}}
+        <section class="nx-banners">
+            <a href="/shop" class="nx-banner nx-banner-isaco">
+                <img src="/assets/images/isaco-logo.png" alt="قطعات اصلی ایساکو - ناظر یدک" width="120" height="120" loading="lazy" decoding="async">
+                <span>
+                    <strong>قطعات اصلی ایساکو</strong>
+                    <p>اصالت کالا، موجودی لحظه‌ای و خرید سریع</p>
+                    <span class="nx-banner-cta">ورود به فروشگاه <i class="fas fa-chevron-left"></i></span>
+                </span>
+            </a>
+            <a href="/contact-us" class="nx-banner nx-banner-support">
+                <i class="fas fa-headset"></i>
+                <span>
+                    <strong>قطعه مناسب را پیدا نمی‌کنید؟</strong>
+                    <p>با کد فنی یا مدل خودرو راهنمایی می‌شوید</p>
+                    <span class="nx-banner-cta">تماس با کارشناس <i class="fas fa-chevron-left"></i></span>
+                </span>
+            </a>
+        </section>
+
+        {{-- عنوان اصلی صفحه؛ هر صفحه‌ی ایندکس‌شونده باید دقیقا یک H1 داشته باشد
+             که موضوع صفحه را برای گوگل و صفحه‌خوان‌ها مشخص کند. --}}
+        <h1 class="nx-page-title">خرید لوازم یدکی خودرو و قطعات اصلی ایساکو</h1>
+
+        {{-- جدیدترین قطعات --}}
+        <section class="nx-card">
+            <div class="nx-card-head">
+                <h2><i class="fas fa-star"></i> جدیدترین قطعات خودرو</h2>
+                <a href="/shop">مشاهده همه <i class="fas fa-chevron-left"></i></a>
+            </div>
+            <div class="nx-rail owl-carousel owl-theme nx-slider">
+                @foreach($products as $product)
+                    @include('product.product_card', ['product' => $product])
+                @endforeach
+            </div>
+        </section>
+
+        {{-- خرید بر اساس خودرو --}}
+        @if(isset($carCategories) && $carCategories->count())
+            <section class="nx-card">
+                <div class="nx-card-head">
+                    <h2><i class="fas fa-car"></i> خرید بر اساس خودرو</h2>
+                    <a href="/shop">همه خودروها <i class="fas fa-chevron-left"></i></a>
+                </div>
+                <div class="nx-cars">
+                    @foreach($carCategories as $cat)
+                        <a href="/shop?car_model={{ urlencode($cat->name) }}" class="nx-car">
+                            @if($cat->image)
+                                <img src="{{ $cat->image }}" alt="قطعات {{ $cat->name }}" loading="lazy" decoding="async" width="120" height="120">
+                            @else
+                                <span class="nx-car-fallback"><i class="fas fa-car"></i></span>
+                            @endif
+                            <strong>{{ $cat->name }}</strong>
+                            <span>{{ number_format($cat->products_count) }} قطعه</span>
+                        </a>
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
+        {{-- مجله --}}
+        @if(isset($articles) && $articles->count())
+            <section class="nx-card">
+                <div class="nx-card-head">
+                    <h2><i class="fas fa-newspaper"></i> مجله ناظر یدک</h2>
+                    <a href="/blog">مشاهده همه <i class="fas fa-chevron-left"></i></a>
+                </div>
+                <div class="nx-posts">
+                    @foreach($articles as $article)
+                        <a href="{{ $article->getUrl() }}" class="nx-post">
+                            <img src="{{ article_cover($article) }}" alt="{{ $article->titr }}" class="nx-post-img" loading="lazy" width="600" height="340">
+                            <span class="nx-post-body">
+                                <h3>{{ $article->titr }}</h3>
+                                @if($article->sutitr)
+                                    <p>{{ Str::limit($article->sutitr, 72) }}</p>
+                                @endif
+                            </span>
+                        </a>
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
+    </div>
 </main>
 @endsection
+
 @section('js')
-<script>$(function(){if($('.home-ad-carousel').length&&!$('.home-ad-carousel').hasClass('owl-loaded')){$('.home-ad-carousel').owlCarousel({rtl:true,items:1,loop:true,dots:true,nav:true,autoplay:true,autoplayTimeout:4500,autoplayHoverPause:true});}});</script>
+<script>
+$(function () {
+    var navText = [
+        '<i class="fas fa-chevron-right"></i>',
+        '<i class="fas fa-chevron-left"></i>'
+    ];
+
+    var $hero = $('.nx-hero-slider');
+    if ($hero.length && !$hero.hasClass('owl-loaded')) {
+        $hero.owlCarousel({
+            rtl: true,
+            items: 1,
+            loop: $hero.children().length > 1,
+            dots: true,
+            nav: true,
+            navText: navText,
+            autoplay: true,
+            autoplayTimeout: 5200,
+            autoplayHoverPause: true
+        });
+    }
+
+    $('.nx-slider').each(function () {
+        var $rail = $(this);
+        if ($rail.hasClass('owl-loaded')) {
+            return;
+        }
+        $rail.owlCarousel({
+            rtl: true,
+            nav: true,
+            dots: false,
+            margin: 0,
+            loop: false,
+            navText: navText,
+            responsive: {
+                0: { items: 2 },
+                768: { items: 3 },
+                992: { items: 4 },
+                1200: { items: 5 },
+                1400: { items: 6 }
+            }
+        });
+    });
+});
+</script>
 @endsection

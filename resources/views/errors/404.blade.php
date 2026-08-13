@@ -1,4 +1,4 @@
-@extends('layout.layout', ['title' => 'صفحه پیدا نشد | ناظر یدک'])
+@extends('layout.layout', ['title' => 'صفحه پیدا نشد | ناظر یدک', 'metaDescription' => 'صفحه‌ای که دنبال آن بودید پیدا نشد. قطعه مورد نظرتان را در فروشگاه ناظر یدک جستجو کنید.', 'robots' => seo_robots_tag(false, true), 'noBaseSchema' => true])
 @section('main_content')
 <main>
     <div class="container">

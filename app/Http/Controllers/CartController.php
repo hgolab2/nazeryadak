@@ -7,30 +7,53 @@ class CartController extends Controller
 {
     public function add(Request $request)
     {
-        $product = Product::where('id', $request->product_id)->where('is_active', 1)->where('stock', '>', 0)->first();
+        // ناموجودی از «نبودن محصول» جدا شده است؛ قبلا هر دو حالت پیام
+        // گمراه‌کننده‌ی «محصول یافت نشد» می‌گرفتند
+        $product = Product::where('id', $request->product_id)->where('is_active', 1)->first();
         if (!$product) {
             return response()->json(['status' => 'error', 'message' => 'محصول یافت نشد'], 404);
         }
 
-        $cart = session()->get('cart', []);
+        $stock = (int) $product->stock;
+        if ($stock <= 0) {
+            return response()->json(['status' => 'error', 'message' => 'این محصول در حال حاضر موجود نیست'], 422);
+        }
 
-        if (isset($cart[$product->id])) {
-            if ($product->stock > 0 && $cart[$product->id]['quantity'] >= $product->stock) {
-                return response()->json(['status' => 'error', 'message' => 'موجودی کافی نیست'], 422);
-            }
-            $cart[$product->id]['quantity']++;
+        $quantity = (int) $request->input('quantity', 1);
+        $quantity = max(1, min($quantity, $stock));
+
+        $cart = session()->get('cart', []);
+        $inCart = (int) ($cart[$product->id]['quantity'] ?? 0);
+
+        if ($inCart + $quantity > $stock) {
+            $remaining = max(0, $stock - $inCart);
+            $message = $remaining > 0
+                ? 'تنها ' . toPersianNumbers($remaining, false) . ' عدد از این محصول موجود است'
+                : 'همه‌ی موجودی این محصول در سبد شماست';
+
+            return response()->json(['status' => 'error', 'message' => $message], 422);
+        }
+
+        if ($inCart > 0) {
+            $cart[$product->id]['quantity'] = $inCart + $quantity;
+            $cart[$product->id]['price']    = $product->price;
         } else {
             $cart[$product->id] = [
                 'title'    => $product->title,
                 'price'    => $product->price,
-                'quantity' => 1,
+                'quantity' => $quantity,
                 'image'    => $product->image(),
                 'url'      => $product->url(),
             ];
         }
 
         session()->put('cart', $cart);
-        return response()->json(['status' => 'success']);
+
+        return response()->json([
+            'status'     => 'success',
+            'quantity'   => $cart[$product->id]['quantity'],
+            'cart_count' => count($cart),
+        ]);
     }
 
     public function getCart()
@@ -56,12 +79,12 @@ class CartController extends Controller
         session()->put('cart', $cart);
 
         $cartTotal = array_sum(array_map(fn($i) => ($i['price'] ?? 0) * ($i['quantity'] ?? 1), $cart));
-        $cartCount = count($cart);
 
         return response()->json([
             'status'     => 'success',
             'cart_total'  => $cartTotal,
-            'cart_count'  => $cartCount,
+            'cart_count'  => count($cart),
+            'items_count' => self::itemsCount($cart),
         ]);
     }
 
@@ -106,14 +129,20 @@ class CartController extends Controller
     {
         $itemSubtotal = ($cart[$id]['price'] ?? 0) * ($cart[$id]['quantity'] ?? 1);
         $cartTotal = array_sum(array_map(fn($i) => ($i['price'] ?? 0) * ($i['quantity'] ?? 1), $cart));
-        $cartCount = count($cart);
 
         return response()->json([
             'status'        => 'success',
             'item_quantity'  => $cart[$id]['quantity'] ?? 0,
             'item_subtotal'  => $itemSubtotal,
             'cart_total'     => $cartTotal,
-            'cart_count'     => $cartCount,
+            'cart_count'     => count($cart),
+            // مجموع تعداد قطعات؛ صفحه‌ی سبد این عدد را نشان می‌دهد نه تعداد ردیف‌ها
+            'items_count'    => self::itemsCount($cart),
         ]);
+    }
+
+    private static function itemsCount(array $cart): int
+    {
+        return (int) array_sum(array_map(fn($i) => $i['quantity'] ?? 1, $cart));
     }
 }

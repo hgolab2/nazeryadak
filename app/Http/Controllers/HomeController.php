@@ -54,21 +54,32 @@ class HomeController extends Controller
             ->where('showdate', '<', date('Y-m-d H:i:s'))
             ->take(4)
             ->get();
-        $products = $this->getProduct(8);
+        $products = $this->getProduct(12);
         $specialProducts = Product::with(['images', 'categories'])
             ->where('is_active', 1)
             ->where('is_special_offer', 1)
             ->where('discount_percent', '>', 0)
             ->latest('updated_at')
-            ->take(10)
+            ->take(12)
             ->get();
+        $specialHasDiscount = $specialProducts->isNotEmpty();
+        if (!$specialHasDiscount) {
+            // تا وقتی تخفیفی ثبت نشده، ریل «پیشنهاد ویژه» با منتخب قطعات پر می‌شود
+            $specialProducts = Product::with(['images', 'categories'])
+                ->where('is_active', 1)
+                ->where('file_path', '!=', '')
+                ->orderByDesc('id')
+                ->skip(12)
+                ->take(12)
+                ->get();
+        }
         $advertisements = $this->getAdvertisement('farsi');
         $carCategories = \App\Models\EshopCategory::withCount('products')
             ->where('is_featured', 1)
             ->orderByDesc('products_count')
             ->take(10)
             ->get();
-        return View('index' , compact('articles','products','specialProducts','advertisements','carCategories'));
+        return View('index' , compact('articles','products','specialProducts','specialHasDiscount','advertisements','carCategories'));
 	}
 
     public function getAdvertisement($lang)
@@ -93,7 +104,7 @@ class HomeController extends Controller
         $category = Category::find($categoryid);
         if(!$category)
         {
-            return view('errors.404');
+            return response()->view('errors.404', [], 404);
         }
         $class = 'App\Models\Article1';
         $article = new $class;

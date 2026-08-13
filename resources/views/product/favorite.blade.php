@@ -1,4 +1,4 @@
-@extends('layout.layout', ['title' => 'علاقه‌مندی‌ها | ناظر یدک'])
+@extends('layout.layout', ['title' => 'علاقه‌مندی‌ها | ناظر یدک', 'robots' => seo_robots_tag(false, true), 'noBaseSchema' => true])
 @section('main_content')
 <main>
     <div class="container">

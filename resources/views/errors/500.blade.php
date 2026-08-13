@@ -1,4 +1,4 @@
-@extends('layout.layout',['title'=>$message,'type'=>'error'])
+@extends('layout.layout', ['title' => $message, 'type' => 'error', 'robots' => seo_robots_tag(false, true), 'noBaseSchema' => true])
 @section('main_content')
 <main class="page-wrapper">
     <!-- Page content-->

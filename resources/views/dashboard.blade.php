@@ -1,5 +1,7 @@
 @extends('layout.layout', [
-    'title' => "داشبورد | ناظر یدک"
+    'title' => 'داشبورد | ناظر یدک',
+    'robots' => seo_robots_tag(false, true),
+    'noBaseSchema' => true,
 ])
 @section('main_content')
 <main>

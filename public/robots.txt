@@ -1,13 +1,54 @@
+# robots.txt — فروشگاه لوازم یدکی ناظر یدک
+# نسخه‌ی داینامیک همین فایل در SitemapController::robots() نگهداری می‌شود؛
+# اگر وب‌سرور فایل استاتیک را سرو کند، این نسخه پاسخ داده می‌شود.
+
 User-agent: *
 Allow: /
+
+# بخش‌های شخصی و تراکنشی؛ ارزش ایندکس ندارند
 Disallow: /admin/
 Disallow: /dashboard
 Disallow: /dashboardAdmin
+Disallow: /loginAdmin
 Disallow: /login
+Disallow: /logout
 Disallow: /cart
+Disallow: /favorite
 Disallow: /profile/
 Disallow: /order/
 Disallow: /payment/
+Disallow: /address/
+Disallow: /auth/
 Disallow: /product/fetch-image/
+Disallow: /products/favorite/
+
+# پارامترهای فیلتر و مرتب‌سازی، محتوای تکراری می‌سازند
+Disallow: /*?*order=
+Disallow: /*?*orderby=
+Disallow: /*?*categories=
+Disallow: /*?*ajaxi=
+Disallow: /*?*utm_
+Disallow: /*?*fbclid=
+Disallow: /*?*gclid=
+
+# فایل‌های ظاهری صفحه باید خزیده شوند وگرنه رندر گوگل ناقص می‌ماند
+Allow: /assets/
+Allow: /upload/
+Allow: /images/
+Allow: *.css$
+Allow: *.js$
+Allow: *.webp$
+Allow: *.jpg$
+Allow: *.png$
+
+# خزنده‌های تجاری پرمصرف که سود سئویی ندارند
+User-agent: AhrefsBot
+Crawl-delay: 10
+
+User-agent: SemrushBot
+Crawl-delay: 10
+
+User-agent: MJ12bot
+Disallow: /
 
 Sitemap: https://nazeryadak.ir/sitemap.xml

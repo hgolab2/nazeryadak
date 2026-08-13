@@ -1,5 +1,8 @@
 @extends('layout.layout', [
-    'title' => "سبد خرید | ناظر یدک"
+    'title' => 'سبد خرید | ناظر یدک',
+    'robots' => seo_robots_tag(false, true),
+    'noBaseSchema' => true,
+    'bodyClass' => count(session('cart', [])) ? 'has-actionbar' : '',
 ])
 @section('main_content')
 <main>
@@ -14,7 +17,14 @@
             </div>
         </div>
 
-        @php $cart = session('cart', []); @endphp
+        @php
+            $cart = session('cart', []);
+            // آستانه‌ها از همان تنظیماتی خوانده می‌شوند که هزینه‌ی واقعی ارسال را
+            // حساب می‌کند؛ قبلا اینجا عدد ثابت نوشته شده بود و با محاسبه‌ی نهایی
+            // ده برابر اختلاف داشت
+            $shippingRules = getShippingRules();
+            $cartSum = array_sum(array_map(fn($i) => ($i['price'] ?? 0) * ($i['quantity'] ?? 1), $cart));
+        @endphp
 
         @if(count($cart) == 0)
             {{-- سبد خالی --}}
@@ -22,7 +32,7 @@
                 <div style="width:100px; height:100px; background:var(--primary-lighter); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
                     <i class="fas fa-shopping-cart" style="font-size:2.5rem; color:var(--primary); opacity:.5;"></i>
                 </div>
-                <h5 style="font-weight:700; margin-bottom:8px;">سبد خرید شما خالی است</h5>
+                <h1 style="font-weight:700; margin-bottom:8px; font-size:1.1rem;">سبد خرید شما خالی است</h1>
                 <p class="font-13 text-muted mb-4">می‌توانید از فروشگاه قطعات مورد نیاز خودرو خود را انتخاب کنید.</p>
                 <a href="/shop" class="btn btn-info px-4">
                     <i class="fas fa-store me-1"></i>
@@ -36,12 +46,12 @@
                     <div class="cart-content">
                         <div class="d-flex align-items-center gap-2 px-3 pb-3 mb-2 border-bottom">
                             <i class="fas fa-shopping-cart" style="color:var(--primary);"></i>
-                            <h4 class="mb-0" style="font-size:1rem; font-weight:700;">
+                            <h1 class="mb-0" style="font-size:1rem; font-weight:700;">
                                 سبد خرید شما
                                 <span class="font-12 text-muted fw-normal">
                                     ({{ toPersianNumbers(count($cart)) }} قطعه)
                                 </span>
-                            </h4>
+                            </h1>
                         </div>
 
                         @foreach($cart as $id => $item)
@@ -111,8 +121,9 @@
                                 تعداد قطعات
                                 (<span class="cart-total-count">{{ toPersianNumbers(array_sum(array_map(fn($i) => $i['quantity'] ?? 1, $cart))) }}</span>)
                             </span>
-                            <span class="cart-total-sum" style="font-weight:600;">
-                                {{ toPersianNumbers(number_format(array_sum(array_map(fn($i) => ($i['price'] ?? 0) * ($i['quantity'] ?? 1), $cart)))) }} تومان
+                            <span style="font-weight:600;">
+                                {{-- واحد بیرون از span است تا به‌روزرسانی ای‌جکس «تومان تومان» ننویسد --}}
+                                <span class="cart-total-sum">{{ toPersianNumbers(number_format($cartSum)) }}</span> تومان
                             </span>
                         </div>
 
@@ -120,13 +131,28 @@
                             <span class="text-muted"><i class="fas fa-truck me-1"></i> هزینه ارسال</span>
                             <span class="font-12" style="color:var(--accent);">محاسبه پس از ثبت آدرس</span>
                         </div>
-                        <div class="font-12 text-muted px-2 py-1" style="line-height:1.8;">
-                            <i class="fas fa-info-circle me-1" style="color:var(--primary);"></i>
-                            قم: سفارش بالای ۵ میلیون تومان ارسال رایگان | سایر شهرها: بالای ۲۰ میلیون رایگان
+                        <div class="font-12 text-muted px-2 py-1" style="line-height:1.9;">
+                            <p class="mb-1">
+                                <i class="fas fa-info-circle me-1" style="color:var(--primary);"></i>
+                                {{ $shippingRules['local_province_name'] }}: سفارش بالای {{ toPersianNumbers($shippingRules['local_free_threshold']) }} تومان ارسال رایگان،
+                                در غیر این صورت {{ toPersianNumbers($shippingRules['local_shipping_cost']) }} تومان (پیک).
+                            </p>
+                            <p class="mb-0">
+                                <i class="fas fa-truck-moving me-1" style="color:var(--accent);"></i>
+                                سایر شهرها: بالای {{ toPersianNumbers($shippingRules['national_free_threshold']) }} تومان رایگان؛
+                                زیر این مبلغ با تیپاکس ارسال می‌شود و <b>کرایه هنگام تحویل از گیرنده</b> دریافت می‌شود
+                                (این مبلغ در فاکتور اینترنتی نیست).
+                            </p>
+                            @if($cartSum > 0 && $cartSum < $shippingRules['local_free_threshold'])
+                            <p class="mb-0 mt-1" style="color:var(--primary);">
+                                <i class="fas fa-gift me-1"></i>
+                                تا ارسال رایگان در {{ $shippingRules['local_province_name'] }} {{ toPersianNumbers($shippingRules['local_free_threshold'] - $cartSum) }} تومان باقی مانده است.
+                            </p>
+                            @endif
                         </div>
 
                         <div class="d-flex justify-content-between py-3 px-2">
-                            <span style="font-weight:700; font-size:.95rem;">مبلغ قابل پرداخت</span>
+                            <span style="font-weight:700; font-size:.95rem;">جمع کالاها <small class="font-12 fw-normal text-muted d-block">(بدون هزینه ارسال)</small></span>
                             <span style="font-weight:700; font-size:1.1rem; color:var(--primary);">
                                 <span class="cart-total-sum">
                                     {{ toPersianNumbers(number_format(array_sum(array_map(fn($i) => ($i['price'] ?? 0) * ($i['quantity'] ?? 1), $cart)))) }}
@@ -162,6 +188,22 @@
         @endif
     </div>
 </main>
+
+@if(count($cart) > 0)
+{{-- نوار چسبان موبایل: مبلغ و دکمه‌ی ادامه بدون اسکرول تا انتهای فهرست کالاها --}}
+<div class="mobile-actionbar" role="region" aria-label="ادامه‌ی خرید">
+    <div class="mobile-actionbar__info">
+        <span class="mobile-actionbar__label">جمع کالاها</span>
+        <span class="mobile-actionbar__price">
+            <span class="cart-total-sum">{{ toPersianNumbers(number_format($cartSum)) }}</span>
+            <small>تومان</small>
+        </span>
+    </div>
+    <a href="/order/shopping" class="mobile-actionbar__btn">
+        <i class="fas fa-check-circle"></i> ادامه و ثبت سفارش
+    </a>
+</div>
+@endif
 @endsection
 @section('js')
 <script>
@@ -177,7 +219,8 @@
         return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     }
     function updateTotals(cart_total = 0, cart_count = 0){
-        $('.cart-total-sum').text(toPersianNumbers(numberWithCommas(Number(cart_total))) + ' تومان');
+        // واحد «تومان» در خود قالب کنار این span آمده است
+        $('.cart-total-sum').text(toPersianNumbers(numberWithCommas(Number(cart_total))));
         $('.cart-total-count').text(toPersianNumbers(cart_count));
     }
     $(document).on('click', '.delete-item', function() {
@@ -196,7 +239,7 @@
                 $.post("/cart/remove", { id: id, _token: csrf }, function(res){
                     if(res.status === 'success'){
                         $('.shopping-cart-item[data-id="'+id+'"]').fadeOut(300, function(){ $(this).remove(); });
-                        updateTotals(res.cart_total, res.cart_count);
+                        updateTotals(res.cart_total, res.items_count);
                         toast.fire({ icon:'success', title:'قطعه از سبد حذف شد' });
                         if(res.cart_count == 0) setTimeout(()=> location.reload(), 500);
                     }
@@ -214,7 +257,7 @@
                 var row = $('.shopping-cart-item[data-id="'+id+'"]');
                 row.find('.qty').val(res.item_quantity);
                 row.find('.item-subtotal').text(toPersianNumbers(numberWithCommas(res.item_subtotal)));
-                updateTotals(res.cart_total, res.cart_count);
+                updateTotals(res.cart_total, res.items_count);
             }
         });
     });
@@ -226,7 +269,7 @@
                 var row = $('.shopping-cart-item[data-id="'+id+'"]');
                 row.find('.qty').val(res.item_quantity);
                 row.find('.item-subtotal').text(toPersianNumbers(numberWithCommas(res.item_subtotal)));
-                updateTotals(res.cart_total, res.cart_count);
+                updateTotals(res.cart_total, res.items_count);
             }
         });
     });

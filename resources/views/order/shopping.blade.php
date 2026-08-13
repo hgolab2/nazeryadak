@@ -1,4 +1,4 @@
-@extends('layout.layout', ['title' => 'اطلاعات ارسال | ناظر یدک'])
+@extends('layout.layout', ['title' => 'اطلاعات ارسال | ناظر یدک', 'robots' => seo_robots_tag(false, true), 'noBaseSchema' => true, 'bodyClass' => 'has-actionbar'])
 @section('main_content')
 <div class="container">
     <div class="row mt-3 mb-2">
@@ -42,11 +42,12 @@
                                                 <div class="row">
                                                     <div class="col-md-6 mb-3">
                                                         <label class="font-12 mb-1">نام و نام خانوادگی</label>
-                                                        <input type="text" name="receiver_name" class="form-control" value="{{ $address->receiver_name ?? '' }}" required style="border-radius:var(--radius-sm);">
+                                                        {{-- autocomplete: مرورگر موبایل اطلاعات ذخیره‌شده را پیشنهاد می‌دهد --}}
+                                                        <input type="text" name="receiver_name" class="form-control" value="{{ $address->receiver_name ?? '' }}" required autocomplete="name" style="border-radius:var(--radius-sm);">
                                                     </div>
                                                     <div class="col-md-6 mb-3">
                                                         <label class="font-12 mb-1">شماره تماس گیرنده</label>
-                                                        <input type="tel" name="receiver_phone" class="form-control" value="{{ $address->receiver_phone ?? '' }}" required style="border-radius:var(--radius-sm);" placeholder="09xxxxxxxxx">
+                                                        <input type="tel" name="receiver_phone" class="form-control" value="{{ $address->receiver_phone ?? '' }}" required inputmode="numeric" autocomplete="tel" maxlength="13" style="border-radius:var(--radius-sm); direction:ltr;" placeholder="09xxxxxxxxx">
                                                     </div>
                                                     <div class="col-md-4 mb-3">
                                                         <label class="font-12 mb-1">استان</label>
@@ -58,15 +59,15 @@
                                                     </div>
                                                     <div class="col-md-4 mb-3">
                                                         <label class="font-12 mb-1">شهر</label>
-                                                        <input type="text" name="city" value="{{ $address->city ?? '' }}" class="form-control" required style="border-radius:var(--radius-sm);">
+                                                        <input type="text" name="city" value="{{ $address->city ?? '' }}" class="form-control" required autocomplete="address-level2" style="border-radius:var(--radius-sm);">
                                                     </div>
                                                     <div class="col-md-4 mb-3">
-                                                        <label class="font-12 mb-1">کد پستی</label>
-                                                        <input type="text" name="postal_code" class="form-control" value="{{ $address->postal_code ?? '' }}" style="border-radius:var(--radius-sm);">
+                                                        <label class="font-12 mb-1">کد پستی <small class="text-muted">(اختیاری)</small></label>
+                                                        <input type="text" name="postal_code" class="form-control" value="{{ $address->postal_code ?? '' }}" inputmode="numeric" autocomplete="postal-code" maxlength="10" style="border-radius:var(--radius-sm); direction:ltr;">
                                                     </div>
                                                     <div class="col-12 mb-3">
                                                         <label class="font-12 mb-1">آدرس کامل</label>
-                                                        <textarea name="address_line" class="form-control" rows="3" required style="border-radius:var(--radius-sm);">{{ $address->address_line ?? '' }}</textarea>
+                                                        <textarea name="address_line" class="form-control" rows="3" required autocomplete="street-address" placeholder="خیابان، کوچه، پلاک، واحد" style="border-radius:var(--radius-sm);">{{ $address->address_line ?? '' }}</textarea>
                                                     </div>
                                                 </div>
                                             </form>
@@ -120,11 +121,11 @@
                         <span class="fw-bold" style="font-size:1.1rem; color:var(--primary);" id="finalPrice">{{ number_format($order->total_price) }} <small class="font-12 fw-normal">تومان</small></span>
                     </div>
                     @if($address)
-                    <a href="/order/payment/{{ $order->id }}" id="proceedPayment" class="btn add-cart-btn2 text-center d-block font-13 fw-bold">
+                    <a href="/order/payment/{{ $order->id }}" id="proceedPayment" class="btn add-cart-btn2 text-center d-block font-13 fw-bold hide-on-mobile-buy">
                         <i class="fas fa-arrow-left me-1"></i> ادامه و پرداخت
                     </a>
                     @else
-                    <button type="button" class="btn text-center d-block w-100 font-13 fw-bold" disabled
+                    <button type="button" class="btn text-center d-block w-100 font-13 fw-bold hide-on-mobile-buy" disabled
                             style="background:#ccc; color:#fff; border:none; border-radius:var(--radius-sm); padding:12px;">
                         <i class="fas fa-exclamation-circle me-1"></i> ابتدا آدرس تحویل را ثبت کنید
                     </button>
@@ -134,6 +135,23 @@
         </div>
     </div>
 </main>
+
+{{-- نوار چسبان موبایل؛ بدون آدرس، همین دکمه فرم آدرس را باز می‌کند تا کاربر
+     مجبور نباشد دنبال دکمه‌ی «ثبت آدرس» در بالای صفحه بگردد --}}
+<div class="mobile-actionbar" role="region" aria-label="ادامه به پرداخت">
+    <div class="mobile-actionbar__info">
+        <span class="mobile-actionbar__label">مبلغ قابل پرداخت</span>
+        <span class="mobile-actionbar__price" id="finalPriceMobile">{{ number_format($order->total_price) }} <small>تومان</small></span>
+    </div>
+    <a href="/order/payment/{{ $order->id }}" id="proceedPaymentMobile"
+       class="mobile-actionbar__btn {{ $address ? '' : 'd-none' }}">
+        <i class="fas fa-arrow-left"></i> ادامه و پرداخت
+    </a>
+    <button type="button" id="openAddressMobile" data-bs-toggle="modal" data-bs-target="#change-address-modal"
+            class="mobile-actionbar__btn {{ $address ? 'd-none' : '' }}" style="background:var(--accent, #ef394e);">
+        <i class="fas fa-map-marker-alt"></i> ثبت آدرس تحویل
+    </button>
+</div>
 @endsection
 @section('js')
 <script>
@@ -148,7 +166,9 @@ function recalcShipping() {
             } else {
                 $('#shippingCost').text(res.shipping_label);
             }
-            $('#finalPrice').html(new Intl.NumberFormat().format(res.total_price) + ' <small class="font-12 fw-normal">تومان</small>');
+            var priceHtml = new Intl.NumberFormat().format(res.total_price);
+            $('#finalPrice').html(priceHtml + ' <small class="font-12 fw-normal">تومان</small>');
+            $('#finalPriceMobile').html(priceHtml + ' <small>تومان</small>');
         }
     });
 }
@@ -167,8 +187,14 @@ $('#saveAddressBtn').click(function () {
                 $('#change-address-modal').modal('hide');
                 toast.fire({ icon: 'success', title: 'آدرس با موفقیت ثبت شد' });
                 recalcShipping();
+
+                // روی موبایل دکمه‌ی نوار چسبان بلافاصله به «ادامه و پرداخت»
+                // تبدیل می‌شود و نیازی به بارگذاری دوباره‌ی صفحه نیست
+                $('#openAddressMobile').addClass('d-none');
+                $('#proceedPaymentMobile').removeClass('d-none');
+
                 let payBtn = $('#proceedPayment');
-                if (payBtn.length === 0) {
+                if (payBtn.length === 0 && window.innerWidth >= 992) {
                     location.reload();
                 }
             }

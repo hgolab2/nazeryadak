@@ -1,5 +1,19 @@
+@php
+    $pageTitle = 'تماس با ناظر یدک | مشاوره خرید لوازم یدکی خودرو';
+    $pageDescription = 'راه‌های ارتباط با ناظر یدک: تماس تلفنی و واتساپ ' . seo_config('business.phone_display') . '، ایمیل ' . seo_config('business.email') . ' و آدرس فروشگاه در قم. پاسخ‌گویی شنبه تا پنج‌شنبه، ۹ تا ۱۸.';
+@endphp
 @extends('layout.layout', [
-    'title' => "تماس با ما | ناظر یدک"
+    'title' => $pageTitle,
+    'metaDescription' => $pageDescription,
+    'keywords' => 'تماس با ناظر یدک, شماره تماس فروشگاه لوازم یدکی, آدرس فروشگاه قطعات ایساکو, پشتیبانی خرید قطعات خودرو',
+    'canonical' => seo_url('/contact-us'),
+    'schema' => [
+        seo_webpage_schema($pageTitle, $pageDescription, seo_url('/contact-us'), 'ContactPage'),
+        seo_breadcrumb_schema([
+            ['name' => 'ناظر یدک', 'url' => seo_url()],
+            ['name' => 'تماس با ما', 'url' => null],
+        ]),
+    ],
 ])
 @section('main_content')
 <main>

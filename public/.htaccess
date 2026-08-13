@@ -23,3 +23,95 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# ---------------------------------------------------------------------
+# فشرده‌سازی خروجی
+# حجم HTML/CSS/JS را تا حدود ۷۰٪ کم می‌کند و مستقیم روی LCP اثر دارد.
+# ---------------------------------------------------------------------
+<IfModule mod_brotli.c>
+    AddOutputFilterByType BROTLI_COMPRESS text/html text/plain text/xml text/css text/javascript application/javascript application/json application/xml image/svg+xml
+</IfModule>
+
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript
+    AddOutputFilterByType DEFLATE application/javascript application/x-javascript application/json
+    AddOutputFilterByType DEFLATE application/xml application/rss+xml application/xhtml+xml
+    AddOutputFilterByType DEFLATE image/svg+xml application/vnd.ms-fontobject font/ttf font/otf
+    BrowserMatch ^Mozilla/4 gzip-only-text/html
+    BrowserMatch ^Mozilla/4\.0[678] no-gzip
+    BrowserMatch \bMSIE !no-gzip !gzip-only-text/html
+</IfModule>
+
+# ---------------------------------------------------------------------
+# کش مرورگر برای فایل‌های ثابت
+# بازدید دوم کاربر تقریبا بدون درخواست شبکه بارگذاری می‌شود.
+# ---------------------------------------------------------------------
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresDefault                          "access plus 1 month"
+
+    ExpiresByType text/html                 "access plus 0 seconds"
+    ExpiresByType application/xml           "access plus 1 hour"
+    ExpiresByType text/xml                  "access plus 1 hour"
+    ExpiresByType text/plain                "access plus 1 day"
+
+    ExpiresByType text/css                  "access plus 1 year"
+    ExpiresByType application/javascript    "access plus 1 year"
+    ExpiresByType text/javascript           "access plus 1 year"
+
+    ExpiresByType image/jpeg                "access plus 1 year"
+    ExpiresByType image/png                 "access plus 1 year"
+    ExpiresByType image/gif                 "access plus 1 year"
+    ExpiresByType image/webp                "access plus 1 year"
+    ExpiresByType image/avif                "access plus 1 year"
+    ExpiresByType image/svg+xml             "access plus 1 year"
+    ExpiresByType image/x-icon              "access plus 1 year"
+
+    ExpiresByType font/woff                 "access plus 1 year"
+    ExpiresByType font/woff2                "access plus 1 year"
+    ExpiresByType application/font-woff     "access plus 1 year"
+    ExpiresByType application/font-woff2    "access plus 1 year"
+</IfModule>
+
+<IfModule mod_headers.c>
+    # فایل‌های ثابت: کش طولانی و تغییرناپذیر
+    <FilesMatch "\.(css|js|jpg|jpeg|png|gif|webp|avif|svg|ico|woff|woff2|ttf|otf|eot)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+
+    # HTML هرگز کش سخت نشود وگرنه تغییر قیمت‌ها به کاربر نمی‌رسد
+    <FilesMatch "\.(html|php)$">
+        Header set Cache-Control "no-cache, must-revalidate"
+    </FilesMatch>
+
+    # هدرهای امنیتی؛ HTTPS و امنیت از فاکتورهای رتبه‌بندی گوگل هستند
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=(), interest-cohort=()"
+    Header always set X-XSS-Protection "1; mode=block"
+
+    # پس از اطمینان از فعال بودن HTTPS روی کل دامنه، خط زیر را از حالت
+    # کامنت خارج کنید (فعال‌سازی زودهنگام سایت را غیرقابل دسترس می‌کند).
+    # Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+
+    Header unset X-Powered-By
+    Header unset Server
+</IfModule>
+
+# ---------------------------------------------------------------------
+# نوع محتوای صحیح برای فایل‌های مدرن
+# ---------------------------------------------------------------------
+<IfModule mod_mime.c>
+    AddType image/webp                  .webp
+    AddType image/avif                  .avif
+    AddType font/woff2                  .woff2
+    AddType application/manifest+json   .webmanifest
+</IfModule>
+
+# ---------------------------------------------------------------------
+# مسدودسازی دسترسی به فایل‌های حساس
+# ---------------------------------------------------------------------
+<FilesMatch "^\.(env|git|htaccess|htpasswd)|composer\.(json|lock)$">
+    Require all denied
+</FilesMatch>

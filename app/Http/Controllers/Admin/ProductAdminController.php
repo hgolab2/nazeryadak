@@ -12,6 +12,88 @@ use Illuminate\Support\Str;
 
 class ProductAdminController extends Controller
 {
+    /**
+     * ستون‌هایی که فرم ثبت/ویرایش محصول اجازه‌ی نوشتن در آن‌ها را دارد.
+     * category_id قبلا در این فهرست نبود، پس دسته‌بندی انتخاب‌شده در فرم
+     * بی‌سروصدا دور ریخته می‌شد و محصول در فیلتر دسته‌بندی فروشگاه پیدا نمی‌شد.
+     */
+    private const EDITABLE_FIELDS = [
+        'title', 'sku', 'price', 'regular_price', 'discount_percent',
+        'stock', 'weight', 'is_active', 'description', 'short_description',
+        'car_model', 'category_id',
+    ];
+
+    private static function rules(): array
+    {
+        $categoryIds = array_column(\App\Enums\ProductCategory::cases(), 'value');
+
+        return [
+            'title'         => 'required|string|max:255',
+            'sku'           => 'nullable|string|max:100',
+            'price'         => 'required|integer|min:0',
+            'regular_price' => 'nullable|integer|min:0',
+            'discount_percent' => 'nullable|integer|min:0|max:100',
+            'is_special_offer' => 'nullable|boolean',
+            // موجودی دیگر اختیاری نیست؛ محصول با stock خالی در فروشگاه دیده
+            // می‌شد ولی به سبد خرید اضافه نمی‌شد
+            'stock'         => 'required|integer|min:0',
+            'weight'        => 'nullable|integer|min:0',
+            'is_active'     => 'required|boolean',
+            'description'   => 'nullable|string',
+            'short_description' => 'nullable|string',
+            'car_model'     => 'nullable|string|max:255',
+            'category_id'   => 'nullable|integer|in:' . implode(',', $categoryIds),
+            'file'          => 'nullable|image|max:2048',
+        ];
+    }
+
+    /**
+     * پیام‌های فارسی؛ پروژه فایل ترجمه‌ی validation ندارد و بدون این‌ها
+     * مدیر به جای پیام، رشته‌ی «validation.required» می‌بیند.
+     */
+    private static function messages(): array
+    {
+        return [
+            'title.required'     => 'عنوان قطعه را وارد کنید.',
+            'price.required'     => 'قیمت فروش را وارد کنید.',
+            'price.integer'      => 'قیمت فروش باید عدد باشد (بدون کاما یا حروف).',
+            'stock.required'     => 'موجودی را وارد کنید؛ برای قطعه‌ی ناموجود عدد صفر بگذارید.',
+            'stock.integer'      => 'موجودی باید عدد باشد.',
+            'stock.min'          => 'موجودی نمی‌تواند منفی باشد.',
+            'regular_price.integer' => 'قیمت اصلی باید عدد باشد.',
+            'discount_percent.max'  => 'درصد تخفیف نمی‌تواند بیشتر از ۱۰۰ باشد.',
+            'is_active.required' => 'وضعیت محصول را مشخص کنید.',
+            'category_id.in'     => 'دسته‌بندی انتخاب‌شده معتبر نیست.',
+            'file.image'         => 'فایل انتخاب‌شده تصویر نیست.',
+            'file.max'           => 'حجم تصویر نباید بیشتر از ۲ مگابایت باشد.',
+        ];
+    }
+
+    /**
+     * دسته‌بندی قطعه را در جدول واسط هم می‌نویسد، چون فیلتر «/shop?category=»
+     * و شمارش دسته‌ها از product_in_category خوانده می‌شود نه از ستون
+     * products.category_id. ردیف‌های خارج از بازه‌ی ۱ تا ۱۱ (دسته‌های خودرو)
+     * دست نخورده می‌مانند — همان قراردادی که products:categorize دارد.
+     */
+    private function syncCategory(int $productId, $categoryId): void
+    {
+        DB::table('product_in_category')
+            ->where('product_id', $productId)
+            ->whereBetween('category_id', [1, 11])
+            ->delete();
+
+        if (!$categoryId) {
+            return;
+        }
+
+        DB::table('product_in_category')->insert([
+            'product_id'  => $productId,
+            'category_id' => (int) $categoryId,
+            'created_at'  => now(),
+            'updated_at'  => now(),
+        ]);
+    }
+
     public function admin_list(Request $request)
     {
         $user = Auth::user();
@@ -57,45 +139,27 @@ class ProductAdminController extends Controller
         if (!Auth::user()) return redirect('/loginAdmin');
         access(388);
 
-        $validator = Validator::make($request->all(), [
-            'title'         => 'required|string|max:255',
-            'sku'           => 'nullable|string|max:100',
-            'price'         => 'required|integer|min:0',
-            'regular_price' => 'nullable|integer|min:0',
-            'discount_percent' => 'nullable|integer|min:0|max:100',
-            'is_special_offer' => 'nullable|boolean',
-            'stock'         => 'nullable|integer|min:0',
-            'weight'        => 'nullable|integer|min:0',
-            'is_active'     => 'required|boolean',
-            'description'   => 'nullable|string',
-            'short_description' => 'nullable|string',
-            'car_model'     => 'nullable|string|max:255',
-            'file'          => 'nullable|image|max:2048',
-        ]);
+        $validator = Validator::make($request->all(), self::rules(), self::messages());
 
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput();
         }
 
-        $data = $request->only([
-            'title', 'sku', 'price', 'regular_price', 'discount_percent',
-            'stock', 'weight', 'is_active', 'description', 'short_description', 'car_model',
-        ]);
+        $data = $request->only(self::EDITABLE_FIELDS);
 
         $data['slug'] = Str::slug($request->sku ?: $request->title);
         $data['is_special_offer'] = $request->boolean('is_special_offer');
-        if ((int) ($data['discount_percent'] ?? 0) > 0) {
-            $data['is_special_offer'] = true;
-            if ((int) ($data['regular_price'] ?? 0) > 0) {
-                $data['price'] = (int) round($data['regular_price'] * (100 - (int) $data['discount_percent']) / 100);
-            }
-        }
+        // تخفیف روی قیمت فروش اعمال می‌شود، نه روی regular_price که قیمت خرید است
+        $discountPercent = (int) ($data['discount_percent'] ?? 0);
+        unset($data['discount_percent']);
 
         if ($request->hasFile('file')) {
             $data['file_path'] = $this->storeUploadedProductImage($request);
         }
 
         $product = Product::create($data);
+        $product->applyDiscountPercent($discountPercent);
+        $product->save();
         if (!empty($data['file_path'])) {
             DB::table('product_images')->insert([
                 'product_id' => $product->id,
@@ -108,7 +172,9 @@ class ProductAdminController extends Controller
             ]);
         }
 
-        return redirect('/admin/product/list')->with('success', 'Product saved successfully');
+        $this->syncCategory($product->id, $data['category_id'] ?? null);
+
+        return redirect('/admin/product/list')->with('success', 'محصول با موفقیت ثبت شد.');
     }
 
     public function admin_edit($id)
@@ -118,7 +184,15 @@ class ProductAdminController extends Controller
 
         $model = Product::with('images')->findOrFail($id);
         $categories = EshopCategory::orderBy('name')->get();
-        return view('product.admin.create', compact('model', 'categories'));
+
+        // دسته‌ی محصولات موجود در جدول واسط نگهداری می‌شود (خروجی products:categorize)
+        // و ستون category_id اغلب خالی است، پس هر دو را در نظر می‌گیریم
+        $selectedCategoryId = DB::table('product_in_category')
+            ->where('product_id', $model->id)
+            ->whereBetween('category_id', [1, 11])
+            ->value('category_id') ?? $model->category_id;
+
+        return view('product.admin.create', compact('model', 'categories', 'selectedCategoryId'));
     }
 
     public function admin_update(Request $request, $id)
@@ -128,45 +202,30 @@ class ProductAdminController extends Controller
 
         $product = Product::findOrFail($id);
 
-        $validator = Validator::make($request->all(), [
-            'title'         => 'required|string|max:255',
-            'sku'           => 'nullable|string|max:100',
-            'price'         => 'required|integer|min:0',
-            'regular_price' => 'nullable|integer|min:0',
-            'discount_percent' => 'nullable|integer|min:0|max:100',
-            'is_special_offer' => 'nullable|boolean',
-            'stock'         => 'nullable|integer|min:0',
-            'weight'        => 'nullable|integer|min:0',
-            'is_active'     => 'required|boolean',
-            'description'   => 'nullable|string',
-            'short_description' => 'nullable|string',
-            'car_model'     => 'nullable|string|max:255',
-            'file'          => 'nullable|image|max:2048',
-        ]);
+        $validator = Validator::make($request->all(), self::rules(), self::messages());
 
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput();
         }
 
-        $data = $request->only([
-            'title', 'sku', 'price', 'regular_price', 'discount_percent',
-            'stock', 'weight', 'is_active', 'description', 'short_description', 'car_model',
-        ]);
+        $data = $request->only(self::EDITABLE_FIELDS);
         $data['is_special_offer'] = $request->boolean('is_special_offer');
-        if ((int) ($data['discount_percent'] ?? 0) > 0) {
-            $data['is_special_offer'] = true;
-            if ((int) ($data['regular_price'] ?? 0) > 0) {
-                $data['price'] = (int) round($data['regular_price'] * (100 - (int) $data['discount_percent']) / 100);
-            }
-        }
+        // تخفیف روی قیمت فروش اعمال می‌شود، نه روی regular_price که قیمت خرید است
+        $discountPercent = (int) ($data['discount_percent'] ?? 0);
+        unset($data['discount_percent']);
 
         if ($request->hasFile('file')) {
             $data['file_path'] = $this->storeUploadedProductImage($request);
         }
 
+        // ادمین قیمت فروش تازه را وارد می‌کند، پس مبنای تخفیف باید از نو حساب شود
+        $product->compare_at_price = null;
         $product->update($data);
+        $product->applyDiscountPercent($discountPercent);
+        $product->save();
+        $this->syncCategory($product->id, $data['category_id'] ?? null);
 
-        return redirect('/admin/product/list')->with('success', 'Product updated successfully');
+        return redirect('/admin/product/list')->with('success', 'محصول با موفقیت ویرایش شد.');
     }
 
     public function statusProduct($id)
@@ -248,7 +307,54 @@ class ProductAdminController extends Controller
         $filename = uniqid('product-', true) . '.' . $extension;
         $file->move($directory, $filename);
 
+        // نسخه‌ی WebP بلافاصله ساخته می‌شود تا تصویرهای تازه‌آپلودشده هم مثل
+        // بقیه سبک سرو شوند و نیازی به اجرای دستی «php artisan images:webp» نباشد.
+        $this->makeWebpVariant($directory . DIRECTORY_SEPARATOR . $filename, $extension);
+
         return '/upload/products/' . date('Y/m') . '/' . $filename;
+    }
+
+    /**
+     * ساخت نسخه‌ی WebP کنار فایل اصلی.
+     *
+     * شکست این کار نباید آپلود را خراب کند؛ اگر نشد، تصویر اصلی سرو
+     * می‌شود و دستور images:webp بعدا آن را می‌سازد.
+     */
+    private function makeWebpVariant(string $absolutePath, string $extension): void
+    {
+        if (! function_exists('imagewebp') || ! is_file($absolutePath)) {
+            return;
+        }
+
+        try {
+            $image = match ($extension) {
+                'png' => @imagecreatefrompng($absolutePath),
+                'jpg', 'jpeg' => @imagecreatefromjpeg($absolutePath),
+                default => null,
+            };
+
+            if (! $image) {
+                return;
+            }
+
+            imagepalettetotruecolor($image);
+            imagealphablending($image, false);
+            imagesavealpha($image, true);
+
+            $target = preg_replace('/\.(jpe?g|png)$/i', '.webp', $absolutePath);
+            @imagewebp($image, $target, 82);
+            imagedestroy($image);
+
+            // اگر WebP از اصل بزرگ‌تر شد، نگهش نمی‌داریم.
+            if (is_file($target) && filesize($target) >= filesize($absolutePath)) {
+                @unlink($target);
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('WebP generation failed', [
+                'path' => $absolutePath,
+                'message' => $e->getMessage(),
+            ]);
+        }
     }
     public function destroy($id)
     {

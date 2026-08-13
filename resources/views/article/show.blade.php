@@ -1,9 +1,34 @@
 @php
-    $articleSeoTitle = $info->seo_title ?: ($info->titr . ' | مجله یدکی');
+    /* --- سئوی صفحه‌ی مقاله --- */
+    $articleSeoTitle = $info->seo_title ?: seo_title($info->titr);
     $articleSeoDescription = seo_description($info->seo_description ?: ($info->sutitr ?: strip_tags($info->text ?? '')));
     $articleCanonical = $info->canonical_url ?: seo_url($info->getUrl());
-    $articleRobots = (($info->robots_index ?? true) ? 'index' : 'noindex') . ',' . (($info->robots_follow ?? true) ? 'follow' : 'nofollow') . ',max-image-preview:large,max-snippet:-1,max-video-preview:-1';
-    $articleImage = !empty($info->images) ? seo_url($info->images->getPath()) : seo_url('/assets/images/logo.png');
+    $articleRobots = seo_robots_tag(($info->robots_index ?? true) ? true : false, ($info->robots_follow ?? true) ? true : false);
+    // مقالات بدون عکس منتشر می‌شوند؛ برای اشتراک‌گذاری فقط تصویر پیش‌فرض سایت استفاده می‌شود.
+    $articleImage = seo_image_url(seo_config('default_image'));
+
+    // تاریخ‌های ISO-8601 برای datePublished/dateModified؛ گوگل فرمت دیگری را
+    // نمی‌پذیرد و بدون آن‌ها ریچ‌ریزالت مقاله ساخته نمی‌شود.
+    $articlePublishedAt = null;
+    $articleModifiedAt = null;
+    try {
+        if (!empty($info->showdate)) {
+            $articlePublishedAt = \Carbon\Carbon::parse($info->showdate)->toAtomString();
+        } elseif (!empty($info->createdate)) {
+            $articlePublishedAt = \Carbon\Carbon::parse($info->createdate)->toAtomString();
+        }
+        if (!empty($info->updatetime)) {
+            $articleModifiedAt = \Carbon\Carbon::parse($info->updatetime)->toAtomString();
+        }
+    } catch (\Throwable $e) {
+        // تاریخ نامعتبر در دیتابیس نباید رندر صفحه را بشکند.
+    }
+
+    $articleCrumbs = [
+        ['name' => 'ناظر یدک', 'url' => seo_url()],
+        ['name' => 'مجله یدکی', 'url' => seo_url('/blog')],
+        ['name' => $info->titr, 'url' => null],
+    ];
 @endphp
 
 @extends('layout.layout', [
@@ -12,8 +37,25 @@
     'keywords' => $info->keywords ?: seo_default_keywords(),
     'canonical' => $articleCanonical,
     'ogImage' => $articleImage,
+    'ogImageAlt' => $info->titr,
     'ogType' => 'article',
     'robots' => $articleRobots,
+    'articlePublished' => $articlePublishedAt,
+    'articleModified' => $articleModifiedAt,
+    'schema' => [
+        seo_article_schema([
+            'url' => $articleCanonical,
+            'title' => $info->titr,
+            'description' => $articleSeoDescription,
+            'image' => $articleImage,
+            'published' => $articlePublishedAt,
+            'modified' => $articleModifiedAt,
+            'section' => 'مجله یدکی',
+            'keywords' => $info->keywords ?: null,
+            'word_count' => $info->countword ?: null,
+        ]),
+        seo_breadcrumb_schema($articleCrumbs),
+    ],
 ])
 @section('main_content')
 <main>
@@ -40,12 +82,6 @@
                             @endif
                         </div>
                     </div>
-
-                    @if($info->images != null)
-                    <div class="blog-article-image">
-                        <img src="{{$info->images->getPath()}}" alt="{{ $info->titr }}">
-                    </div>
-                    @endif
 
                     @if($info->sutitr)
                     <div class="blog-article-lead">
@@ -98,13 +134,7 @@
                         <div class="blog-sidebar-title"><i class="fas fa-fire"></i> مطالب پیشنهادی</div>
                         @foreach ($model as $article)
                         <a href="{{$article->getUrl()}}" class="blog-sidebar-item">
-                            <div class="blog-sidebar-item-img">
-                                @if($article->images != null && $article->image > 0)
-                                <img src="{{$article->images->getPath()}}" alt="{{ $article->titr }}">
-                                @else
-                                <img src="/assets/images/noimage.jpg" alt="{{ $article->titr }}">
-                                @endif
-                            </div>
+                            <span class="blog-sidebar-item-bullet"><i class="fas fa-angle-left"></i></span>
                             <div class="blog-sidebar-item-content">
                                 <span class="blog-sidebar-item-title">{{ $article->titr }}</span>
                                 <span class="blog-sidebar-item-date"><i class="far fa-calendar-alt"></i> {{toPersianDate($article->showdate, true, false)}}</span>

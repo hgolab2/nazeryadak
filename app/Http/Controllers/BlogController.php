@@ -15,23 +15,17 @@ class BlogController extends Controller
     {
         $categoryid = 17;
         $category = Category::find($categoryid);
-        if(!$category)
-        {
-            return view('errors.404');
-        }
         $class = 'App\Models\Article1';
         $article = new $class;
         $model = $article::orderBy('showdate', 'desc')->where('hidden' , '0')->where('deleted' , '0');
-        if($categoryid > 0)
+        // اگر دسته‌ی مجله در دیتابیس تعریف شده باشد فقط مقالات همان دسته،
+        // در غیر این صورت همه‌ی مقالات منتشرشده فهرست می‌شوند.
+        if($category)
         {
             $model = $model->select(['article1.*'])
             ->join('articleincategory', 'articleincategory.articleid', '=', 'article1.articleid')
             ->where('articleincategory.siteid',  1)
-            ->where('articleincategory.categoryid' , 17);
-        }
-        else
-        {
-            return view('errors.404');
+            ->where('articleincategory.categoryid' , $categoryid);
         }
         $totalCount = $model->count();
         $model = $model->paginate(20);
@@ -99,14 +93,14 @@ class BlogController extends Controller
     {
         $visit_cnt = 1;
         if (!$articleid) {
-            return view('errors.404');
+            return response()->view('errors.404', [], 404);
         }
         $class = 'App\Models\Article1';
         $article = new $class;
         $info = $article::where('articleid' , $articleid)->first();
         if(!$info || $info == null || $info->hidden == 1 ||  $info->deleted == 1)
         {
-            return view('errors.404');
+            return response()->view('errors.404', [], 404);
         }
         $ImgStr = '';
         if($info->images){
@@ -171,11 +165,16 @@ class BlogController extends Controller
             );
             $text = str_replace("¬" , "‌" , str_replace('"  rtl;"', '" ', $text));
         }
-        $model = $article::orderBy('showdate', 'desc')->where('hidden' , '0')->where('deleted' , '0');
-        $model = $model->select(['article1.*'])
-        ->join('articleincategory', 'articleincategory.articleid', '=', 'article1.articleid')
-        ->where('articleincategory.siteid',  1)
-        ->where('articleincategory.categoryid' , 17);
+        // مطالب پیشنهادی: اگر دسته‌بندی مجله تعریف شده باشد از همان دسته، وگرنه آخرین مقالات.
+        $model = $article::orderBy('showdate', 'desc')->where('hidden' , '0')->where('deleted' , '0')
+            ->where('articleid', '!=', $articleid);
+        if(Category::find(17))
+        {
+            $model = $model->select(['article1.*'])
+            ->join('articleincategory', 'articleincategory.articleid', '=', 'article1.articleid')
+            ->where('articleincategory.siteid',  1)
+            ->where('articleincategory.categoryid' , 17);
+        }
         $model = $model->paginate(4);
         $result =  array(
             'model' => $model,

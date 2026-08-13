@@ -1,5 +1,7 @@
 @extends('layout.layout', [
-    'title' => "سبد خرید"
+    'title' => 'سبد خرید | ناظر یدک',
+    'robots' => seo_robots_tag(false, true),
+    'noBaseSchema' => true,
 ])
 @section('main_content')
 

@@ -1,15 +1,21 @@
 @extends('layout.layout', [
-    'title' => $paymentStatus === 'paid' ? 'پرداخت موفق | ناظر یدک' : 'پرداخت ناموفق | ناظر یدک'
+    'title' => $paymentStatus === 'paid' ? 'پرداخت موفق | ناظر یدک' : 'پرداخت ناموفق | ناظر یدک',
+    'robots' => seo_robots_tag(false, true),
+    'noBaseSchema' => true,
 ])
 @section('main_content')
 <div class="container">
     <div class="row mt-3 mb-2">
         <div class="col-12">
             <div class="cart-content py-3 px-4 mb-3">
+                {{-- در پرداخت ناموفق، مرحله‌ی «اتمام خرید» هنوز طی نشده است؛
+                     قبلا همه‌ی مراحل سبز نشان داده می‌شد و کاربر فکر می‌کرد سفارش نهایی شده --}}
                 <ul class="checkout-steps mb-0">
                     <li class="is-completed-extra"><a href="javascript:void(0)" class="checkout-steps-active active-link-shopping">اطلاعات ارسال</a></li>
-                    <li class="is-completed-extra"><a href="javascript:void(0)" class="checkout-steps-active active-link-shopping">پرداخت</a></li>
-                    <li class="is-active"><a href="javascript:void(0)" class="checkout-steps-active active-link-shopping">اتمام خرید</a></li>
+                    <li class="{{ $paymentStatus === 'paid' ? 'is-completed-extra' : 'is-completed' }}"><a href="javascript:void(0)" class="checkout-steps-active active-link-shopping">پرداخت</a></li>
+                    <li class="is-active">
+                        <a href="javascript:void(0)" class="{{ $paymentStatus === 'paid' ? 'checkout-steps-active active-link-shopping' : 'checkout-steps-item active-link' }}">اتمام خرید</a>
+                    </li>
                 </ul>
             </div>
         </div>

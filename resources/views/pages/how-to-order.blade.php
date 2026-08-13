@@ -1,4 +1,35 @@
-@extends('layout.layout', ['title' => 'نحوه ثبت سفارش | ناظر یدک'])
+@php
+    $pageTitle = 'آموزش گام‌به‌گام ثبت سفارش لوازم یدکی | ناظر یدک';
+    $pageDescription = 'راهنمای تصویری ثبت سفارش در ناظر یدک: جستجوی قطعه با نام یا کد فنی، افزودن به سبد خرید، ثبت آدرس، انتخاب روش پرداخت و پیگیری سفارش.';
+@endphp
+@extends('layout.layout', [
+    'title' => $pageTitle,
+    'metaDescription' => $pageDescription,
+    'keywords' => 'نحوه ثبت سفارش, راهنمای خرید لوازم یدکی, خرید اینترنتی قطعات خودرو',
+    'canonical' => seo_url('/how-to-order'),
+    'schema' => [
+        seo_webpage_schema($pageTitle, $pageDescription, seo_url('/how-to-order')),
+        seo_breadcrumb_schema([
+            ['name' => 'ناظر یدک', 'url' => seo_url()],
+            ['name' => 'نحوه ثبت سفارش', 'url' => null],
+        ]),
+        [
+            '@context' => 'https://schema.org',
+            '@type' => 'HowTo',
+            '@id' => seo_url('/how-to-order') . '#howto',
+            'name' => 'چگونه در ناظر یدک سفارش ثبت کنیم؟',
+            'description' => $pageDescription,
+            'totalTime' => 'PT5M',
+            'step' => [
+                ['@type' => 'HowToStep', 'position' => 1, 'name' => 'پیدا کردن قطعه', 'text' => 'نام قطعه، مدل خودرو یا کد فنی (OEM) را در جعبه جستجوی سایت وارد کنید یا از دسته‌بندی‌های فروشگاه استفاده کنید.', 'url' => seo_url('/shop')],
+                ['@type' => 'HowToStep', 'position' => 2, 'name' => 'افزودن به سبد خرید', 'text' => 'در صفحه محصول، قیمت و مشخصات فنی را بررسی کنید و روی دکمه «افزودن به سبد خرید» بزنید.'],
+                ['@type' => 'HowToStep', 'position' => 3, 'name' => 'ورود و ثبت آدرس', 'text' => 'با شماره موبایل و کد پیامکی وارد شوید و آدرس دقیق گیرنده را ثبت کنید.'],
+                ['@type' => 'HowToStep', 'position' => 4, 'name' => 'پرداخت', 'text' => 'روش پرداخت را انتخاب و سفارش را نهایی کنید؛ پرداخت آنلاین از درگاه بانکی امن انجام می‌شود.'],
+                ['@type' => 'HowToStep', 'position' => 5, 'name' => 'پیگیری سفارش', 'text' => 'کد رهگیری از طریق پیامک ارسال می‌شود و وضعیت سفارش در بخش «سفارش‌های من» قابل مشاهده است.', 'url' => seo_url('/profile/orders')],
+            ],
+        ],
+    ],
+])
 @section('main_content')
 <main>
     <div class="container">

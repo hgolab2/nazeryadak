@@ -33,6 +33,9 @@
 </a>
 
 <div class="admin-menu-title">تنظیمات</div>
+<a href="/admin/settings" class="admin-menu-item {{ ($menu ?? '') == 'settings' ? 'active' : '' }}">
+    <i class="fas fa-truck"></i> تنظیمات ارسال
+</a>
 <a href="/admin/user/list" class="admin-menu-item {{ ($menu ?? '') == 'user/list' ? 'active' : '' }}">
     <i class="fas fa-user-cog"></i> کاربران سیستم
 </a>

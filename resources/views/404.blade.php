@@ -1,5 +1,8 @@
 @extends('layout.layout', [
-    'title' => "ناظر یدک"
+    'title' => 'صفحه پیدا نشد | ناظر یدک',
+    'metaDescription' => 'صفحه‌ای که دنبال آن بودید پیدا نشد. از فروشگاه ناظر یدک قطعه مورد نظر خود را جستجو کنید.',
+    'robots' => seo_robots_tag(false, true),
+    'noBaseSchema' => true,
 ])
 @section('main_content')
 

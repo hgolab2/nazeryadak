@@ -14,7 +14,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // یکسان‌سازی آدرس‌ها (https / بدون www / بدون پارامتر ردیابی) پیش از
+        // هر پردازش دیگری، تا گوگل از هر صفحه فقط یک نسخه ببیند.
+        $middleware->prepend(\App\Http\Middleware\CanonicalUrl::class);
+
+        // سایت پشت پروکسی/CDN اجرا می‌شود؛ بدون این تنظیم، Laravel آدرس‌های
+        // مطلق را http می‌سازد و canonical با آدرس واقعی صفحه فرق می‌کند.
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->render(function (Throwable $e, Request $request) {

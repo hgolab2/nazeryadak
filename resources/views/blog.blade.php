@@ -1,5 +1,7 @@
 @extends('layout.layout', [
-    'title' => "ناظر یدک"
+    'title' => 'مجله یدکی | ناظر یدک',
+    'metaDescription' => 'مقالات و راهنماهای تخصصی لوازم یدکی و تعمیر خودرو در مجله ناظر یدک.',
+    'canonical' => seo_url('/blog'),
 ])
 @section('main_content')
     <main><!-- start main -->

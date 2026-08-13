@@ -1,0 +1,302 @@
+/* =========================================================
+   نوار پایین چسبان موبایل (حس اپلیکیشن)
+   فقط زیر 992px نمایش داده می‌شود
+   ========================================================= */
+
+:root {
+    --appbar-h: 58px;
+    --appbar-accent: #ef394e;
+    --appbar-ink: #3f4064;
+    --appbar-muted: #81858b;
+    --appbar-line: #e6e6ea;
+}
+
+.mobile-appbar {
+    display: none;
+}
+
+@media (max-width: 991.98px) {
+
+    /* فضای خالی انتهای صفحه تا نوار روی محتوا/فوتر نیفتد */
+    body {
+        padding-bottom: calc(var(--appbar-h) + env(safe-area-inset-bottom, 0px));
+    }
+
+    .mobile-appbar {
+        position: fixed;
+        right: 0;
+        left: 0;
+        bottom: 0;
+        z-index: 1035; /* زیر offcanvas بوت‌استرپ (1045) */
+        display: flex;
+        align-items: stretch;
+        height: calc(var(--appbar-h) + env(safe-area-inset-bottom, 0px));
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        background: rgba(255, 255, 255, 0.94);
+        -webkit-backdrop-filter: saturate(180%) blur(14px);
+        backdrop-filter: saturate(180%) blur(14px);
+        border-top: 1px solid var(--appbar-line);
+        box-shadow: 0 -6px 24px rgba(35, 37, 78, 0.10);
+        transition: transform .28s cubic-bezier(.22, .61, .36, 1);
+        will-change: transform;
+    }
+
+    /* پنهان شدن هنگام اسکرول به پایین */
+    .mobile-appbar.is-hidden {
+        transform: translateY(115%);
+    }
+
+    .mobile-appbar__item {
+        position: relative;
+        flex: 1 1 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        padding: 6px 2px 4px;
+        color: var(--appbar-muted);
+        font-size: 10.5px;
+        font-weight: 700;
+        line-height: 1;
+        text-decoration: none;
+        background: none;
+        border: 0;
+        -webkit-tap-highlight-color: transparent;
+        transition: color .2s ease, transform .12s ease;
+    }
+
+    .mobile-appbar__item:active {
+        transform: scale(.92);
+    }
+
+    .mobile-appbar__item:focus-visible {
+        outline: 2px solid var(--appbar-accent);
+        outline-offset: -4px;
+        border-radius: 10px;
+    }
+
+    /* آیکن داخل یک قرص که در حالت فعال رنگی می‌شود */
+    .mobile-appbar__icon {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 26px;
+        border-radius: 999px;
+        background: transparent;
+        transition: background .24s ease, transform .24s cubic-bezier(.22,.61,.36,1);
+    }
+
+    .mobile-appbar__icon i {
+        font-size: 17px;
+        line-height: 1;
+    }
+
+    .mobile-appbar__label {
+        display: block;
+        max-width: 100%;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    /* حالت فعال */
+    .mobile-appbar__item.is-active {
+        color: var(--appbar-accent);
+    }
+
+    .mobile-appbar__item.is-active .mobile-appbar__icon {
+        background: rgba(239, 57, 78, .10);
+        transform: translateY(-1px);
+    }
+
+    /* نشانگر کوچک بالای آیتم فعال */
+    .mobile-appbar__item.is-active::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: 50%;
+        transform: translateX(50%);
+        width: 26px;
+        height: 3px;
+        border-radius: 0 0 4px 4px;
+        background: var(--appbar-accent);
+    }
+
+    /* شمارنده سبد خرید */
+    .mobile-appbar__badge {
+        position: absolute;
+        top: -4px;
+        left: 4px;
+        min-width: 17px;
+        height: 17px;
+        padding: 0 4px;
+        border-radius: 999px;
+        background: var(--appbar-accent);
+        color: #fff;
+        font-size: 10px;
+        font-weight: 800;
+        line-height: 17px;
+        text-align: center;
+        box-shadow: 0 0 0 2px #fff;
+    }
+
+    .mobile-appbar__badge.is-empty {
+        display: none;
+    }
+
+    /* دکمه بازگشت به بالا نباید زیر نوار بماند */
+    .topbutton {
+        bottom: calc(var(--appbar-h) + 14px + env(safe-area-inset-bottom, 0px)) !important;
+        z-index: 1030;
+    }
+
+    /* شیت پایین (دسته‌بندی / جستجو) */
+    .app-sheet {
+        height: auto !important;
+        max-height: 82vh;
+        border-radius: 18px 18px 0 0;
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        box-shadow: 0 -10px 40px rgba(35, 37, 78, .18);
+    }
+
+    .app-sheet__grabber {
+        width: 42px;
+        height: 4px;
+        margin: 9px auto 0;
+        border-radius: 999px;
+        background: #d8d8de;
+    }
+
+    .app-sheet .offcanvas-header {
+        padding: 8px 16px 10px;
+    }
+
+    .app-sheet .offcanvas-title {
+        margin: 0;
+        color: var(--appbar-ink);
+        font-size: 14px;
+        font-weight: 800;
+    }
+
+    .app-sheet .offcanvas-body {
+        padding: 4px 16px 18px;
+        overflow-y: auto;
+    }
+
+    .app-sheet__grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+    }
+
+    .app-sheet__tile {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        min-height: 88px;
+        padding: 10px 6px;
+        border: 1px solid var(--appbar-line);
+        border-radius: 14px;
+        background: #fff;
+        color: var(--appbar-ink);
+        font-size: 11.5px;
+        font-weight: 700;
+        line-height: 1.5;
+        text-align: center;
+        text-decoration: none;
+        transition: transform .12s ease, border-color .2s ease;
+    }
+
+    .app-sheet__tile:active {
+        transform: scale(.96);
+        border-color: var(--appbar-accent);
+    }
+
+    .app-sheet__tile i {
+        font-size: 19px;
+        color: #19bfd3;
+    }
+
+    .app-sheet__tile span {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    /* شیت جستجو */
+    .app-sheet__search {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 46px;
+        padding: 0 12px;
+        border-radius: 12px;
+        background: #f1f2f4;
+    }
+
+    .app-sheet__search input {
+        flex: 1 1 auto;
+        min-width: 0;
+        height: 100%;
+        border: 0;
+        background: transparent;
+        color: var(--appbar-ink);
+        font-size: 13px;
+        outline: none;
+    }
+
+    .app-sheet__search button {
+        flex-shrink: 0;
+        height: 34px;
+        padding: 0 14px;
+        border: 0;
+        border-radius: 9px;
+        background: var(--appbar-accent);
+        color: #fff;
+        font-size: 12.5px;
+        font-weight: 700;
+    }
+
+    .app-sheet__hint {
+        margin: 12px 0 6px;
+        color: var(--appbar-muted);
+        font-size: 11.5px;
+        font-weight: 700;
+    }
+
+    .app-sheet__chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .app-sheet__chips a {
+        padding: 7px 12px;
+        border: 1px solid var(--appbar-line);
+        border-radius: 999px;
+        background: #fff;
+        color: #62666d;
+        font-size: 11.5px;
+        text-decoration: none;
+    }
+
+    .app-sheet__chips a:active {
+        border-color: var(--appbar-accent);
+        color: var(--appbar-accent);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mobile-appbar,
+    .mobile-appbar__item,
+    .mobile-appbar__icon,
+    .app-sheet__tile {
+        transition: none;
+    }
+}

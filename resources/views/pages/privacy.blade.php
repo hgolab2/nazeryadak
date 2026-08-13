@@ -1,4 +1,19 @@
-@extends('layout.layout', ['title' => 'حریم خصوصی | ناظر یدک'])
+@php
+    $pageTitle = 'سیاست حریم خصوصی کاربران | ناظر یدک';
+    $pageDescription = 'ناظر یدک چه اطلاعاتی از شما ذخیره می‌کند، چگونه از آن محافظت می‌کند و حقوق شما درباره داده‌های شخصی در فروشگاه اینترنتی لوازم یدکی.';
+@endphp
+@extends('layout.layout', [
+    'title' => $pageTitle,
+    'metaDescription' => $pageDescription,
+    'canonical' => seo_url('/privacy'),
+    'schema' => [
+        seo_webpage_schema($pageTitle, $pageDescription, seo_url('/privacy')),
+        seo_breadcrumb_schema([
+            ['name' => 'ناظر یدک', 'url' => seo_url()],
+            ['name' => 'حریم خصوصی', 'url' => null],
+        ]),
+    ],
+])
 @section('main_content')
 <main>
     <div class="container">

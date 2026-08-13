@@ -1,0 +1,257 @@
+/* =========================================================
+   تجربه‌ی خرید روی موبایل
+   نوار عمل چسبان (خرید/ادامه/پرداخت) + اصلاح فرم‌ها و اندازه‌ی لمس
+   همه‌چیز فقط زیر 992px فعال است و بالای نوار پایین (mobile-appbar) می‌نشیند
+   ========================================================= */
+
+.mobile-actionbar {
+    display: none;
+}
+
+@media (max-width: 991.98px) {
+
+    /* ---------- نوار عمل چسبان ---------- */
+
+    .mobile-actionbar {
+        position: fixed;
+        right: 0;
+        left: 0;
+        bottom: calc(var(--appbar-h, 58px) + env(safe-area-inset-bottom, 0px));
+        z-index: 1034; /* درست زیر mobile-appbar (1035) و زیر offcanvas (1045) */
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        background: #fff;
+        border-top: 1px solid var(--appbar-line, #e6e6ea);
+        box-shadow: 0 -8px 24px rgba(35, 37, 78, .12);
+    }
+
+    /* صفحه‌هایی که نوار عمل دارند، فضای بیشتری ته صفحه می‌خواهند */
+    body.has-actionbar {
+        padding-bottom: calc(var(--appbar-h, 58px) + 74px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .mobile-actionbar__info {
+        flex: 1 1 auto;
+        min-width: 0;
+        line-height: 1.5;
+    }
+
+    .mobile-actionbar__label {
+        display: block;
+        color: var(--appbar-muted, #81858b);
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .mobile-actionbar__price {
+        display: block;
+        color: var(--text-dark, #23254e);
+        font-size: 15px;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .mobile-actionbar__price small {
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    /* دکمه‌ی اصلی: بلند و تمام‌عرضِ باقیمانده تا با شست به‌راحتی زده شود */
+    .mobile-actionbar__btn {
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-width: 55%;
+        min-height: 46px;
+        padding: 0 16px;
+        border: 0;
+        border-radius: 10px;
+        background: var(--primary, #0f3d6e);
+        color: #fff;
+        font-size: 14px;
+        font-weight: 700;
+        text-decoration: none;
+        -webkit-tap-highlight-color: transparent;
+        transition: transform .12s ease, opacity .2s ease;
+    }
+
+    .mobile-actionbar__btn:active {
+        transform: scale(.98);
+        color: #fff;
+    }
+
+    .mobile-actionbar__btn.is-pay {
+        background: linear-gradient(135deg, var(--success, #2e7d32), #43a047);
+    }
+
+    .mobile-actionbar__btn[disabled],
+    .mobile-actionbar__btn.is-disabled {
+        background: #ccc;
+        pointer-events: none;
+    }
+
+    /* شمارنده‌ی تعداد داخل نوار خرید */
+    .mobile-actionbar__qty {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        flex: 0 0 auto;
+        padding: 2px;
+        border: 1px solid var(--appbar-line, #e6e6ea);
+        border-radius: 10px;
+    }
+
+    .mobile-actionbar__qty button {
+        width: 34px;
+        height: 40px;
+        border: 0;
+        border-radius: 8px;
+        background: transparent;
+        color: var(--primary, #0f3d6e);
+        font-size: 17px;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .mobile-actionbar__qty button:disabled {
+        color: #c3c3c9;
+    }
+
+    .mobile-actionbar__qty span {
+        min-width: 22px;
+        text-align: center;
+        font-size: 14px;
+        font-weight: 800;
+    }
+
+    /* روی موبایل نسخه‌ی داخل صفحه‌ی همین دکمه‌ها تکراری است */
+    .hide-on-mobile-buy {
+        display: none !important;
+    }
+
+    /* ---------- فرم‌ها روی موبایل ---------- */
+
+    /* زیر ۱۶ پیکسل، سافاری هنگام فوکوس صفحه را زوم می‌کند و کاربر
+       باید دستی برگردد؛ این تنها راه استاندارد جلوگیری از آن است */
+    .form-control,
+    .form-select,
+    input[type="text"],
+    input[type="tel"],
+    input[type="number"],
+    input[type="email"],
+    textarea,
+    select {
+        font-size: 16px !important;
+    }
+
+    /* ورودی‌های شمارنده از این قاعده مستثنا هستند تا با دکمه‌های کنارشان
+       هم‌ارتفاع بمانند */
+    .form-control:not(.qty):not(#buy-qty),
+    .form-select {
+        min-height: 46px;
+    }
+
+    textarea.form-control {
+        min-height: 92px;
+    }
+
+    /* ---------- اندازه‌ی لمس ---------- */
+
+    /* دکمه‌های کم/زیاد کردن تعداد؛ ۳۲ پیکسل برای شست کوچک است */
+    .btn-qty {
+        width: 44px !important;
+        height: 44px !important;
+        font-size: 1.15rem !important;
+    }
+
+    .shopping-cart-item .qty {
+        width: 54px !important;
+        height: 44px !important;
+        min-height: 44px !important;
+    }
+
+    /* شمارنده‌ی صفحه‌ی محصول */
+    .dk-buy-qty .js-qty-plus,
+    .dk-buy-qty .js-qty-minus {
+        width: 44px !important;
+        height: 44px !important;
+    }
+
+    #buy-qty {
+        width: 58px !important;
+        height: 44px !important;
+        min-height: 44px !important;
+    }
+
+    .delete-item {
+        min-height: 38px;
+        padding-inline: 12px !important;
+    }
+
+    /* ---------- خلاصه‌ی سفارش ---------- */
+
+    /* چسباندن جعبه‌ی خلاصه روی موبایل معنایی ندارد و فقط پرش ایجاد می‌کند */
+    .cart-content[style*="sticky"] {
+        position: static !important;
+    }
+
+    /* ---------- گام‌های خرید ---------- */
+
+    .checkout-steps {
+        font-size: .82rem;
+    }
+
+    /* ---------- مودال آدرس ---------- */
+
+    /* روی صفحه‌ی کوچک، مودال آدرس تمام‌قد باشد تا فیلدها جا شوند */
+    #change-address-modal .modal-dialog {
+        margin: 0;
+        max-width: 100%;
+        min-height: 100%;
+    }
+
+    #change-address-modal .modal-content {
+        min-height: 100vh;
+        border-radius: 0 !important;
+    }
+
+    #change-address-modal .modal-body {
+        padding: 16px !important;
+    }
+
+    #change-address-modal .modal-footer {
+        position: sticky;
+        bottom: 0;
+        padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+        background: #fff;
+        box-shadow: 0 -6px 18px rgba(35, 37, 78, .10);
+    }
+
+    #saveAddressBtn {
+        width: 100%;
+        min-height: 48px;
+    }
+
+    /* ---------- ورود با کد یکبارمصرف ---------- */
+
+    #mobile,
+    #otp {
+        min-height: 52px;
+        font-size: 20px !important;
+    }
+
+    #sendOtpBtn,
+    #verifyOtpBtn {
+        min-height: 50px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mobile-actionbar__btn {
+        transition: none;
+    }
+}

@@ -1,5 +1,31 @@
+@php
+    /* --- سئوی آرشیو مجله --- */
+    $blogPage = max(1, (int) request('page', 1));
+    $blogTitle = 'مجله یدکی | مقالات آموزشی لوازم یدکی و تعمیر خودرو'
+        . ($blogPage > 1 ? ' - صفحه ' . $blogPage : '');
+    $blogDescription = 'مقالات و راهنماهای تخصصی درباره‌ی انتخاب قطعات یدکی، تشخیص قطعه اصل از تقلبی، سرویس دوره‌ای و تعمیر خودروهای ایرانی؛ به قلم کارشناسان ناظر یدک.';
+    $blogCanonical = seo_canonical('/blog');
+
+    $blogItems = collect($model->items() ?? [])->map(fn($a) => [
+        'name' => $a->titr,
+        'url'  => seo_url($a->getUrl()),
+    ])->all();
+@endphp
 @extends('layout.layout', [
-    'title' => "مجله یدکی | ناظر یدک"
+    'title' => $blogTitle,
+    'metaDescription' => $blogDescription,
+    'keywords' => 'مجله خودرو, آموزش تعمیر خودرو, تشخیص قطعه اصل, سرویس دوره ای خودرو, راهنمای خرید لوازم یدکی',
+    'canonical' => $blogCanonical,
+    'prevPage' => $model->currentPage() > 1 ? $model->previousPageUrl() : null,
+    'nextPage' => $model->hasMorePages() ? $model->nextPageUrl() : null,
+    'schema' => [
+        seo_webpage_schema($blogTitle, $blogDescription, $blogCanonical, 'CollectionPage'),
+        seo_breadcrumb_schema([
+            ['name' => 'ناظر یدک', 'url' => seo_url()],
+            ['name' => 'مجله یدکی', 'url' => null],
+        ]),
+        seo_itemlist_schema('مقالات مجله یدکی', $blogItems, $blogCanonical),
+    ],
 ])
 @section('main_content')
 <main>

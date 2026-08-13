@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#ef394e">
+    <title>اتصال اینترنت برقرار نیست | ناظر یدک</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <style>
+        @font-face {
+            font-family: 'IRANSans';
+            src: local('IRANSans'), local('Vazirmatn'), local('Tahoma');
+            font-display: swap;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            font-family: 'IRANSans', Tahoma, sans-serif;
+            background: #f0f0f1;
+            color: #23254e;
+        }
+
+        .offline-card {
+            width: 100%;
+            max-width: 460px;
+            background: #fff;
+            border-radius: 16px;
+            padding: 40px 28px;
+            text-align: center;
+            box-shadow: 0 4px 24px rgba(35, 37, 78, .08);
+        }
+
+        .offline-card img {
+            width: 180px;
+            max-width: 70%;
+            height: auto;
+            margin-bottom: 28px;
+        }
+
+        .offline-icon {
+            width: 72px;
+            height: 72px;
+            margin: 0 auto 20px;
+            border-radius: 50%;
+            background: #ffeef0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .offline-icon svg { width: 36px; height: 36px; stroke: #ef394e; }
+
+        h1 { font-size: 20px; margin: 0 0 12px; }
+
+        p {
+            font-size: 14px;
+            line-height: 2;
+            color: #62666d;
+            margin: 0 0 28px;
+        }
+
+        .btn {
+            display: inline-block;
+            border: 0;
+            cursor: pointer;
+            padding: 12px 32px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: inherit;
+            background: #ef394e;
+            color: #fff;
+            text-decoration: none;
+            transition: background .2s;
+        }
+
+        .btn:hover { background: #c7352f; }
+
+        .btn-link {
+            display: block;
+            margin-top: 16px;
+            font-size: 13px;
+            color: #62666d;
+            text-decoration: none;
+        }
+
+        .btn-link:hover { color: #ef394e; }
+    </style>
+</head>
+<body>
+    <div class="offline-card">
+        <img src="/assets/images/logo.png" alt="ناظر یدک">
+
+        <div class="offline-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 1l22 22"></path>
+                <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
+                <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
+                <path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path>
+                <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
+                <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+                <line x1="12" y1="20" x2="12.01" y2="20"></line>
+            </svg>
+        </div>
+
+        <h1>اتصال اینترنت برقرار نیست</h1>
+        <p>
+            دسترسی به اینترنت قطع شده است. لطفاً اتصال خود را بررسی کنید
+            و دوباره تلاش کنید. صفحه‌هایی که قبلاً باز کرده‌اید همچنان در
+            دسترس هستند.
+        </p>
+
+        <button class="btn" onclick="window.location.reload()">تلاش دوباره</button>
+        <a class="btn-link" href="/">بازگشت به صفحه اصلی</a>
+    </div>
+
+    <script>
+        // Reload automatically the moment connectivity comes back.
+        window.addEventListener('online', function () {
+            window.location.reload();
+        });
+    </script>
+</body>
+</html>

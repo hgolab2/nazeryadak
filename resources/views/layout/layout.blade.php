@@ -1,53 +1,154 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="fa" dir="rtl" prefix="og: https://ogp.me/ns#">
 <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     @php
-        $seoTitle = $title ?? seo_site_name();
-        $seoDescription = $metaDescription ?? 'خرید آنلاین لوازم یدکی اصلی خودرو، قطعات ایساکو، قطعات مصرفی، موتوری، برقی، بدنه و جلوبندی با ضمانت اصالت کالا و ارسال سراسر کشور از ناظر یدک.';
+        /*
+        | مقادیر سئوی هر صفحه از @extends پاس داده می‌شوند و اینجا با
+        | پیش‌فرض‌های config/seo.php ترکیب می‌شوند تا هیچ صفحه‌ای بدون
+        | title/description/canonical معتبر رندر نشود.
+        */
+        $seoTitle = $title ?? seo_config('default_title');
+        $seoDescription = $metaDescription ?? seo_config('default_description');
         $seoKeywords = $keywords ?? seo_default_keywords();
-        $seoCanonical = $canonical ?? url()->current();
-        $seoImage = $ogImage ?? seo_url('/assets/images/logo.png');
+        $seoCanonical = $canonical ?? seo_canonical();
+        $seoImage = isset($ogImage) ? seo_image_url($ogImage) : seo_image_url(seo_config('default_image'));
+        $seoImageAlt = $ogImageAlt ?? $seoTitle;
         $seoType = $ogType ?? 'website';
-        $seoRobots = $robots ?? (!empty($follow) ? 'noindex,nofollow' : 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1');
+        $seoRobots = $robots ?? (!empty($follow) ? seo_robots_tag(false, false) : seo_robots_tag());
+        $seoPrev = $prevPage ?? null;
+        $seoNext = $nextPage ?? null;
+
+        // اسکیمای پایه (Organization + WebSite + AutoPartsStore) روی همه‌ی
+        // صفحات می‌آید مگر صفحه صراحتا با no_base_schema آن را رد کند.
         $schemaItems = $schema ?? [];
         if (!empty($schemaItems) && array_is_list($schemaItems) === false) {
             $schemaItems = [$schemaItems];
         }
+        if (empty($noBaseSchema)) {
+            $schemaItems = array_merge(seo_base_schema(), $schemaItems);
+        }
+
+        $seoVerification = (array) seo_config('verification', []);
+        $seoAnalytics = (array) seo_config('analytics', []);
     @endphp
+
+    {{-- منابع بحرانی زودتر از موعد درخواست می‌شوند؛ مستقیم روی LCP اثر دارد --}}
+    <link rel="dns-prefetch" href="//www.googletagmanager.com">
+    <link rel="preload" as="style" href="/assets/css/style.css">
+    <link rel="preload" as="font" type="font/woff" href="/assets/font/IRANSans/IRANSansWeb(FaNum).woff" crossorigin>
+    <link rel="preload" as="image" href="/assets/images/logo.png" fetchpriority="high">
+
     <title>{{ $seoTitle }}</title>
     <meta name="description" content="{{ $seoDescription }}">
     <meta name="keywords" content="{{ $seoKeywords }}">
     <meta name="robots" content="{{ $seoRobots }}">
     <meta name="googlebot" content="{{ $seoRobots }}">
+    <meta name="bingbot" content="{{ $seoRobots }}">
+    <meta name="author" content="{{ seo_site_name() }}">
+    <meta name="publisher" content="{{ seo_site_name() }}">
+    <meta name="language" content="Persian">
+    <meta name="rating" content="general">
+    <meta name="revisit-after" content="3 days">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="geo.region" content="IR-25">
+    <meta name="geo.placename" content="{{ seo_config('business.city') }}">
+    @if(seo_config('business.latitude'))
+    <meta name="geo.position" content="{{ seo_config('business.latitude') }};{{ seo_config('business.longitude') }}">
+    <meta name="ICBM" content="{{ seo_config('business.latitude') }}, {{ seo_config('business.longitude') }}">
+    @endif
+
     <link rel="canonical" href="{{ $seoCanonical }}">
-    <meta property="og:locale" content="fa_IR">
+    <link rel="alternate" hreflang="fa-IR" href="{{ $seoCanonical }}">
+    <link rel="alternate" hreflang="x-default" href="{{ $seoCanonical }}">
+    @if($seoPrev)<link rel="prev" href="{{ $seoPrev }}">@endif
+    @if($seoNext)<link rel="next" href="{{ $seoNext }}">@endif
+
+    {{-- Open Graph --}}
+    <meta property="og:locale" content="{{ seo_config('locale', 'fa_IR') }}">
     <meta property="og:site_name" content="{{ seo_site_name() }}">
     <meta property="og:type" content="{{ $seoType }}">
     <meta property="og:title" content="{{ $seoTitle }}">
     <meta property="og:description" content="{{ $seoDescription }}">
     <meta property="og:url" content="{{ $seoCanonical }}">
     <meta property="og:image" content="{{ $seoImage }}">
+    <meta property="og:image:secure_url" content="{{ $seoImage }}">
+    <meta property="og:image:alt" content="{{ $seoImageAlt }}">
+    <meta property="og:image:width" content="{{ $ogImageWidth ?? seo_config('default_image_width', 512) }}">
+    <meta property="og:image:height" content="{{ $ogImageHeight ?? seo_config('default_image_height', 512) }}">
+    @isset($ogPrice)
+    <meta property="product:price:amount" content="{{ $ogPrice }}">
+    <meta property="product:price:currency" content="{{ seo_config('business.currency', 'IRR') }}">
+    <meta property="product:availability" content="{{ $ogAvailability ?? 'in stock' }}">
+    <meta property="product:condition" content="new">
+    @endisset
+    @isset($articlePublished)
+    <meta property="article:published_time" content="{{ $articlePublished }}">
+    <meta property="article:modified_time" content="{{ $articleModified ?? $articlePublished }}">
+    <meta property="article:publisher" content="{{ seo_url() }}">
+    @endisset
+
+    {{-- Twitter Card --}}
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{{ $seoTitle }}">
     <meta name="twitter:description" content="{{ $seoDescription }}">
     <meta name="twitter:image" content="{{ $seoImage }}">
+    <meta name="twitter:image:alt" content="{{ $seoImageAlt }}">
+    @if(seo_config('social.twitter'))<meta name="twitter:site" content="{{ seo_config('social.twitter') }}">@endif
+
+    {{-- تأیید مالکیت در سرچ‌کنسول‌ها --}}
+    @if(!empty($seoVerification['google']))<meta name="google-site-verification" content="{{ $seoVerification['google'] }}">@endif
+    @if(!empty($seoVerification['bing']))<meta name="msvalidate.01" content="{{ $seoVerification['bing'] }}">@endif
+    @if(!empty($seoVerification['yandex']))<meta name="yandex-verification" content="{{ $seoVerification['yandex'] }}">@endif
+    @if(!empty($seoVerification['enamad']))<meta name="enamad" content="{{ $seoVerification['enamad'] }}">@endif
+
     @if(!empty($ampurl))
-        <link rel=amphtml href="{{$ampurl}}">
+        <link rel="amphtml" href="{{ $ampurl }}">
     @endif
+
+    {{-- داده‌های ساختاریافته --}}
     @foreach($schemaItems as $schemaItem)
         <script type="application/ld+json">{!! seo_json_ld($schemaItem) !!}</script>
     @endforeach
+
+    {{-- آیکون‌ها و PWA --}}
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="192x192" href="/assets/images/pwa/icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/assets/images/pwa/icon-512.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/pwa/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <meta name="theme-color" content="{{ seo_config('theme_color', '#0f3d6e') }}">
+    <meta name="apple-mobile-web-app-title" content="{{ seo_site_name() }}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="application-name" content="{{ seo_site_name() }}">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="msapplication-TileColor" content="{{ seo_config('theme_color', '#0f3d6e') }}">
+    <meta name="msapplication-TileImage" content="/assets/images/pwa/icon-144.png">
+
     @yield('head')
-    <link rel="icon" type="image/ico" href="/favicon.ico"/>
-    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <link rel="stylesheet" href="/assets/css/bootstrap.rtl.css">
     <link rel="stylesheet" href="/assets/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="/assets/css/owl.carousel.min.css">
     <link rel="stylesheet" href="/assets/css/owl.theme.default.min.css">
     <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="/assets/css/home-digikala.css">
+    <link rel="stylesheet" href="/assets/css/mobile-appbar.css">
+    <link rel="stylesheet" href="/assets/css/mobile-checkout.css">
+
+    @if(!empty($seoAnalytics['gtm']))
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','{{ $seoAnalytics['gtm'] }}');</script>
+    @elseif(!empty($seoAnalytics['ga4']))
+    <script async src="https://www.googletagmanager.com/gtag/js?id={{ $seoAnalytics['ga4'] }}"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ $seoAnalytics['ga4'] }}');</script>
+    @endif
 </head>
-<body>
+{{-- صفحه‌هایی که نوار عمل چسبان موبایل دارند این کلاس را می‌فرستند تا
+     محتوای انتهای صفحه زیر نوار پنهان نشود --}}
+<body class="{{ $bodyClass ?? '' }}">
 
     {{-- هدر بالای صفحه - فقط تماس و ساعت کاری؛ لینک‌ها در منوی اصلی هستند --}}
     <div class="header-top-bar d-none d-lg-block">
@@ -68,6 +169,7 @@
                     <div class="flex-shrink-0">
                         <a href="/" class="site-logo">
                             <img src="/assets/images/logo.png"
+                                 width="150" height="50" fetchpriority="high" decoding="async"
                                  alt="ناظر یدک - لوازم یدکی خودرو و محصولات اصلی ایساکو">
                         </a>
                     </div>
@@ -122,7 +224,7 @@
                             @endif
                         </div>
                         <a href="#shopping-cart" class="header-cart-btn" data-bs-toggle="offcanvas">
-                            <img src="/assets/images/cart.png">
+                            <img src="/assets/images/cart.png" alt="سبد خرید" width="28" height="28" loading="lazy" decoding="async">
                             <div class="count cart-count" id="cart-count">0</div>
                         </a>
                         <div class="offcanvas offcanvas-end" tabindex="-1" data-bs-scroll="true" id="shopping-cart">
@@ -156,7 +258,7 @@
                     <div class="offcanvas offcanvas-start" tabindex="-1" data-bs-scroll="true" id="mobile-menu">
                         <div class="offcanvas-header" style="background: var(--primary); padding: 15px;">
                             <span class="site-logo site-logo-mobile">
-                                <img src="/assets/images/logo.png" alt="ناظر یدک">
+                                <img src="/assets/images/logo.png" alt="ناظر یدک" width="120" height="40" loading="lazy" decoding="async">
                             </span>
                             <button type="button" class="btn-close btn-close-white text-reset" data-bs-dismiss="offcanvas"></button>
                         </div>
@@ -175,13 +277,13 @@
                             <ul class="mobile-menu-level-1">
                                 <li class="has-mobile-submenu"><a href="#"><i class="fas fa-th-large me-2" style="color:var(--primary);"></i> دسته‌بندی محصولات</a>
                                     <ul class="mobile-menu-level-2">
-                                        <li><a href="/shop?category=>موتور-و-اجزای-متعلقه">موتور و اجزای متعلقه خودرو</a></li>
-                                        <li><a href="/shop?category=قطعات-مصرفی">قطعات مصرفی خودرو</a></li>
-                                        <li><a href="/shop?category=شاسی-و-بدنه">شاسی و بدنه خودرو</a></li>
-                                        <li><a href="/shop?category=سیستم-گیربکس-و-دیفرانسیل">سیستم گیربکس و دیفرانسیل</a></li>
-                                        <li><a href="/shop?category=سیستم-سوخت‌رسانی">سیستم سوخت‌رسانی و جرقه</a></li>
-                                        <li><a href="/shop?category=سیستم-چرخ-و-ترمز">سیستم چرخ و ترمز و تعلیق</a></li>
-                                        <li><a href="/shop?category=سیستم-برق">سیستم برق و روشنایی</a></li>
+                                        <li><a href="/shop/%D9%85%D9%88%D8%AA%D9%88%D8%B1-%D9%88-%D8%A7%D8%AC%D8%B2%D8%A7%DB%8C-%D9%85%D8%AA%D8%B9%D9%84%D9%82%D9%87">موتور و اجزای متعلقه خودرو</a></li>
+                                        <li><a href="/shop/%D9%82%D8%B7%D8%B9%D8%A7%D8%AA-%D9%85%D8%B5%D8%B1%D9%81%DB%8C">قطعات مصرفی خودرو</a></li>
+                                        <li><a href="/shop/%D8%B4%D8%A7%D8%B3%DB%8C-%D9%88-%D8%A8%D8%AF%D9%86%D9%87">شاسی و بدنه خودرو</a></li>
+                                        <li><a href="/shop/%D8%B3%DB%8C%D8%B3%D8%AA%D9%85-%DA%AF%DB%8C%D8%B1%D8%A8%DA%A9%D8%B3-%D9%88-%D8%AF%DB%8C%D9%81%D8%B1%D8%A7%D9%86%D8%B3%DB%8C%D9%84">سیستم گیربکس و دیفرانسیل</a></li>
+                                        <li><a href="/shop/%D8%B3%DB%8C%D8%B3%D8%AA%D9%85-%D8%B3%D9%88%D8%AE%D8%AA%E2%80%8C%D8%B1%D8%B3%D8%A7%D9%86%DB%8C">سیستم سوخت‌رسانی و جرقه</a></li>
+                                        <li><a href="/shop/%D8%B3%DB%8C%D8%B3%D8%AA%D9%85-%DA%86%D8%B1%D8%AE-%D9%88-%D8%AA%D8%B1%D9%85%D8%B2">سیستم چرخ و ترمز و تعلیق</a></li>
+                                        <li><a href="/shop/%D8%B3%DB%8C%D8%B3%D8%AA%D9%85-%D8%A8%D8%B1%D9%82">سیستم برق و روشنایی</a></li>
                                     </ul>
                                 </li>
                                 <li><a href="/shop"><i class="fas fa-store me-2" style="color:var(--primary);"></i> فروشگاه</a></li>
@@ -205,6 +307,7 @@
                 <div class="col-5 text-center">
                     <a href="/" class="site-logo site-logo-mobile">
                         <img src="/assets/images/logo.png"
+                             width="130" height="44" fetchpriority="high" decoding="async"
                              alt="ناظر یدک - لوازم یدکی خودرو و محصولات اصلی ایساکو">
                     </a>
                 </div>
@@ -245,7 +348,7 @@
                 </div>
                 <div class="col-2 d-flex align-items-center justify-content-end">
                     <a href="#shopping-cart-responsive" class="header-cart-btn" data-bs-toggle="offcanvas">
-                        <img src="/assets/images/cart.png">
+                        <img src="/assets/images/cart.png" alt="سبد خرید" width="28" height="28" loading="lazy" decoding="async">
                         <div class="count cart-count">0</div>
                     </a>
                     <div class="offcanvas offcanvas-end" tabindex="-1" data-bs-scroll="true" id="shopping-cart-responsive">
@@ -282,13 +385,13 @@
                 <li class="has-sub-menu nav-category-item">
                     <a href="#"><i class="fas fa-th-large me-1"></i> دسته‌بندی محصولات <i class="fa fa-angle-down fa-sm"></i></a>
                     <ul class="sub-menu">
-                        <li><a href="/shop?category=>موتور-و-اجزای-متعلقه"><i class="fas fa-cog sub-menu-icon"></i> موتور و اجزای متعلقه خودرو</a></li>
-                        <li><a href="/shop?category=قطعات-مصرفی"><i class="fas fa-oil-can sub-menu-icon"></i> قطعات مصرفی خودرو</a></li>
-                        <li><a href="/shop?category=شاسی-و-بدنه"><i class="fas fa-car sub-menu-icon"></i> شاسی و بدنه خودرو</a></li>
-                        <li><a href="/shop?category=سیستم-گیربکس-و-دیفرانسیل"><i class="fas fa-cogs sub-menu-icon"></i> سیستم گیربکس و دیفرانسیل</a></li>
-                        <li><a href="/shop?category=سیستم-سوخت‌رسانی"><i class="fas fa-gas-pump sub-menu-icon"></i> سیستم سوخت‌رسانی و جرقه</a></li>
-                        <li><a href="/shop?category=سیستم-چرخ-و-ترمز"><i class="fas fa-compact-disc sub-menu-icon"></i> سیستم چرخ و ترمز و تعلیق</a></li>
-                        <li><a href="/shop?category=سیستم-برق"><i class="fas fa-bolt sub-menu-icon"></i> سیستم برق و روشنایی</a></li>
+                        <li><a href="/shop/%D9%85%D9%88%D8%AA%D9%88%D8%B1-%D9%88-%D8%A7%D8%AC%D8%B2%D8%A7%DB%8C-%D9%85%D8%AA%D8%B9%D9%84%D9%82%D9%87"><i class="fas fa-cog sub-menu-icon"></i> موتور و اجزای متعلقه خودرو</a></li>
+                        <li><a href="/shop/%D9%82%D8%B7%D8%B9%D8%A7%D8%AA-%D9%85%D8%B5%D8%B1%D9%81%DB%8C"><i class="fas fa-oil-can sub-menu-icon"></i> قطعات مصرفی خودرو</a></li>
+                        <li><a href="/shop/%D8%B4%D8%A7%D8%B3%DB%8C-%D9%88-%D8%A8%D8%AF%D9%86%D9%87"><i class="fas fa-car sub-menu-icon"></i> شاسی و بدنه خودرو</a></li>
+                        <li><a href="/shop/%D8%B3%DB%8C%D8%B3%D8%AA%D9%85-%DA%AF%DB%8C%D8%B1%D8%A8%DA%A9%D8%B3-%D9%88-%D8%AF%DB%8C%D9%81%D8%B1%D8%A7%D9%86%D8%B3%DB%8C%D9%84"><i class="fas fa-cogs sub-menu-icon"></i> سیستم گیربکس و دیفرانسیل</a></li>
+                        <li><a href="/shop/%D8%B3%DB%8C%D8%B3%D8%AA%D9%85-%D8%B3%D9%88%D8%AE%D8%AA%E2%80%8C%D8%B1%D8%B3%D8%A7%D9%86%DB%8C"><i class="fas fa-gas-pump sub-menu-icon"></i> سیستم سوخت‌رسانی و جرقه</a></li>
+                        <li><a href="/shop/%D8%B3%DB%8C%D8%B3%D8%AA%D9%85-%DA%86%D8%B1%D8%AE-%D9%88-%D8%AA%D8%B1%D9%85%D8%B2"><i class="fas fa-compact-disc sub-menu-icon"></i> سیستم چرخ و ترمز و تعلیق</a></li>
+                        <li><a href="/shop/%D8%B3%DB%8C%D8%B3%D8%AA%D9%85-%D8%A8%D8%B1%D9%82"><i class="fas fa-bolt sub-menu-icon"></i> سیستم برق و روشنایی</a></li>
                     </ul>
                 </li>
                 <li><a href="/shop"><i class="fas fa-store me-1 d-none d-xl-inline"></i> فروشگاه</a></li>
@@ -308,11 +411,12 @@
         <div class="footer-features">
             <div class="container">
                 <div class="row text-center">
+                    @php $footerShipping = getShippingRules(); @endphp
                     <div class="col-6 col-lg-4 mb-3 mb-lg-0">
                         <div class="footer-feature-item">
                             <div class="footer-feature-icon"><i class="fas fa-truck"></i></div>
                             <h6>ارسال رایگان</h6>
-                            <span>قم +۵M | سایر شهرها +۲۰M</span>
+                            <span>{{ $footerShipping['local_province_name'] }} +{{ shippingAmountShort($footerShipping['local_free_threshold']) }} | سایر شهرها +{{ shippingAmountShort($footerShipping['national_free_threshold']) }}</span>
                         </div>
                     </div>
                     <div class="col-6 col-lg-4 mb-3 mb-lg-0">
@@ -340,6 +444,7 @@
                         <div class="footer-brand">
                             <span class="site-logo" style="margin-bottom:15px;">
                                 <img src="/assets/images/logo.png"
+                                     width="150" height="50" loading="lazy" decoding="async"
                                      alt="ناظر یدک - لوازم یدکی خودرو و محصولات اصلی ایساکو">
                             </span>
                             <div class="footer-about">
@@ -373,8 +478,8 @@
                     <div class="col-lg-3 col-md-6 footer-box mb-4">
                         <p class="footer-title">نماد اعتماد</p>
                         <div class="footer-trust-badges">
-                            <img src="/assets/images/f-1.png" class="footer-detail-pic" alt="نماد اعتماد">
-                            <img src="/assets/images/f-2.png" class="footer-detail-pic" alt="نماد ساماندهی">
+                            <img src="/assets/images/f-1.png" class="footer-detail-pic" alt="نماد اعتماد الکترونیکی ناظر یدک" width="90" height="90" loading="lazy" decoding="async">
+                            <img src="/assets/images/f-2.png" class="footer-detail-pic" alt="نماد ساماندهی وزارت فرهنگ و ارشاد اسلامی" width="90" height="90" loading="lazy" decoding="async">
                         </div>
                         <p class="footer-title mt-4">ما را دنبال کنید</p>
                         <div class="footer-social">
@@ -384,6 +489,28 @@
                     </div>
                 </div>
             </div>
+
+            {{-- لینک‌سازی داخلی: صفحات دسته‌بندی و مدل خودرو از هر صفحه‌ی سایت
+                 یک لینک مستقیم می‌گیرند. این کار هم عمق خزش را کم می‌کند و هم
+                 متن لنگر (anchor text) مرتبط به آن صفحات می‌رساند. --}}
+            <nav class="footer-seo-links" aria-label="دسته‌بندی قطعات و مدل خودروها">
+                <div class="footer-seo-group">
+                    <p class="footer-title">خرید بر اساس دسته‌بندی</p>
+                    <ul class="footer-tag-list">
+                        @foreach(\App\Enums\ProductCategory::cases() as $footerCategory)
+                            <li><a href="/shop/{{ rawurlencode($footerCategory->slug()) }}">{{ $footerCategory->label() }}</a></li>
+                        @endforeach
+                    </ul>
+                </div>
+                <div class="footer-seo-group">
+                    <p class="footer-title">خرید بر اساس خودرو</p>
+                    <ul class="footer-tag-list">
+                        @foreach(['پژو 206', 'پژو 405', 'پژو پارس', 'سمند', 'دنا', 'رانا', 'تیبا', 'پراید', 'کوییک', 'ساینا', 'شاهین', 'تارا'] as $footerCar)
+                            <li><a href="/shop?car_model={{ rawurlencode($footerCar) }}">قطعات {{ $footerCar }}</a></li>
+                        @endforeach
+                    </ul>
+                </div>
+            </nav>
 
             <div class="footer-bottom">
                 <div class="d-flex flex-column flex-md-row align-items-center justify-content-between">
@@ -402,6 +529,96 @@
         </div>
         <a href="#" class="topbutton"><i class="fa fa-chevron-up"></i></a>
     </footer>
+
+    {{-- ================= نوار پایین چسبان موبایل ================= --}}
+    @php
+        $isHomeTab   = request()->is('/');
+        $isShopTab   = request()->is('shop') || request()->is('shop/*') || request()->is('product*');
+        $isCartTab   = request()->is('cart') || request()->is('cart/*');
+        $isUserTab   = request()->is('dashboard') || request()->is('profile*') || request()->is('login') || request()->is('favorite');
+        $appbarCategories = [
+            ['title' => 'موتور و اجزای متعلقه', 'icon' => 'fas fa-cog',          'url' => '/shop/%D9%85%D9%88%D8%AA%D9%88%D8%B1-%D9%88-%D8%A7%D8%AC%D8%B2%D8%A7%DB%8C-%D9%85%D8%AA%D8%B9%D9%84%D9%82%D9%87'],
+            ['title' => 'قطعات مصرفی',          'icon' => 'fas fa-oil-can',      'url' => '/shop/%D9%82%D8%B7%D8%B9%D8%A7%D8%AA-%D9%85%D8%B5%D8%B1%D9%81%DB%8C'],
+            ['title' => 'شاسی و بدنه',          'icon' => 'fas fa-car',          'url' => '/shop/%D8%B4%D8%A7%D8%B3%DB%8C-%D9%88-%D8%A8%D8%AF%D9%86%D9%87'],
+            ['title' => 'گیربکس و دیفرانسیل',   'icon' => 'fas fa-cogs',         'url' => '/shop/%D8%B3%DB%8C%D8%B3%D8%AA%D9%85-%DA%AF%DB%8C%D8%B1%D8%A8%DA%A9%D8%B3-%D9%88-%D8%AF%DB%8C%D9%81%D8%B1%D8%A7%D9%86%D8%B3%DB%8C%D9%84'],
+            ['title' => 'سوخت‌رسانی و جرقه',    'icon' => 'fas fa-gas-pump',     'url' => '/shop/%D8%B3%DB%8C%D8%B3%D8%AA%D9%85-%D8%B3%D9%88%D8%AE%D8%AA%E2%80%8C%D8%B1%D8%B3%D8%A7%D9%86%DB%8C'],
+            ['title' => 'چرخ و ترمز و تعلیق',   'icon' => 'fas fa-compact-disc', 'url' => '/shop/%D8%B3%DB%8C%D8%B3%D8%AA%D9%85-%DA%86%D8%B1%D8%AE-%D9%88-%D8%AA%D8%B1%D9%85%D8%B2'],
+            ['title' => 'برق و روشنایی',        'icon' => 'fas fa-bolt',         'url' => '/shop/%D8%B3%DB%8C%D8%B3%D8%AA%D9%85-%D8%A8%D8%B1%D9%82'],
+            ['title' => 'همه محصولات',          'icon' => 'fas fa-store',        'url' => '/shop'],
+            ['title' => 'مجله یدکی',            'icon' => 'fas fa-newspaper',    'url' => '/blog'],
+        ];
+    @endphp
+    <nav class="mobile-appbar" id="mobileAppbar" aria-label="منوی اصلی موبایل">
+        <a href="/" class="mobile-appbar__item {{ $isHomeTab ? 'is-active' : '' }}" @if($isHomeTab) aria-current="page" @endif>
+            <span class="mobile-appbar__icon"><i class="fas fa-home"></i></span>
+            <span class="mobile-appbar__label">خانه</span>
+        </a>
+        <a href="#app-categories-sheet" class="mobile-appbar__item {{ $isShopTab ? 'is-active' : '' }}" data-bs-toggle="offcanvas" role="button">
+            <span class="mobile-appbar__icon"><i class="fas fa-th-large"></i></span>
+            <span class="mobile-appbar__label">دسته‌بندی</span>
+        </a>
+        <a href="#app-search-sheet" class="mobile-appbar__item" data-bs-toggle="offcanvas" role="button">
+            <span class="mobile-appbar__icon"><i class="fas fa-search"></i></span>
+            <span class="mobile-appbar__label">جستجو</span>
+        </a>
+        <a href="#shopping-cart-responsive" class="mobile-appbar__item {{ $isCartTab ? 'is-active' : '' }}" data-bs-toggle="offcanvas" role="button">
+            <span class="mobile-appbar__icon">
+                <i class="fas fa-shopping-cart"></i>
+                <span class="mobile-appbar__badge cart-count is-empty" id="appbar-cart-count">0</span>
+            </span>
+            <span class="mobile-appbar__label">سبد خرید</span>
+        </a>
+        <a href="{{ empty(Auth::guard('customer')->user()) ? '/login' : '/dashboard' }}" class="mobile-appbar__item {{ $isUserTab ? 'is-active' : '' }}">
+            <span class="mobile-appbar__icon"><i class="fas fa-user"></i></span>
+            <span class="mobile-appbar__label">{{ empty(Auth::guard('customer')->user()) ? 'ورود' : 'حساب من' }}</span>
+        </a>
+    </nav>
+
+    {{-- شیت دسته‌بندی‌ها --}}
+    <div class="offcanvas offcanvas-bottom app-sheet d-lg-none" tabindex="-1" id="app-categories-sheet" aria-labelledby="app-categories-title">
+        <div class="app-sheet__grabber"></div>
+        <div class="offcanvas-header">
+            <p class="offcanvas-title" id="app-categories-title">دسته‌بندی محصولات</p>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="بستن"></button>
+        </div>
+        <div class="offcanvas-body">
+            <div class="app-sheet__grid">
+                @foreach($appbarCategories as $appbarCategory)
+                <a href="{{ $appbarCategory['url'] }}" class="app-sheet__tile">
+                    <i class="{{ $appbarCategory['icon'] }}"></i>
+                    <span>{{ $appbarCategory['title'] }}</span>
+                </a>
+                @endforeach
+            </div>
+        </div>
+    </div>
+
+    {{-- شیت جستجو --}}
+    <div class="offcanvas offcanvas-bottom app-sheet d-lg-none" tabindex="-1" id="app-search-sheet" aria-labelledby="app-search-title">
+        <div class="app-sheet__grabber"></div>
+        <div class="offcanvas-header">
+            <p class="offcanvas-title" id="app-search-title">جستجو در محصولات</p>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="بستن"></button>
+        </div>
+        <div class="offcanvas-body">
+            <form method="get" action="/shop">
+                <div class="app-sheet__search">
+                    <i class="fa fa-search" style="color:#81858b;font-size:14px;"></i>
+                    <input type="search" name="title" value="{{ request('title') }}" placeholder="نام قطعه، خودرو یا کد فنی..." data-appbar-search>
+                    <button type="submit">جستجو</button>
+                </div>
+            </form>
+            <p class="app-sheet__hint">جستجوهای پرتکرار</p>
+            <div class="app-sheet__chips">
+                <a href="/shop?title=لنت ترمز">لنت ترمز</a>
+                <a href="/shop?title=فیلتر روغن">فیلتر روغن</a>
+                <a href="/shop?title=تسمه تایم">تسمه تایم</a>
+                <a href="/shop?title=شمع">شمع</a>
+                <a href="/shop?title=دیسک و صفحه">دیسک و صفحه</a>
+                <a href="/shop?title=کمک فنر">کمک فنر</a>
+            </div>
+        </div>
+    </div>
 
 <script src="/assets/js/jquery.min.js"></script>
 <script src="/assets/js/bootstrap.bundle.min.js"></script>
@@ -442,24 +659,36 @@ function addFavorite(id) {
 $(document).on('click', '.add-cart-btn', function (e) {
     e.preventDefault();
     let productId = $(this).data('id');
+    // اگر دکمه به یک انتخابگر تعداد وصل باشد (صفحه‌ی محصول)، همان تعداد ارسال
+    // می‌شود؛ در کارت‌های فروشگاه مثل قبل یک عدد اضافه می‌شود
+    let qtySource = $(this).data('qty-from');
+    let quantity = qtySource ? (parseInt($('#' + qtySource).val(), 10) || 1) : 1;
+    let btn = $(this);
+    btn.prop('disabled', true);
     $.ajax({
         url: "/cart/add",
         type: "POST",
         data: {
             product_id: productId,
+            quantity: quantity,
             _token: "{{ csrf_token() }}"
         },
         success: function (response) {
             if (response.status === "success") {
                 toast.fire({
                     title: 'انجام شد!',
-                    text: 'محصول با موفقیت به سبد خرید اضافه شد',
+                    text: quantity > 1
+                        ? quantity + ' عدد به سبد خرید اضافه شد'
+                        : 'محصول با موفقیت به سبد خرید اضافه شد',
                     icon: 'success',
                     confirmButtonText: 'باشه',
                     confirmButtonColor: '#d33',
                     timer: 2000
                 });
             }
+        },
+        complete: function () {
+            btn.prop('disabled', false);
         },
         error: function (xhr) {
             // سرور دلیل دقیق را می‌فرستد (مثلاً «موجودی کافی نیست») — همان را نشان بده
@@ -483,7 +712,7 @@ function loadCart() {
                 html += `
                     <div class="row">
                         <div class="col-4">
-                            <img src="${item.image}" class="img-fluid img-thumbnail">
+                            <img src="${item.image}" class="img-fluid img-thumbnail" alt="${item.title || ''}" width="70" height="70" loading="lazy">
                         </div>
                         <div class="col-8 d-flex align-items-center">
                             <a href="${item.url}" class="cart-product-title">${item.title}</a>
@@ -499,11 +728,22 @@ function loadCart() {
                     </div>
                 `;
             });
+            if (!html) {
+                // حالت خالی؛ قبلا کشوی سبد روی موبایل کاملا سفید باز می‌شد
+                html = `
+                    <div class="text-center py-5">
+                        <i class="fas fa-shopping-cart" style="font-size:2.2rem; color:#d7d7dd;"></i>
+                        <p class="font-13 mt-3 mb-3">سبد خرید شما خالی است</p>
+                        <a href="/shop" class="btn btn-info font-13 px-4">رفتن به فروشگاه</a>
+                    </div>`;
+            }
             $(".cart-items").html(html);
+            // شمارنده‌ی خالی نباید روی نوار پایین موبایل نشان داده شود
+            $(".mobile-appbar__badge").toggleClass('is-empty', !res.count);
         }
     });
 }
-$('#shopping-cart').on('show.bs.offcanvas', function () {
+$('#shopping-cart, #shopping-cart-responsive').on('show.bs.offcanvas', function () {
     loadCart();
 });
 $(document).on('click', '.add-cart-btn', function () {
@@ -518,7 +758,62 @@ $(document).on('click', '.cart-delete-btn', function () {
         loadCart();
     });
 });
+$('#shopping-cart-responsive').on('show.bs.offcanvas', function () {
+    loadCart();
+});
 loadCart();
+
+/* ---------- رفتار نوار پایین موبایل ---------- */
+(function () {
+    var bar = document.getElementById('mobileAppbar');
+    if (!bar) return;
+
+    /* پنهان‌شدن هنگام اسکرول به پایین، نمایش هنگام اسکرول به بالا */
+    var lastY = window.pageYOffset || 0;
+    var ticking = false;
+
+    function onScroll() {
+        var y = window.pageYOffset || 0;
+        if (Math.abs(y - lastY) > 8) {
+            var nearBottom = (y + window.innerHeight) >= (document.body.scrollHeight - 60);
+            bar.classList.toggle('is-hidden', y > lastY && y > 220 && !nearBottom);
+            lastY = y;
+        }
+        ticking = false;
+    }
+
+    window.addEventListener('scroll', function () {
+        if (!ticking) {
+            ticking = true;
+            window.requestAnimationFrame(onScroll);
+        }
+    }, { passive: true });
+
+    /* هنگام باز شدن هر شیت، نوار دوباره دیده شود */
+    document.addEventListener('show.bs.offcanvas', function () {
+        bar.classList.remove('is-hidden');
+    });
+
+    /* نشان‌دادن/پنهان‌کردن شمارنده سبد خرید بر اساس مقدار آن */
+    var badge = document.getElementById('appbar-cart-count');
+    if (badge) {
+        var syncBadge = function () {
+            var n = parseInt((badge.textContent || '').replace(/[^\d]/g, ''), 10);
+            badge.classList.toggle('is-empty', !n);
+        };
+        syncBadge();
+        new MutationObserver(syncBadge).observe(badge, { childList: true, characterData: true, subtree: true });
+    }
+
+    /* فوکوس روی فیلد جستجو پس از باز شدن شیت */
+    var searchSheet = document.getElementById('app-search-sheet');
+    if (searchSheet) {
+        searchSheet.addEventListener('shown.bs.offcanvas', function () {
+            var input = searchSheet.querySelector('[data-appbar-search]');
+            if (input) input.focus();
+        });
+    }
+})();
 </script>
 @yield('js')
 <script>
@@ -533,6 +828,168 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+</script>
+
+{{-- ============ PWA ============ --}}
+
+{{-- بنر نصب اپلیکیشن؛ فقط وقتی مرورگر امکان نصب را اعلام کند نمایش داده می‌شود --}}
+<div id="pwa-install-banner" class="pwa-install-banner" hidden>
+    <img src="/assets/images/pwa/icon-192.png" alt="{{ seo_site_name() }}">
+    <div class="pwa-install-text">
+        <strong>نصب اپلیکیشن {{ seo_site_name() }}</strong>
+        <span>دسترسی سریع‌تر، بدون نیاز به مرورگر</span>
+    </div>
+    <button type="button" id="pwa-install-btn" class="pwa-install-btn">نصب</button>
+    <button type="button" id="pwa-install-close" class="pwa-install-close" aria-label="بستن">&times;</button>
+</div>
+
+<style>
+    .pwa-install-banner {
+        position: fixed;
+        z-index: 1080;
+        right: 12px;
+        left: 12px;
+        bottom: calc(12px + env(safe-area-inset-bottom));
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 6px 28px rgba(35, 37, 78, .18);
+        animation: pwa-slide-up .3s ease-out;
+    }
+
+    /* روی موبایل نوار پایین سایت وجود دارد؛ بنر بالاتر از آن می‌نشیند */
+    @media (max-width: 991px) {
+        .pwa-install-banner { bottom: calc(72px + env(safe-area-inset-bottom)); }
+    }
+
+    @media (min-width: 992px) {
+        .pwa-install-banner { right: auto; left: 20px; max-width: 380px; }
+    }
+
+    @keyframes pwa-slide-up {
+        from { opacity: 0; transform: translateY(16px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .pwa-install-banner img { width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0; }
+    .pwa-install-text { flex: 1; min-width: 0; line-height: 1.7; }
+    .pwa-install-text strong { display: block; font-size: 13px; color: #23254e; }
+    .pwa-install-text span { display: block; font-size: 11px; color: #62666d; }
+
+    .pwa-install-btn {
+        flex-shrink: 0;
+        border: 0;
+        cursor: pointer;
+        padding: 8px 18px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-family: inherit;
+        background: #ef394e;
+        color: #fff;
+    }
+
+    .pwa-install-btn:hover { background: #c7352f; }
+
+    .pwa-install-close {
+        flex-shrink: 0;
+        border: 0;
+        background: none;
+        cursor: pointer;
+        padding: 0 4px;
+        font-size: 22px;
+        line-height: 1;
+        color: #a1a3a8;
+    }
+
+    .pwa-install-close:hover { color: #62666d; }
+</style>
+
+<script>
+(function () {
+    'use strict';
+
+    if (!('serviceWorker' in navigator)) return;
+
+    window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/sw.js', { scope: '/' }).then(function (registration) {
+            // نسخه‌ی جدید سرویس‌ورکر به محض آماده شدن جایگزین شود
+            registration.addEventListener('updatefound', function () {
+                var worker = registration.installing;
+                if (!worker) return;
+
+                worker.addEventListener('statechange', function () {
+                    if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+                        worker.postMessage({ type: 'SKIP_WAITING' });
+                    }
+                });
+            });
+        }).catch(function (error) {
+            console.warn('Service worker registration failed:', error);
+        });
+    });
+
+    // با فعال شدن سرویس‌ورکر جدید، صفحه یک بار تازه می‌شود تا فایل‌های قدیمی نمانند
+    var refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+        if (refreshing) return;
+        refreshing = true;
+        window.location.reload();
+    });
+
+    /* ---- بنر نصب ---- */
+
+    var DISMISS_KEY = 'pwa-install-dismissed-at';
+    var DISMISS_DAYS = 14;
+
+    function recentlyDismissed() {
+        try {
+            var at = parseInt(localStorage.getItem(DISMISS_KEY), 10);
+            if (!at) return false;
+            return (Date.now() - at) < DISMISS_DAYS * 24 * 60 * 60 * 1000;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    var deferredPrompt = null;
+
+    window.addEventListener('beforeinstallprompt', function (event) {
+        event.preventDefault();
+        deferredPrompt = event;
+
+        if (recentlyDismissed()) return;
+
+        var banner = document.getElementById('pwa-install-banner');
+        if (!banner) return;
+
+        banner.hidden = false;
+
+        document.getElementById('pwa-install-btn').addEventListener('click', function () {
+            banner.hidden = true;
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then(function () {
+                deferredPrompt = null;
+            });
+        });
+
+        document.getElementById('pwa-install-close').addEventListener('click', function () {
+            banner.hidden = true;
+            try {
+                localStorage.setItem(DISMISS_KEY, String(Date.now()));
+            } catch (e) {}
+        });
+    });
+
+    window.addEventListener('appinstalled', function () {
+        deferredPrompt = null;
+        var banner = document.getElementById('pwa-install-banner');
+        if (banner) banner.hidden = true;
+    });
+})();
 </script>
 </body>
 </html>

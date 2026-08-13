@@ -21,6 +21,7 @@ class Product extends Model
         'short_description',
         'price',
         'regular_price',
+        'compare_at_price',
         'discount_percent',
         'is_special_offer',
         'file_path',
@@ -36,6 +37,7 @@ class Product extends Model
     protected $casts = [
         'price'         => 'integer',
         'regular_price' => 'integer',
+        'compare_at_price' => 'integer',
         'discount_percent' => 'integer',
         'is_special_offer' => 'boolean',
         'weight'        => 'integer',
@@ -44,9 +46,22 @@ class Product extends Model
 
     /**
      */
+    /**
+     * حدود ۹۳٪ عنوان محصولات با «ي» و «ك» عربی وارد شده‌اند، در حالی که کاربر
+     * «ی» و «ک» فارسی تایپ می‌کند. این نگاشت روی هر دو طرفِ مقایسه (عبارت
+     * جستجو و ستون دیتابیس) اعمال می‌شود، پس هر دو شکل به یک صورت درمی‌آیند.
+     */
     private const LETTER_MAP = [
-        "\u{200C}" => ' ',
-        "\u{0640}" => '',
+        "\u{200C}" => ' ',  // نیم‌فاصله
+        "\u{0640}" => '',   // کشیده
+        "\u{064A}" => "\u{06CC}", // ي عربی → ی فارسی
+        "\u{0649}" => "\u{06CC}", // ى مقصوره → ی فارسی
+        "\u{0643}" => "\u{06A9}", // ك عربی → ک فارسی
+        "\u{0629}" => "\u{0647}", // ة → ه
+        "\u{0623}" => "\u{0627}", // أ → ا
+        "\u{0625}" => "\u{0627}", // إ → ا
+        "\u{0622}" => "\u{0627}", // آ → ا
+        "\u{0624}" => "\u{0648}", // ؤ → و
     ];
 
     private const DIGIT_MAP = [
@@ -199,32 +214,62 @@ class Product extends Model
         return $this->belongsToMany(User::class, 'product_favorites', 'product_id', 'user_id')->withPivot('pin')->withTimestamps();
     }
 
+    /**
+     * قیمتی که باید خط‌خورده نمایش داده شود؛ اگر تخفیفی در کار نباشد null است.
+     * توجه: regular_price قیمت خرید است و هرگز نباید اینجا استفاده شود.
+     */
+    public function compareAtPrice(): ?int
+    {
+        $compare = (int) $this->compare_at_price;
+
+        return $compare > 0 && $compare > (int) $this->price ? $compare : null;
+    }
+
     public function discountPercent()
     {
         if ($this->discount_percent > 0) {
             return min(100, max(0, (int) $this->discount_percent));
         }
 
-        if (!$this->regular_price || $this->regular_price == 0) {
+        $compare = $this->compareAtPrice();
+        if ($compare === null) {
             return 0;
         }
 
-        if ($this->price < $this->regular_price) {
-            $percent = (($this->regular_price - $this->price) / $this->regular_price) * 100;
-            return round($percent, 2);
-        }
-
-        return 0;
+        return round((($compare - (int) $this->price) / $compare) * 100, 2);
     }
+
+    /**
+     * درصد تخفیف را روی قیمت فروش فعلی اعمال می‌کند و قیمت پیش از تخفیف را در
+     * compare_at_price نگه می‌دارد. اجرای چندباره تخفیف را روی هم انباشته
+     * نمی‌کند، چون مبنا همیشه قیمت پیش از تخفیف است.
+     */
     public function applyDiscountPercent(?int $percent): void
     {
         $percent = min(100, max(0, (int) $percent));
-        $this->discount_percent = $percent;
-        $this->is_special_offer = $percent > 0;
+        $base = (int) ($this->compare_at_price ?: $this->price);
 
-        if ($percent > 0 && $this->regular_price > 0) {
-            $this->price = (int) round($this->regular_price * (100 - $percent) / 100);
+        $this->discount_percent = $percent;
+        // با درصد صفر، تیک «پیشنهاد ویژه» دست‌نخورده می‌ماند تا ادمین بتواند
+        // محصولی را بدون تخفیف هم ویژه نگه دارد.
+        if ($percent > 0) {
+            $this->is_special_offer = true;
         }
+
+        if ($base <= 0) {
+            return;
+        }
+
+        if ($percent > 0) {
+            $this->compare_at_price = $base;
+            $this->price = (int) round($base * (100 - $percent) / 100);
+
+            return;
+        }
+
+        // برداشتن تخفیف: قیمت به مقدار پیش از تخفیف برمی‌گردد
+        $this->price = $base;
+        $this->compare_at_price = null;
     }
 }
 

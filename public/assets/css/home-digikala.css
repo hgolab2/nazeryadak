@@ -1,0 +1,2324 @@
+/* ==========================================================================
+   قالب دیجی‌کالایی: هدر سایت + چیدمان و رنگ‌بندی صفحه اصلی
+   این فایل بعد از style.css بارگذاری می‌شود تا روی لایه‌های قدیمی تم بنشیند.
+   ========================================================================== */
+
+:root {
+    --nx-red: #ef4056;
+    --nx-red-dark: #d33449;
+    --nx-red-soft: #fff1f3;
+    --nx-teal: #19bfd3;
+    --nx-ink: #23254e;
+    --nx-text: #3f4064;
+    --nx-muted: #81858b;
+    --nx-line: #e0e0e2;
+    --nx-soft: #f0f0f1;
+    --nx-bg: #f5f5f5;
+    --nx-radius: 8px;
+    --nx-shell: 1330px;
+}
+
+body {
+    background: var(--nx-bg) !important;
+    color: var(--nx-text) !important;
+}
+
+/* ==========================================================================
+   ۱) هدر و منو
+   ========================================================================== */
+
+.header-top-bar {
+    background: #fff !important;
+    color: var(--nx-muted) !important;
+    border-bottom: 1px solid var(--nx-soft) !important;
+    padding: 6px 0 !important;
+    font-size: 12px !important;
+}
+
+.header-top-bar i {
+    color: var(--nx-teal) !important;
+}
+
+.site-header {
+    background: #fff !important;
+    border-bottom: 1px solid var(--nx-line) !important;
+    box-shadow: none !important;
+}
+
+.header-main {
+    background: #fff !important;
+    padding: 12px 0 !important;
+    min-height: 74px !important;
+}
+
+.site-logo {
+    background: transparent !important;
+    padding: 0 !important;
+}
+
+.site-logo img {
+    max-height: 52px !important;
+    width: auto;
+    object-fit: contain;
+}
+
+/* جعبه جستجو: زمینه خاکستری روشن، دکمه قرمز در انتهای فیلد.
+   دکمه از حالت absolute خارج و به آیتم فلکس تبدیل می‌شود تا همیشه داخل کادر بماند. */
+.search-box-header {
+    display: flex !important;
+    align-items: center;
+    height: 44px !important;
+    background: var(--nx-soft) !important;
+    border: 1px solid transparent !important;
+    border-radius: var(--nx-radius) !important;
+    overflow: hidden;
+    transition: border-color .18s ease;
+}
+
+.search-box-header:focus-within {
+    border-color: var(--nx-red) !important;
+}
+
+.search-box-header input {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 44px !important;
+    padding: 0 16px !important;
+    background: transparent !important;
+    border: 0 !important;
+    color: var(--nx-ink) !important;
+    font-size: 13px !important;
+}
+
+.search-box-header input::placeholder {
+    color: var(--nx-muted) !important;
+}
+
+.search-box-header button {
+    position: static !important;
+    flex: 0 0 auto;
+    height: 44px !important;
+    min-width: 98px;
+    justify-content: center;
+    border-radius: 0 !important;
+    background: var(--nx-red) !important;
+    border-color: var(--nx-red) !important;
+    font-size: 13px !important;
+    font-weight: 800 !important;
+}
+
+.search-box-header button:hover {
+    background: var(--nx-red-dark) !important;
+    border-color: var(--nx-red-dark) !important;
+}
+
+/* دکمه ورود و سبد خرید */
+.header-action-btn {
+    height: 42px !important;
+    padding: 0 14px !important;
+    background: #fff !important;
+    border: 1px solid var(--nx-line) !important;
+    border-radius: var(--nx-radius) !important;
+    color: var(--nx-ink) !important;
+    font-size: 13px !important;
+}
+
+.header-action-btn:hover {
+    background: #fff !important;
+    border-color: var(--nx-red) !important;
+    color: var(--nx-red) !important;
+}
+
+.header-cart-btn {
+    width: 42px !important;
+    height: 42px !important;
+    background: #fff !important;
+    border: 1px solid var(--nx-line) !important;
+    border-radius: var(--nx-radius) !important;
+}
+
+.header-cart-btn:hover {
+    background: #fff !important;
+    border-color: var(--nx-red) !important;
+}
+
+/* آیکن سبد خرید سیاه است؛ فیلتر سفیدکننده‌ی تم قبلی آن را روی هدر سفید نامرئی می‌کرد */
+.header-cart-btn img {
+    width: 20px !important;
+    height: 20px !important;
+    filter: none !important;
+    object-fit: contain;
+}
+
+.header-cart-btn .count {
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 19px;
+    height: 19px;
+    padding: 0 5px;
+    border-radius: 10px;
+    background: var(--nx-red) !important;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+/* نوار منو */
+.navigation {
+    height: 46px !important;
+    background: #fff !important;
+    border-bottom: 1px solid var(--nx-line) !important;
+    box-shadow: none !important;
+}
+
+.main-menu {
+    height: 46px !important;
+    align-items: center !important;
+}
+
+.main-menu > li > a {
+    height: 46px !important;
+    padding: 0 14px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    color: var(--nx-text) !important;
+    font-size: 13px !important;
+    line-height: 46px !important;
+}
+
+.main-menu > li > a:hover {
+    background: transparent !important;
+    color: var(--nx-red) !important;
+}
+
+.main-menu > li > a::before {
+    background: var(--nx-red) !important;
+}
+
+.nav-category-item > a,
+.nav-category-item:hover > a {
+    background: transparent !important;
+    color: var(--nx-ink) !important;
+    font-weight: 800 !important;
+}
+
+.nav-category-item:hover > a,
+.nav-category-item:hover > a > i {
+    color: var(--nx-red) !important;
+}
+
+.nav-phone-link {
+    color: var(--nx-red) !important;
+}
+
+.nav-phone-link:hover {
+    background: var(--nx-red-soft) !important;
+}
+
+.sub-menu,
+.sub-menu-level-2 {
+    border-top-color: var(--nx-red) !important;
+    box-shadow: 0 12px 30px rgba(35, 37, 78, .14) !important;
+}
+
+.sub-menu > li > a:hover,
+.sub-menu-level-2 > li > a:hover {
+    color: var(--nx-red) !important;
+    background: var(--nx-red-soft) !important;
+    border-right-color: var(--nx-red) !important;
+}
+
+.sub-menu-icon {
+    color: var(--nx-teal) !important;
+}
+
+.sub-menu > li > a:hover .sub-menu-icon {
+    color: var(--nx-red) !important;
+}
+
+/* هدر موبایل: آیکن‌ها روی زمینه سفید دیده نمی‌شدند */
+.mobile-menu-icon,
+.signup-login-icon {
+    color: var(--nx-ink) !important;
+}
+
+.mobile-search input {
+    background: var(--nx-soft) !important;
+    border: 1px solid transparent !important;
+    color: var(--nx-ink) !important;
+}
+
+.mobile-search input::placeholder {
+    color: var(--nx-muted) !important;
+}
+
+.mobile-search input:focus {
+    background: var(--nx-soft) !important;
+    border-color: var(--nx-red) !important;
+    color: var(--nx-ink) !important;
+}
+
+.mobile-search button {
+    background: var(--nx-red) !important;
+}
+
+#mobile-menu .offcanvas-header {
+    background: #fff !important;
+    border-bottom: 1px solid var(--nx-line);
+}
+
+#mobile-menu .btn-close-white {
+    filter: none !important;
+}
+
+.mobile-login-btn {
+    background: var(--nx-red) !important;
+    border-color: var(--nx-red) !important;
+}
+
+/* ==========================================================================
+   ۲) پوسته صفحه اصلی
+   ========================================================================== */
+
+.nx-home {
+    padding: 16px 0 40px;
+    background: var(--nx-bg);
+    overflow-x: hidden;
+    direction: rtl;
+}
+
+.nx-home *,
+.nx-home *::before,
+.nx-home *::after {
+    box-sizing: border-box;
+}
+
+.nx-home a {
+    text-decoration: none;
+}
+
+.nx-wrap {
+    width: min(var(--nx-shell), calc(100% - 32px));
+    margin-inline: auto;
+}
+
+/* ---------- اسلایدر اصلی ---------- */
+
+.nx-hero {
+    margin-bottom: 16px;
+}
+
+.nx-hero-slider {
+    position: relative;
+    border-radius: 12px;
+    background: #fff;
+    overflow: hidden;
+}
+
+.nx-hero-slider,
+.nx-hero-slider .owl-stage-outer,
+.nx-hero-slider .owl-stage,
+.nx-hero-slider .owl-item,
+.nx-slide {
+    height: 310px;
+}
+
+.nx-slide {
+    position: relative;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    color: #fff;
+}
+
+.nx-slide > img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.nx-slide-promo {
+    padding: 0 56px;
+    background: linear-gradient(90deg, #23254e 0%, #3c3f7d 45%, var(--nx-red) 100%);
+}
+
+.nx-slide-promo-2 {
+    background: linear-gradient(90deg, #0c7c8c 0%, var(--nx-teal) 55%, #86e5ef 100%);
+}
+
+.nx-slide-promo-3 {
+    background: linear-gradient(90deg, #7d1220 0%, var(--nx-red) 58%, #ff9273 100%);
+}
+
+.nx-slide-copy {
+    position: relative;
+    z-index: 2;
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: 570px;
+    min-width: 0;
+}
+
+.nx-slide-copy small {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 12px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, .18);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.nx-slide-copy strong {
+    display: block;
+    font-size: 34px;
+    font-weight: 900;
+    line-height: 1.5;
+}
+
+.nx-slide-copy p {
+    margin: 10px 0 18px;
+    font-size: 15px;
+    line-height: 2;
+    opacity: .92;
+}
+
+.nx-slide-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 42px;
+    padding: 0 22px;
+    border-radius: var(--nx-radius);
+    background: #fff;
+    color: var(--nx-ink) !important;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.nx-slide-art {
+    position: absolute;
+    left: 56px;
+    top: 50%;
+    z-index: 1;
+    transform: translateY(-50%);
+    font-size: 150px;
+    opacity: .16;
+}
+
+/* حالت پیش از راه‌اندازی اسلایدر: فقط اسلاید اول */
+.nx-hero-slider:not(.owl-loaded) .nx-slide {
+    display: none;
+}
+
+.nx-hero-slider:not(.owl-loaded) .nx-slide:first-child {
+    display: flex;
+}
+
+.nx-hero-slider .owl-nav button.owl-prev,
+.nx-hero-slider .owl-nav button.owl-next {
+    position: absolute;
+    top: 50%;
+    z-index: 3;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    margin: 0 !important;
+    transform: translateY(-50%);
+    border-radius: 50% !important;
+    background: rgba(255, 255, 255, .94) !important;
+    color: var(--nx-ink) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .16);
+    font-size: 17px !important;
+}
+
+.nx-hero-slider .owl-nav button.owl-prev {
+    right: 16px;
+}
+
+.nx-hero-slider .owl-nav button.owl-next {
+    left: 16px;
+}
+
+.nx-hero-slider .owl-dots {
+    position: absolute;
+    right: 56px;
+    bottom: 16px;
+    z-index: 3;
+    display: flex;
+    gap: 6px;
+}
+
+.nx-hero-slider .owl-dot span {
+    width: 8px !important;
+    height: 8px !important;
+    margin: 0 !important;
+    background: rgba(255, 255, 255, .55) !important;
+}
+
+.nx-hero-slider .owl-dot.active span {
+    width: 22px !important;
+    border-radius: 5px !important;
+    background: #fff !important;
+}
+
+/* ---------- دسترسی سریع (آیکن‌های دایره‌ای) ---------- */
+
+.nx-circles {
+    display: grid;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+    padding: 18px 10px;
+    border-radius: 12px;
+    background: #fff;
+}
+
+.nx-circle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 9px;
+    color: var(--nx-text);
+    font-size: 12.5px;
+    font-weight: 700;
+    text-align: center;
+}
+
+.nx-circle i {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    font-size: 23px;
+    transition: transform .18s ease;
+}
+
+.nx-circle:hover {
+    color: var(--nx-red);
+}
+
+.nx-circle:hover i {
+    transform: translateY(-3px);
+}
+
+.nx-t1 i { background: #ffeef0; color: #ef4056; }
+.nx-t2 i { background: #e6f8fb; color: #109cae; }
+.nx-t3 i { background: #eef0ff; color: #5a5fd8; }
+.nx-t4 i { background: #fff6e5; color: #d38b06; }
+.nx-t5 i { background: #e9f7ef; color: #17a566; }
+.nx-t6 i { background: #fdeef8; color: #c4479b; }
+.nx-t7 i { background: #eaf2ff; color: #2f6fd0; }
+.nx-t8 i { background: #f1f0ea; color: #7d7a5c; }
+
+/* ---------- نوار پیشنهاد ویژه ---------- */
+
+.nx-amazing {
+    display: grid;
+    grid-template-columns: 196px minmax(0, 1fr);
+    margin-bottom: 16px;
+    padding: 14px;
+    border-radius: 12px;
+    background: linear-gradient(180deg, var(--nx-red) 0%, #e02642 100%);
+}
+
+.nx-amazing-side {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px;
+    color: #fff;
+    text-align: center;
+}
+
+.nx-amazing-side > i {
+    font-size: 34px;
+    opacity: .95;
+}
+
+.nx-amazing-side strong {
+    font-size: 26px;
+    font-weight: 900;
+    line-height: 1.5;
+}
+
+.nx-amazing-side span {
+    font-size: 12.5px;
+    line-height: 1.9;
+    opacity: .92;
+}
+
+.nx-amazing-side a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 36px;
+    margin-top: 4px;
+    padding: 0 16px;
+    border-radius: var(--nx-radius);
+    background: #fff;
+    color: var(--nx-red) !important;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+/* بدون min-width:0 ، عرض ذاتی ریل ستون گرید را باز می‌کند و کل صفحه پهن‌تر از نمایشگر می‌شود */
+.nx-amazing > * {
+    min-width: 0;
+}
+
+.nx-amazing .nx-rail {
+    border-radius: 10px;
+    background: #fff;
+}
+
+/* ---------- بنرهای میانی ---------- */
+
+.nx-banners {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.nx-banner {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    min-height: 140px;
+    padding: 20px 24px;
+    border-radius: 12px;
+    color: #fff;
+}
+
+.nx-banner strong {
+    display: block;
+    font-size: 18px;
+    font-weight: 900;
+}
+
+.nx-banner p {
+    margin: 7px 0 0;
+    font-size: 13px;
+    line-height: 1.9;
+    opacity: .9;
+}
+
+.nx-banner-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 34px;
+    margin-top: 13px;
+    padding: 0 16px;
+    border-radius: var(--nx-radius);
+    background: #fff;
+    color: var(--nx-ink) !important;
+    font-size: 12.5px;
+    font-weight: 800;
+}
+
+.nx-banner-isaco {
+    background: linear-gradient(120deg, #23254e 0%, #3a3d7d 100%);
+}
+
+.nx-banner-isaco img {
+    flex-shrink: 0;
+    width: 98px;
+    height: 98px;
+    padding: 10px;
+    border-radius: 12px;
+    background: #fff;
+    object-fit: contain;
+}
+
+.nx-banner-support {
+    background: linear-gradient(120deg, #0d90a1 0%, var(--nx-teal) 100%);
+}
+
+.nx-banner-support > i {
+    flex-shrink: 0;
+    font-size: 46px;
+    opacity: .95;
+}
+
+/* ---------- کارت بخش‌ها ---------- */
+
+.nx-card {
+    margin-bottom: 16px;
+    border-radius: 12px;
+    background: #fff;
+    overflow: hidden;
+}
+
+.nx-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    height: 58px;
+    padding: 0 18px;
+    border-bottom: 1px solid var(--nx-soft);
+}
+
+.nx-card-head h2 {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 0;
+    color: var(--nx-ink);
+    font-size: 16px;
+    font-weight: 900;
+}
+
+.nx-card-head h2 i {
+    color: var(--nx-red);
+    font-size: 16px;
+}
+
+.nx-card-head a {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--nx-teal) !important;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+/* ---------- خرید بر اساس خودرو ---------- */
+
+.nx-cars {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px;
+    padding: 16px;
+}
+
+.nx-car {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 142px;
+    padding: 12px;
+    border: 1px solid var(--nx-soft);
+    border-radius: 10px;
+    color: var(--nx-text);
+    transition: .18s ease;
+}
+
+.nx-car:hover {
+    border-color: var(--nx-red);
+    box-shadow: 0 8px 20px rgba(35, 37, 78, .08);
+    transform: translateY(-2px);
+    color: var(--nx-red);
+}
+
+.nx-car img,
+.nx-car-fallback {
+    width: 100%;
+    max-width: 120px;
+    height: 66px;
+    border-radius: 8px;
+    background: var(--nx-soft);
+    object-fit: cover;
+}
+
+.nx-car-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--nx-teal);
+    font-size: 26px;
+}
+
+.nx-car strong {
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.nx-car span {
+    color: var(--nx-muted);
+    font-size: 11.5px;
+}
+
+/* ---------- مجله ---------- */
+
+.nx-posts {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    padding: 16px;
+}
+
+.nx-post {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--nx-soft);
+    border-radius: 10px;
+    color: var(--nx-text);
+    overflow: hidden;
+    transition: .18s ease;
+}
+
+.nx-post:hover {
+    box-shadow: 0 10px 24px rgba(35, 37, 78, .09);
+    transform: translateY(-2px);
+}
+
+/* کاور برداریِ اختصاصی مقاله؛ نسبت تصویر ثابت است تا در هیچ اندازه‌ای بریده نشود */
+.nx-post-img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 600 / 340;
+    background: var(--nx-soft);
+    object-fit: cover;
+    border-bottom: 1px solid var(--nx-soft);
+}
+
+.nx-post-fallback {
+    width: 100%;
+    height: 150px;
+    background: var(--nx-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--nx-teal);
+    font-size: 30px;
+}
+
+.nx-post-body {
+    padding: 12px 14px 16px;
+}
+
+.nx-post h3 {
+    height: 50px;
+    margin: 0;
+    overflow: hidden;
+    color: var(--nx-ink);
+    font-size: 13.5px;
+    font-weight: 800;
+    line-height: 1.85;
+}
+
+.nx-post p {
+    height: 44px;
+    margin: 8px 0 0;
+    overflow: hidden;
+    color: var(--nx-muted);
+    font-size: 12px;
+    line-height: 1.9;
+}
+
+/* ==========================================================================
+   ۳) ریل محصولات و کارت کالا
+   قواعد سراسری style.css با !important نوشته شده‌اند؛ این بخش با
+   اختصاصی‌بودن بیشتر (.nx-home .nx-rail ...) روی آن‌ها می‌نشیند.
+   ========================================================================== */
+
+.nx-rail {
+    position: relative;
+    min-width: 0;
+    padding: 6px 0 12px;
+}
+
+.nx-rail .owl-stage {
+    display: flex;
+    align-items: stretch;
+}
+
+.nx-rail .owl-item {
+    display: flex;
+    min-width: 0;
+}
+
+.nx-rail .owl-item > .item {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    padding: 0;
+}
+
+/* پیش از راه‌اندازی owl، کارت‌ها به‌جای ستون عمودی کنار هم بمانند */
+.nx-rail:not(.owl-loaded) {
+    display: flex;
+    overflow: hidden;
+}
+
+.nx-rail:not(.owl-loaded) > .item {
+    flex: 0 0 20%;
+    min-width: 0;
+}
+
+.nx-rail .owl-nav button.owl-prev,
+.nx-rail .owl-nav button.owl-next {
+    position: absolute;
+    top: 74px;
+    z-index: 4;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    margin: 0 !important;
+    border-radius: 50% !important;
+    background: #fff !important;
+    color: var(--nx-ink) !important;
+    box-shadow: 0 2px 10px rgba(35, 37, 78, .2);
+    font-size: 15px !important;
+}
+
+.nx-rail .owl-nav button.owl-prev {
+    right: 6px;
+}
+
+.nx-rail .owl-nav button.owl-next {
+    left: 6px;
+}
+
+.nx-rail .owl-nav button.disabled {
+    opacity: 0 !important;
+    pointer-events: none;
+}
+
+.nx-home .nx-rail .dk-product-card {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 352px !important;
+    min-height: 352px !important;
+    max-height: 352px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-left: 1px solid var(--nx-soft) !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    transform: none !important;
+    overflow: hidden !important;
+}
+
+.nx-home .nx-rail .dk-product-card:hover {
+    box-shadow: 0 4px 16px rgba(35, 37, 78, .13) !important;
+    z-index: 2;
+}
+
+.nx-home .nx-rail .dk-product-thumb {
+    position: relative !important;
+    display: flex !important;
+    flex: 0 0 158px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    height: 158px !important;
+    margin: 0 !important;
+    padding: 16px 16px 6px !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+    overflow: hidden !important;
+}
+
+.nx-home .nx-rail .dk-product-thumb .slider-pic {
+    width: 100% !important;
+    height: 134px !important;
+    max-width: 100% !important;
+    background: #fff !important;
+    object-fit: contain !important;
+}
+
+.nx-home .nx-rail .dk-gallery-count {
+    position: absolute !important;
+    left: 12px !important;
+    bottom: 4px !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-width: 30px;
+    height: 21px;
+    padding: 0 7px;
+    border-radius: 11px;
+    background: var(--nx-soft) !important;
+    color: var(--nx-muted) !important;
+    font-size: 11px;
+}
+
+.nx-home .nx-rail .product-discount-badge {
+    position: absolute !important;
+    top: 10px !important;
+    right: 12px !important;
+    left: auto !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 22px;
+    padding: 0 !important;
+    border-radius: 11px !important;
+    background: var(--nx-red) !important;
+    color: #fff !important;
+    font-size: 12px !important;
+    font-weight: 900 !important;
+}
+
+.nx-home .nx-rail .product-card-body {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+    padding: 6px 14px 12px !important;
+    overflow: hidden !important;
+}
+
+.nx-home .nx-rail .product-title {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    min-height: 44px !important;
+    max-height: 44px !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    color: var(--nx-text) !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    line-height: 1.75 !important;
+}
+
+.nx-home .nx-rail .product-title:hover {
+    color: var(--nx-red) !important;
+}
+
+.nx-home .nx-rail .product-card-meta {
+    min-height: 38px !important;
+    max-height: 38px !important;
+    margin-top: 6px !important;
+    gap: 2px !important;
+    overflow: hidden !important;
+    color: var(--nx-muted) !important;
+    font-size: 11px !important;
+    line-height: 1.7 !important;
+}
+
+/* توضیح کوتاه در کارت ریل جا نمی‌شود؛ فقط کد فنی و خودرو نمایش داده می‌شود */
+.nx-home .nx-rail .product-card-meta p {
+    display: none !important;
+}
+
+.nx-home .nx-rail .product-price-row {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+    gap: 2px !important;
+    margin: 0 0 auto !important;
+    margin-top: auto !important;
+    min-height: 42px !important;
+}
+
+.nx-home .nx-rail .product-old-price {
+    color: var(--nx-muted) !important;
+    font-size: 12px !important;
+}
+
+.nx-home .nx-rail .product-price {
+    color: var(--nx-ink) !important;
+    font-size: 16px !important;
+    font-weight: 900 !important;
+}
+
+.nx-home .nx-rail .product-price small {
+    margin-right: 4px;
+    color: var(--nx-muted) !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+}
+
+.nx-home .nx-rail .add-cart-btn {
+    display: flex !important;
+    flex: 0 0 38px !important;
+    align-items: center;
+    justify-content: center;
+    height: 38px !important;
+    min-height: 38px !important;
+    margin: 8px 0 0 !important;
+    border: 1px solid var(--nx-red) !important;
+    border-radius: var(--nx-radius) !important;
+    background: var(--nx-red) !important;
+    color: #fff !important;
+    font-size: 12.5px !important;
+    font-weight: 800 !important;
+}
+
+.nx-home .nx-rail .add-cart-btn:hover {
+    background: var(--nx-red-dark) !important;
+    border-color: var(--nx-red-dark) !important;
+}
+
+/* ==========================================================================
+   ۴) عناصر مشترک صفحات داخلی (مسیر صفحه، دکمه، فیلد فرم)
+   ========================================================================== */
+
+.nx-breadcrumb {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 40px;
+    margin-bottom: 4px;
+    color: var(--nx-muted);
+    font-size: 12px;
+}
+
+.nx-breadcrumb a {
+    color: var(--nx-muted) !important;
+}
+
+.nx-breadcrumb a:hover {
+    color: var(--nx-red) !important;
+}
+
+.nx-breadcrumb i {
+    font-size: 9px;
+    opacity: .6;
+}
+
+.nx-breadcrumb b {
+    color: var(--nx-text);
+    font-weight: 700;
+}
+
+.nx-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    height: 40px;
+    padding: 0 20px;
+    border: 1px solid var(--nx-red);
+    border-radius: var(--nx-radius);
+    background: var(--nx-red);
+    color: #fff !important;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.nx-btn:hover {
+    background: var(--nx-red-dark);
+    border-color: var(--nx-red-dark);
+}
+
+.nx-btn-ghost {
+    border-color: var(--nx-line);
+    background: #fff;
+    color: var(--nx-ink) !important;
+}
+
+.nx-btn-ghost:hover {
+    border-color: var(--nx-red);
+    background: #fff;
+    color: var(--nx-red) !important;
+}
+
+/* فیلدهای فرم: همان زبان بصری جعبه جستجوی هدر */
+.nx-field {
+    position: relative;
+    display: flex;
+    align-items: center;
+    height: 42px;
+    border: 1px solid transparent;
+    border-radius: var(--nx-radius);
+    background: var(--nx-soft);
+    transition: border-color .18s ease;
+}
+
+.nx-field:focus-within {
+    border-color: var(--nx-red);
+}
+
+.nx-field > i {
+    flex: 0 0 auto;
+    padding-right: 12px;
+    color: var(--nx-muted);
+    font-size: 13px;
+    pointer-events: none;
+}
+
+.nx-field input,
+.nx-field select {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    padding: 0 10px;
+    border: 0;
+    background: transparent;
+    color: var(--nx-ink);
+    font-size: 13px;
+    outline: none;
+}
+
+.nx-field input::placeholder {
+    color: var(--nx-muted);
+}
+
+/* فلش سفارشی به‌جای فلش پیش‌فرض مرورگر */
+.nx-field-select select {
+    padding-right: 12px;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+}
+
+.nx-field-select > i:last-child {
+    padding: 0 0 0 12px;
+    font-size: 10px;
+}
+
+.nx-field-label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 16px 0 8px;
+    color: var(--nx-ink);
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.nx-field-label i {
+    color: var(--nx-red);
+    font-size: 12px;
+}
+
+/* ==========================================================================
+   ۵) صفحه جستجو و فهرست قطعات
+   ========================================================================== */
+
+/* overflow-x: hidden ارثی از .nx-home یک قاب پیمایش می‌سازد و ستون‌های sticky را
+   از کار می‌اندازد؛ clip همان جلوگیری از سرریز افقی را بدون قاب پیمایش انجام می‌دهد */
+.nx-shop,
+.nx-detail {
+    overflow-x: clip;
+}
+
+.nx-shop-layout {
+    display: grid;
+    grid-template-columns: 268px minmax(0, 1fr);
+    align-items: start;
+    gap: 16px;
+}
+
+.nx-shop-side,
+.nx-shop-main {
+    min-width: 0;
+}
+
+.nx-shop-side {
+    position: sticky;
+    top: 14px;
+}
+
+.nx-side-card .nx-card-head {
+    height: 50px;
+    padding: 0 14px;
+}
+
+.nx-side-card .nx-card-head h2 {
+    font-size: 14px;
+}
+
+.nx-side-body {
+    padding: 14px;
+}
+
+.nx-filter-list {
+    max-height: 420px;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    list-style: none;
+}
+
+.nx-filter-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 8px;
+    border-radius: var(--nx-radius);
+    color: var(--nx-text);
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: background .18s ease;
+}
+
+.nx-filter-item:hover {
+    background: var(--nx-soft);
+}
+
+.nx-filter-item input {
+    flex: 0 0 auto;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: var(--nx-red);
+    cursor: pointer;
+}
+
+.nx-filter-item > i {
+    width: 18px;
+    color: var(--nx-teal);
+    font-size: 12px;
+    text-align: center;
+}
+
+.nx-filter-item span {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nx-filter-item b {
+    flex: 0 0 auto;
+    padding: 1px 7px;
+    border-radius: 9px;
+    background: var(--nx-soft);
+    color: var(--nx-muted);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.nx-filter-item:has(input:checked) {
+    background: var(--nx-red-soft);
+    color: var(--nx-red);
+    font-weight: 800;
+}
+
+.nx-filter-item:has(input:checked) > i {
+    color: var(--nx-red);
+}
+
+.nx-side-banner {
+    min-height: 0;
+    padding: 18px;
+}
+
+.nx-side-banner > i {
+    font-size: 34px;
+}
+
+/* ---------- نوار بالای نتایج ---------- */
+
+.nx-results-head h2 {
+    font-size: 14px;
+}
+
+.nx-sort {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--nx-muted);
+    font-size: 12px;
+}
+
+.nx-sort-field {
+    height: 36px;
+    border-color: var(--nx-line);
+    background: #fff;
+}
+
+.nx-sort-field select {
+    padding: 0 12px 0 6px;
+    font-size: 12.5px;
+    font-weight: 700;
+}
+
+/* ---------- شبکه کارت‌ها ---------- */
+/* خطوط جداکننده مثل ریل صفحه اصلی با فاصله ۱px روی زمینه خاکستری ساخته می‌شود */
+
+.nx-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1px;
+    padding: 1px;
+    background: var(--nx-soft);
+}
+
+/* کارت شبکه‌ای: همان زبان بصری کارت ریل صفحه اصلی، فقط بلندتر
+   چون در فهرست، تصویر بزرگ‌تر و دکمه خرید مهم‌تر است */
+.nx-gcard {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background: #fff;
+    transition: box-shadow .18s ease;
+}
+
+.nx-gcard:hover {
+    z-index: 2;
+    box-shadow: 0 4px 16px rgba(35, 37, 78, .13);
+}
+
+.nx-gcard .product-discount-badge {
+    position: absolute !important;
+    top: 12px !important;
+    right: 14px !important;
+    left: auto !important;
+    z-index: 3;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 22px;
+    padding: 0 !important;
+    border-radius: 11px !important;
+    background: var(--nx-red) !important;
+    color: #fff !important;
+    box-shadow: none !important;
+    font-size: 12px !important;
+    font-weight: 900 !important;
+}
+
+.nx-gcard-fav {
+    position: absolute;
+    top: 10px;
+    left: 12px;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    color: var(--nx-muted);
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.nx-gcard-fav:hover,
+.nx-gcard-fav .fas {
+    color: var(--nx-red);
+}
+
+.nx-gcard-thumb {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 196px;
+    padding: 18px 18px 6px;
+    background: #fff;
+    overflow: hidden;
+}
+
+.nx-gcard-thumb .slider-pic {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100%;
+    margin: 0 !important;
+    background: #fff;
+    object-fit: contain !important;
+    transition: transform .3s ease;
+}
+
+.nx-gcard:hover .slider-pic {
+    transform: scale(1.04);
+}
+
+.nx-gcard-thumb .slider-pic.is-placeholder {
+    padding: 28px;
+    opacity: .35;
+}
+
+.nx-gcard-body {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    padding: 6px 14px 14px;
+}
+
+.nx-gcard .product-title {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    min-height: 46px;
+    max-height: 46px;
+    margin: 0 !important;
+    overflow: hidden;
+    color: var(--nx-text) !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    line-height: 1.75 !important;
+    text-align: right;
+}
+
+.nx-gcard .product-title:hover {
+    color: var(--nx-red) !important;
+}
+
+.nx-gcard-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    min-height: 26px;
+    margin: 8px 0 0;
+}
+
+.nx-gcard-meta .product-sku {
+    background: var(--nx-soft) !important;
+    color: var(--nx-text) !important;
+}
+
+.nx-gcard-meta .product-car {
+    background: #e6f8fb !important;
+    color: #0d8898 !important;
+}
+
+.nx-gcard .product-price-row {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 2px;
+    min-height: 46px;
+    margin: auto 0 0 !important;
+}
+
+.nx-gcard .product-old-price {
+    color: var(--nx-muted) !important;
+    font-size: 12px !important;
+}
+
+.nx-gcard .product-price {
+    color: var(--nx-ink) !important;
+    font-size: 16px !important;
+    font-weight: 900 !important;
+}
+
+.nx-gcard .product-price small {
+    margin-right: 4px;
+    color: var(--nx-muted) !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+}
+
+.nx-gcard .add-cart-btn {
+    display: flex;
+    flex: 0 0 40px;
+    align-items: center;
+    justify-content: center;
+    height: 40px !important;
+    margin: 10px 0 0 !important;
+    padding: 0 8px !important;
+    border: 1px solid var(--nx-red) !important;
+    border-radius: var(--nx-radius) !important;
+    background: var(--nx-red) !important;
+    color: #fff !important;
+    box-shadow: none !important;
+    font-size: 12.5px !important;
+    font-weight: 800 !important;
+}
+
+.nx-gcard .add-cart-btn:hover {
+    background: var(--nx-red-dark) !important;
+    border-color: var(--nx-red-dark) !important;
+    box-shadow: none !important;
+}
+
+/* ---------- صفحه‌بندی ---------- */
+
+.nx-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0 !important;
+    padding: 18px 14px !important;
+    border-top: 1px solid var(--nx-soft);
+    list-style: none;
+}
+
+/* paging.js همان نشانه‌گذاری قدیمی را می‌سازد؛ قاب دایره‌ای li خنثی می‌شود
+   تا ظاهر دکمه‌ها روی خود <a> ساخته شود */
+.nx-pagination li,
+.nx-pagination li.active {
+    width: auto !important;
+    height: auto !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.nx-pagination li a {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 10px !important;
+    border: 1px solid var(--nx-line) !important;
+    border-radius: var(--nx-radius) !important;
+    background: #fff !important;
+    color: var(--nx-text) !important;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.nx-pagination li a:hover {
+    border-color: var(--nx-red) !important;
+    color: var(--nx-red) !important;
+}
+
+.nx-pagination li.active a,
+.nx-pagination li a.active {
+    border-color: var(--nx-red) !important;
+    background: var(--nx-red) !important;
+    color: #fff !important;
+}
+
+.nx-pagination li.myDisableClass a,
+.nx-pagination li a.myDisableClass {
+    opacity: .45;
+    pointer-events: none;
+}
+
+/* ---------- حالت «نتیجه‌ای پیدا نشد» ---------- */
+
+.nx-empty {
+    grid-column: 1 / -1;
+    padding: 44px 20px;
+    background: #fff;
+    text-align: center;
+}
+
+.nx-empty-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 84px;
+    height: 84px;
+    margin: 0 auto 16px;
+    border-radius: 50%;
+    background: var(--nx-red-soft);
+    color: var(--nx-red);
+    font-size: 30px;
+}
+
+.nx-empty h3 {
+    margin: 0 0 8px;
+    color: var(--nx-ink);
+    font-size: 16px;
+    font-weight: 900;
+}
+
+.nx-empty > p {
+    margin: 0 0 18px;
+    color: var(--nx-muted);
+    font-size: 13px;
+}
+
+.nx-empty-tips {
+    max-width: 430px;
+    margin: 0 auto 20px;
+    padding: 0;
+    list-style: none;
+    text-align: right;
+}
+
+.nx-empty-tips li {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 7px;
+    padding: 10px 12px;
+    border-radius: var(--nx-radius);
+    background: var(--nx-bg);
+    color: var(--nx-text);
+    font-size: 12.5px;
+    line-height: 1.9;
+}
+
+.nx-empty-tips i {
+    width: 18px;
+    color: var(--nx-teal);
+    text-align: center;
+}
+
+.nx-empty-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* ==========================================================================
+   ۶) صفحه نمایش قطعه
+   ========================================================================== */
+
+.nx-detail .dk-product-detail {
+    display: grid;
+    grid-template-columns: 370px minmax(0, 1fr) 300px;
+    gap: 24px;
+    padding: 20px;
+    background: #fff;
+    /* .nx-card مقدار hidden دارد و جعبه خرید sticky را می‌شکند */
+    overflow: visible;
+}
+
+.nx-detail .dk-product-gallery {
+    position: relative;
+    min-width: 0;
+    border-left: 1px solid var(--nx-soft);
+}
+
+.nx-detail .dk-product-actions {
+    position: absolute;
+    top: 6px;
+    right: 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.nx-detail .dk-product-actions button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--nx-muted);
+    font-size: 16px;
+    transition: .18s ease;
+}
+
+.nx-detail .dk-product-actions button:hover {
+    background: var(--nx-red-soft);
+    color: var(--nx-red);
+}
+
+.nx-detail .dk-product-main-image {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 390px;
+    padding: 20px 42px 12px;
+}
+
+.nx-detail .dk-product-main-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.nx-detail .dk-product-thumbs {
+    display: flex;
+    gap: 8px;
+    padding: 10px 42px;
+    overflow-x: auto;
+}
+
+.nx-detail .dk-product-thumbs .product-thumb {
+    flex: 0 0 auto;
+    width: 62px !important;
+    height: 62px !important;
+    margin: 0 !important;
+    padding: 5px !important;
+    border: 1px solid var(--nx-line) !important;
+    border-radius: var(--nx-radius) !important;
+    background: #fff !important;
+    transition: border-color .18s ease;
+}
+
+.nx-detail .dk-product-thumbs .product-thumb:hover,
+.nx-detail .dk-product-thumbs .product-thumb.active {
+    border-color: var(--nx-red) !important;
+}
+
+.nx-detail .dk-product-thumbs img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.nx-detail .dk-product-info {
+    min-width: 0;
+}
+
+.nx-detail .dk-product-info h1 {
+    margin: 0 0 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--nx-soft);
+    color: var(--nx-ink);
+    font-size: 18px;
+    font-weight: 900;
+    line-height: 2;
+}
+
+.nx-detail .dk-short-desc {
+    margin: 0;
+    color: var(--nx-muted);
+    font-size: 13px;
+    line-height: 2.1;
+}
+
+.nx-detail .dk-product-info h2 {
+    margin: 18px 0 12px;
+    color: var(--nx-ink);
+    font-size: 15px;
+    font-weight: 900;
+}
+
+.nx-detail .dk-product-info ul {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.nx-detail .dk-product-info li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 38px;
+    padding: 8px 12px;
+    border-radius: var(--nx-radius);
+    background: var(--nx-soft);
+    color: var(--nx-text);
+    font-size: 13px;
+}
+
+.nx-detail .dk-product-info li span {
+    flex: 0 0 108px;
+    margin: 0;
+    color: var(--nx-muted);
+}
+
+.nx-detail .dk-assurance {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 18px;
+    margin-top: 18px;
+    color: var(--nx-muted);
+    font-size: 12.5px;
+}
+
+.nx-detail .dk-assurance span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.nx-detail .dk-assurance i {
+    color: var(--nx-teal);
+}
+
+/* ---------- جعبه خرید ---------- */
+
+.nx-detail .dk-buy-box {
+    position: sticky;
+    top: 14px;
+    align-self: start;
+    min-width: 0;
+    padding: 16px !important;
+    border: 1px solid var(--nx-line) !important;
+    border-radius: 10px !important;
+    background: #fff !important;
+    box-shadow: none !important;
+}
+
+.nx-detail .product-seller-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 11px 0 !important;
+    border-bottom: 1px solid var(--nx-soft) !important;
+    background: transparent !important;
+    color: var(--nx-muted);
+    font-size: 12.5px;
+}
+
+.nx-detail .product-seller-row span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.nx-detail .product-seller-row i {
+    color: var(--nx-teal);
+}
+
+.nx-detail .product-seller-row b {
+    color: var(--nx-ink);
+    font-weight: 800;
+}
+
+.nx-detail .dk-detail-old {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.nx-detail .dk-detail-old del {
+    color: var(--nx-muted);
+    font-size: 13px;
+}
+
+.nx-detail .dk-detail-discount {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 24px;
+    padding: 0 8px;
+    border-radius: 12px;
+    background: var(--nx-red);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.nx-detail .dk-detail-price {
+    margin: 10px 0 16px;
+    color: var(--nx-ink);
+    font-size: 24px;
+    font-weight: 900;
+    text-align: left;
+    direction: rtl;
+}
+
+.nx-detail .dk-detail-price small {
+    color: var(--nx-muted);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.nx-detail .dk-buy-box .add-cart-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 48px !important;
+    margin: 0 !important;
+    border: 1px solid var(--nx-red) !important;
+    border-radius: var(--nx-radius) !important;
+    background: var(--nx-red) !important;
+    color: #fff !important;
+    box-shadow: none !important;
+    font-size: 14px !important;
+    font-weight: 800 !important;
+}
+
+.nx-detail .dk-buy-box .add-cart-btn:hover {
+    background: var(--nx-red-dark) !important;
+    border-color: var(--nx-red-dark) !important;
+}
+
+/* ---------- توضیحات ---------- */
+
+.nx-detail .dk-detail-tabs {
+    padding: 0;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+.nx-detail .dk-detail-tabs-body {
+    padding: 18px;
+    color: var(--nx-text);
+    font-size: 13.5px;
+    line-height: 2.1;
+}
+
+.nx-detail .dk-detail-tabs-body p:last-child {
+    margin-bottom: 0;
+}
+
+.nx-detail .product-description-html img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--nx-radius);
+}
+
+/* ==========================================================================
+   ۷) واکنش‌گرایی
+   ========================================================================== */
+
+@media (max-width: 1199px) {
+    .nx-circles {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+
+    .nx-cars {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .nx-posts {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .nx-rail:not(.owl-loaded) > .item {
+        flex-basis: 25%;
+    }
+
+    .nx-shop-layout {
+        grid-template-columns: 240px minmax(0, 1fr);
+    }
+
+    .nx-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .nx-detail .dk-product-detail {
+        grid-template-columns: 300px minmax(0, 1fr) 268px;
+        gap: 16px;
+    }
+
+    .nx-detail .dk-product-main-image {
+        height: 320px;
+        padding: 16px 20px 10px;
+    }
+
+    .nx-detail .dk-product-thumbs {
+        padding: 10px 20px;
+    }
+}
+
+@media (max-width: 991px) {
+    .nx-wrap {
+        width: calc(100% - 24px);
+    }
+
+    .nx-hero-slider,
+    .nx-hero-slider .owl-stage-outer,
+    .nx-hero-slider .owl-stage,
+    .nx-hero-slider .owl-item,
+    .nx-slide {
+        height: 230px;
+    }
+
+    .nx-slide-promo {
+        padding: 0 28px;
+    }
+
+    .nx-slide-copy strong {
+        font-size: 24px;
+    }
+
+    .nx-slide-copy p {
+        margin: 8px 0 14px;
+        font-size: 13px;
+    }
+
+    .nx-slide-art {
+        left: 20px;
+        font-size: 96px;
+    }
+
+    .nx-hero-slider .owl-dots {
+        right: 28px;
+        bottom: 12px;
+    }
+
+    .nx-circles {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px 8px;
+    }
+
+    .nx-amazing {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .nx-amazing-side {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px 12px;
+        padding: 4px 4px 14px;
+    }
+
+    .nx-amazing-side > i {
+        font-size: 24px;
+    }
+
+    .nx-amazing-side strong {
+        font-size: 20px;
+    }
+
+    .nx-amazing-side a {
+        margin: 0;
+    }
+
+    .nx-banners {
+        grid-template-columns: 1fr;
+    }
+
+    .nx-cars {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .nx-posts {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .nx-rail:not(.owl-loaded) > .item {
+        flex-basis: 33.333%;
+    }
+
+    /* در تبلت و موبایل، فیلترها زیر نتایج می‌روند تا کاربر مستقیم به کارت‌ها برسد */
+    .nx-shop-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .nx-shop-side {
+        position: static;
+        order: 2;
+    }
+
+    .nx-shop-main {
+        order: 1;
+    }
+
+    .nx-filter-list {
+        max-height: none;
+    }
+
+    .nx-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .nx-detail .dk-product-detail {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 18px;
+        padding: 16px;
+    }
+
+    .nx-detail .dk-product-gallery {
+        border-left: 0;
+        border-bottom: 1px solid var(--nx-soft);
+        padding-bottom: 8px;
+    }
+
+    .nx-detail .dk-buy-box {
+        position: static;
+    }
+}
+
+@media (max-width: 575px) {
+    .nx-home {
+        padding-top: 12px;
+    }
+
+    .nx-hero-slider,
+    .nx-hero-slider .owl-stage-outer,
+    .nx-hero-slider .owl-stage,
+    .nx-hero-slider .owl-item,
+    .nx-slide {
+        height: 180px;
+    }
+
+    .nx-slide-promo {
+        padding: 0 20px;
+    }
+
+    .nx-slide-copy strong {
+        font-size: 19px;
+    }
+
+    .nx-slide-copy p {
+        display: none;
+    }
+
+    .nx-slide-copy small {
+        margin-bottom: 8px;
+    }
+
+    .nx-slide-cta {
+        height: 36px;
+        padding: 0 16px;
+        font-size: 12.5px;
+    }
+
+    .nx-slide-art {
+        font-size: 74px;
+    }
+
+    /* مثل نسخه موبایل دیجی‌کالا، فلش‌ها حذف و فقط نقطه‌ها می‌مانند */
+    .nx-hero-slider .owl-nav {
+        display: none;
+    }
+
+    .nx-hero-slider .owl-dots {
+        right: 20px;
+        bottom: 10px;
+    }
+
+    .nx-circles {
+        gap: 12px 6px;
+        padding: 14px 6px;
+    }
+
+    .nx-circle {
+        font-size: 11px;
+    }
+
+    .nx-circle i {
+        width: 52px;
+        height: 52px;
+        font-size: 19px;
+    }
+
+    .nx-banner {
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: right;
+    }
+
+    .nx-card-head {
+        height: 52px;
+        padding: 0 14px;
+    }
+
+    .nx-card-head h2 {
+        font-size: 14px;
+    }
+
+    .nx-cars,
+    .nx-posts {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        padding: 12px;
+    }
+
+    /* در موبایل هم دو ستونی می‌ماند تا کاورها بیش از حد بلند نشوند */
+    .nx-post h3 {
+        height: 46px;
+        font-size: 12.5px;
+        line-height: 1.75;
+    }
+
+    .nx-post p {
+        display: none;
+    }
+
+    .nx-rail:not(.owl-loaded) > .item {
+        flex-basis: 50%;
+    }
+
+    .nx-results-head {
+        height: auto;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 12px 14px;
+    }
+
+    .nx-gcard-thumb {
+        height: 150px;
+        padding: 14px 14px 4px;
+    }
+
+    .nx-gcard-body {
+        padding: 6px 10px 12px;
+    }
+
+    /* در عرض کم، برچسب دکمه نباید دو خطی شود */
+    .nx-gcard .add-cart-btn {
+        font-size: 11px !important;
+        white-space: nowrap;
+    }
+
+    .nx-gcard-meta .product-car {
+        display: none !important;
+    }
+
+    .nx-pagination {
+        padding: 14px 8px !important;
+    }
+
+    .nx-empty {
+        padding: 32px 14px;
+    }
+
+    .nx-detail .dk-product-main-image {
+        height: 260px;
+        padding: 12px 14px 8px;
+    }
+
+    .nx-detail .dk-product-thumbs {
+        padding: 10px 14px;
+    }
+
+    .nx-detail .dk-product-info h1 {
+        font-size: 16px;
+    }
+
+    .nx-detail .dk-product-info li {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    .nx-detail .dk-detail-tabs-body {
+        padding: 14px;
+    }
+
+    .nx-home .nx-rail .dk-product-card {
+        height: 336px !important;
+        min-height: 336px !important;
+        max-height: 336px !important;
+    }
+
+    .nx-home .nx-rail .dk-product-thumb {
+        flex-basis: 142px !important;
+        height: 142px !important;
+        padding: 12px 12px 4px !important;
+    }
+
+    .nx-home .nx-rail .dk-product-thumb .slider-pic {
+        height: 122px !important;
+    }
+
+    .nx-rail .owl-nav button.owl-prev,
+    .nx-rail .owl-nav button.owl-next {
+        top: 62px;
+        width: 30px;
+        height: 30px;
+    }
+
+    /* در عرض کم، برچسب دکمه نباید دو خطی شود */
+    .nx-home .nx-rail .add-cart-btn {
+        padding: 0 6px !important;
+        font-size: 11px !important;
+        white-space: nowrap;
+    }
+}
