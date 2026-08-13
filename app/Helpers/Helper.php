@@ -12,31 +12,60 @@ function getQuery($item){
     return $query = vsprintf($query, $item->getBindings());
         //echo($query);
 }
-function sendSms($to_number, $text, $udh = "",$adv="")
+function sendSms($to_number, $text, $udh = "", $adv = "")
 {
-    if(strlen($to_number) != 11 || substr($to_number , 0 , 2) != '09')return;
+    if (strlen($to_number) != 11 || substr($to_number, 0, 2) != '09') return;
     if (trim($text) == '') return;
+
     date_default_timezone_set('Asia/Tehran');
     $text = str_replace('\n', "\n", $text);
-    $input["text"] = $text;
-    $text = urlencode("$text");
-    $sms_number = env('SMS_NUMBER');
-    $username = env('SMS_USERNAME');
-    $password = env('SMS_PASSWORD');
-    $url_sms = "http://tsms.ir/url/tsmshttp.php?from=$sms_number&to=$to_number&username=$username&password=$password&message=$text";
 
-    eval ("\$url_sms = \"$url_sms\";");
-    $code_number = file_get_contents_curl("$url_sms");
-    $input["type"] = 1;
-    $input["mobile"] = $to_number;
+    $input = [
+        'text'   => $text,
+        'type'   => 1,
+        'mobile' => $to_number,
+    ];
+
+    // تنظیمات از config خوانده می‌شوند نه env(). با «php artisan config:cache»
+    // روی سرور، env() بیرون از فایل‌های config همیشه null برمی‌گرداند و
+    // ورود با پیامک بی‌سروصدا از کار می‌افتد.
+    $config = config('sms');
+
+    if (empty($config['username']) || empty($config['password'])) {
+        \Illuminate\Support\Facades\Log::warning('SMS not sent: gateway is not configured', ['mobile' => $to_number]);
+        return null;
+    }
+
+    // پارامترها با http_build_query انکد می‌شوند.
+    // اینجا قبلا یک eval() روی رشته‌ی URL بود که متن پیامک را هم شامل می‌شد؛
+    // با متن حاوی «$» یا «"» می‌شکست و در بدترین حالت اجرای کد دلخواه بود.
+    $url = $config['url'] . '?' . http_build_query([
+        'from'     => $config['number'],
+        'to'       => $to_number,
+        'username' => $config['username'],
+        'password' => $config['password'],
+        'message'  => $text,
+    ]);
+
+    try {
+        $code_number = file_get_contents_curl($url);
+    } catch (\Throwable $e) {
+        \Illuminate\Support\Facades\Log::error('SMS send failed', ['mobile' => $to_number, 'message' => $e->getMessage()]);
+        $code_number = null;
+    }
 
     $user = Auth::guard('customer')->user();
-    // user not found
     if ($user) {
-        $input["user_id"] = $user->id;
+        $input['user_id'] = $user->id;
     }
-    $input["udh"]=$code_number;
-    Sms::create($input);
+    $input['udh'] = $code_number;
+
+    try {
+        Sms::create($input);
+    } catch (\Throwable $e) {
+        \Illuminate\Support\Facades\Log::error('SMS log insert failed', ['message' => $e->getMessage()]);
+    }
+
     return $code_number;
 }
 function file_get_contents_curl($url) {

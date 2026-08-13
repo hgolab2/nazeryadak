@@ -52,10 +52,16 @@ class ProductController extends Controller
                 $q->whereIn('category_id', $selectedCategoryIds);
             });
         }
-        $query->orderBy(
-            $request->get('order', 'id'),
-            $request->get('orderby', 'desc')
-        );
+        // فقط ستون‌ها و جهت‌های مجاز. قبلا ورودی مستقیم به orderBy می‌رفت و
+        // هر مقدار نامعتبر (مثلا از یک لینک خراب یا خزنده) صفحه‌ی ۵۰۰ می‌داد.
+        $sortable = ['id', 'price', 'title', 'created_at'];
+        $orderColumn = $request->get('order', 'id');
+        $orderColumn = in_array($orderColumn, $sortable, true) ? $orderColumn : 'id';
+
+        $orderDirection = strtolower((string) $request->get('orderby', 'desc'));
+        $orderDirection = in_array($orderDirection, ['asc', 'desc'], true) ? $orderDirection : 'desc';
+
+        $query->orderBy($orderColumn, $orderDirection);
         $model = $query->paginate($perPage);
         $totalCount = $model->total();
         if ($request->ajax() || $request->ajaxi) {

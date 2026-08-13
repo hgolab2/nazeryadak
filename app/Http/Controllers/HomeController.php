@@ -72,7 +72,13 @@ class HomeController extends Controller
 
     public function getProduct($count)
     {
-        return Product::orderBy('id' , 'desc')->where('is_active' , '1')->where('file_path' ,'!=', '')->paginate($count);
+        // صفحه‌ی اول فقط چند محصول را در اسلایدر نشان می‌دهد و صفحه‌بندی ندارد؛
+        // paginate() یک کوئری count(*) اضافه روی کل جدول می‌زد که بی‌استفاده بود.
+        return Product::orderBy('id', 'desc')
+            ->where('is_active', '1')
+            ->where('file_path', '!=', '')
+            ->limit($count)
+            ->get();
     }
 
     public function getArticle($categoryid , $lang = 'farsi' , $sort = 'showdate' , $count)
@@ -97,8 +103,9 @@ class HomeController extends Controller
             }
             $model = $model->select(['article1.*'])->join('articleincategory', 'articleincategory.articleid', '=', 'article1.articleid')->where('articleincategory.siteid',  1)->whereIn('articleincategory.categoryid' , $catlist)->distinct();
         }
-        //dd(getQuery($model));
-        return $model->paginate($count);
+        // مثل getProduct: این خروجی فقط در اسلایدر صفحه‌ی اول استفاده می‌شود و
+        // صفحه‌بندی ندارد، پس کوئری count(*) روی join لازم نیست.
+        return $model->limit($count)->get();
     }
     public function view(Request $request)
 	{
