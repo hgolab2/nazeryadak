@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Auth\ImpersonationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -10,8 +11,8 @@ use Illuminate\Validation\Rules\Password;
 /**
  * تعیین و تغییر رمز عبور مشتری.
  *
- * ورود پیش‌فرض سایت با کد یکبارمصرف است؛ رمز عبور یک راه ورود اضافه است،
- * نه جایگزین. برای همین حذف رمز هم پیش‌بینی شده و کاربر قفل نمی‌شود.
+ * ورود با کد یکبارمصرف همیشه در دسترس است؛ رمز عبور راه سریع‌تر است، نه
+ * جایگزین. برای همین حذف رمز هم پیش‌بینی شده و کاربر قفل نمی‌شود.
  */
 class CustomerPasswordController extends Controller
 {
@@ -24,8 +25,9 @@ class CustomerPasswordController extends Controller
         }
 
         return view('profile.password', [
-            'customer'    => $customer,
-            'hasPassword' => ! empty($customer->password),
+            'customer'      => $customer,
+            'hasPassword'   => ! empty($customer->password),
+            'isImpersonated' => session()->has(ImpersonationController::SESSION_KEY),
         ]);
     }
 
@@ -35,6 +37,10 @@ class CustomerPasswordController extends Controller
 
         if (! $customer) {
             return redirect('/login');
+        }
+
+        if ($guard = $this->impersonationGuard()) {
+            return $guard;
         }
 
         $hasPassword = ! empty($customer->password);
@@ -77,9 +83,27 @@ class CustomerPasswordController extends Controller
             return redirect('/login');
         }
 
+        if ($guard = $this->impersonationGuard()) {
+            return $guard;
+        }
+
         $customer->password = null;
         $customer->save();
 
         return redirect('/profile/password')->with('success', 'رمز عبور حذف شد. ورود فقط با کد پیامکی انجام می‌شود.');
+    }
+
+    /**
+     * مدیری که «به‌عنوان کاربر» وارد شده نباید رمز او را از این‌جا عوض کند؛
+     * برای این کار فرم مخصوصش در پنل مدیریت هست که در لاگ ثبت می‌شود.
+     */
+    private function impersonationGuard()
+    {
+        if (! session()->has(ImpersonationController::SESSION_KEY)) {
+            return null;
+        }
+
+        return redirect('/profile/password')
+            ->withErrors(['در حالت «ورود به‌عنوان کاربر»، تغییر رمز از این‌جا ممکن نیست. از پنل مدیریت اقدام کنید.']);
     }
 }

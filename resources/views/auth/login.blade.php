@@ -1,273 +1,439 @@
 @extends('layout.layout', [
     'title' => 'ورود و ثبت‌نام | ناظر یدک',
-    'metaDescription' => 'ورود و ثبت‌نام در فروشگاه ناظر یدک تنها با شماره موبایل و کد پیامکی؛ بدون نیاز به رمز عبور، برای ثبت سفارش و پیگیری خرید لوازم یدکی.',
+    'metaDescription' => 'ورود و ثبت‌نام در فروشگاه ناظر یدک با شماره موبایل؛ با کد پیامکی یا رمز عبور، برای ثبت سفارش و پیگیری خرید لوازم یدکی.',
     'robots' => seo_robots_tag(false, true),
     'noBaseSchema' => true,
 ])
+
 @section('main_content')
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-11 col-sm-8 col-md-6 col-lg-4" style="margin: 60px auto;">
-            <div class="cart-content p-4">
-                <div class="text-center mb-4">
-                    <div style="width:70px; height:70px; background:var(--primary-lighter); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 15px;">
-                        <i class="fas fa-user" style="font-size:1.8rem; color:var(--primary);"></i>
-                    </div>
-                    <h1 style="font-weight:700; font-size:1.1rem;">ورود به ناظر یدک</h1>
-                    <p class="font-12 text-muted">شماره موبایل خود را وارد کنید</p>
-                </div>
+<main class="nx-auth">
+    <div class="nx-auth-card">
+        <div class="nx-auth-head">
+            <span class="nx-auth-logo"><i class="fas fa-user"></i></span>
+            <h1 id="authTitle">ورود به ناظر یدک</h1>
+            <p id="authSubtitle">برای ورود یا ثبت‌نام، شماره موبایل خود را وارد کنید</p>
+        </div>
 
-                <form id="loginForm">
-                    <div class="mb-3" id="mobileBox">
-                        <label class="font-12 mb-1 text-muted">شماره موبایل</label>
-                        <div class="position-relative">
-                            {{-- inputmode و autocomplete: روی موبایل کیبورد عددی باز
-                                 می‌شود و شماره‌ی ذخیره‌شده‌ی دستگاه پیشنهاد داده می‌شود --}}
-                            <input type="tel" name="mobile" id="mobile"
-                                class="form-control form-control-lg text-center"
-                                placeholder="۰۹۱۲۰۰۰۰۰۰۰"
-                                inputmode="numeric" autocomplete="tel" enterkeyhint="send"
-                                maxlength="13" autofocus
-                                style="border-radius:var(--radius-sm); letter-spacing:2px; font-size:1.1rem; direction:ltr;">
-                        </div>
-                    </div>
+        <p class="nx-auth-error" id="authError" hidden></p>
+        <p class="nx-auth-dev" id="authDevCode" hidden></p>
 
-                    <div class="mb-3 d-none" id="otpBox">
-                        <label class="font-12 mb-1 text-muted">کد تأیید ارسال‌شده</label>
-                        {{-- one-time-code باعث می‌شود iOS و اندروید کد را مستقیم از
-                             پیامک پیشنهاد بدهند و کاربر لازم نباشد بین دو برنامه جابه‌جا شود --}}
-                        <input type="text" name="otp" id="otp"
-                            class="form-control form-control-lg text-center"
-                            placeholder="- - - - - -"
-                            maxlength="6"
-                            inputmode="numeric" autocomplete="one-time-code" enterkeyhint="go"
-                            pattern="[0-9۰-۹]*"
-                            style="border-radius:var(--radius-sm); letter-spacing:8px; font-size:1.3rem; direction:ltr;">
-                        <p class="font-12 text-muted mt-2 text-center" id="otpHint">
-                            <i class="fas fa-sms me-1"></i> کد تأیید به شماره <span id="sentTo" class="fw-bold"></span> ارسال شد
-                        </p>
-                    </div>
-
-                    {{-- ورود با رمز، راه دوم در کنار کد پیامکی --}}
-                    <div class="mb-3 d-none" id="passwordBox">
-                        <label class="font-12 mb-1 text-muted">رمز عبور</label>
-                        <input type="password" name="password" id="loginPassword"
-                            class="form-control form-control-lg text-center"
-                            autocomplete="current-password" enterkeyhint="go"
-                            style="border-radius:var(--radius-sm); font-size:1rem; direction:ltr;">
-                    </div>
-
-                    <button type="button" id="passwordLoginBtn"
-                        class="btn w-100 py-2 mt-2 d-none" style="background:#ef4056; color:#fff; border-radius:var(--radius-sm); font-size:.95rem; font-weight:600;">
-                        <i class="fas fa-right-to-bracket me-1"></i> ورود
-                    </button>
-
-                    <button type="button" id="sendOtpBtn"
-                        class="btn w-100 py-2 mt-2" style="background:linear-gradient(135deg, var(--primary), var(--primary-light)); color:#fff; border-radius:var(--radius-sm); font-size:.95rem; font-weight:600;">
-                        <i class="fas fa-paper-plane me-1"></i> دریافت کد تأیید
-                    </button>
-
-                    <button type="button" id="verifyOtpBtn"
-                        class="btn w-100 py-2 mt-2 d-none" style="background:linear-gradient(135deg, var(--success), #43a047); color:#fff; border-radius:var(--radius-sm); font-size:.95rem; font-weight:600;">
-                        <i class="fas fa-sign-in-alt me-1"></i> ورود به حساب
-                    </button>
-
-                    {{-- ارسال مجدد با شمارش معکوس؛ بدون آن کاربر پیام «تعداد درخواست
-                         زیاد است» می‌گیرد و نمی‌داند چقدر باید صبر کند --}}
-                    <button type="button" id="resendOtpBtn" class="btn btn-link w-100 d-none font-12 mt-2" style="color:var(--primary);">
-                        <i class="fas fa-redo me-1"></i> ارسال مجدد کد
-                    </button>
-                    <p class="font-12 text-muted text-center d-none mb-0 mt-2" id="resendTimer">
-                        ارسال مجدد کد تا <span id="resendSeconds">۶۰</span> ثانیه دیگر
-                    </p>
-
-                    <button type="button" id="editMobileBtn" class="btn btn-link w-100 d-none font-12 mt-1" style="color:var(--primary);">
-                        <i class="fas fa-edit me-1"></i> تغییر شماره موبایل
-                    </button>
-
-                    <button type="button" id="toggleModeBtn" class="btn btn-link w-100 font-12 mt-1" style="color:#ef4056;">
-                        <i class="fas fa-lock me-1"></i> ورود با رمز عبور
-                    </button>
-                </form>
-
-                <div class="text-center mt-4 pt-3 border-top">
-                    <p class="font-12 text-muted mb-0" style="line-height:2;">
-                        <i class="fas fa-shield-alt me-1" style="color:var(--success);"></i>
-                        <span id="loginModeHint">ورود شما با رمز یکبار مصرف (OTP) انجام می‌شود</span>
-                    </p>
-                </div>
+        {{-- گام ۱: شماره موبایل. سرور تصمیم می‌گیرد گام بعد رمز باشد یا کد. --}}
+        <section class="nx-auth-step" data-step="mobile">
+            <div class="nx-auth-field">
+                <label for="mobile">شماره موبایل</label>
+                {{-- inputmode و autocomplete: روی موبایل کیبورد عددی باز می‌شود
+                     و شماره‌ی ذخیره‌شده‌ی دستگاه پیشنهاد داده می‌شود --}}
+                <input type="tel" id="mobile" class="is-num" placeholder="۰۹۱۲۰۰۰۰۰۰۰"
+                       inputmode="numeric" autocomplete="tel" enterkeyhint="next"
+                       maxlength="13" autofocus>
             </div>
+
+            <button type="button" class="nx-auth-submit" id="btnContinue">
+                ادامه <i class="fas fa-arrow-left"></i>
+            </button>
+        </section>
+
+        {{-- گام ۲-الف: رمز عبور — فقط برای شماره‌ای که رمز ثبت کرده است --}}
+        <section class="nx-auth-step" data-step="password" hidden>
+            <div class="nx-auth-identity">
+                <span class="js-identity"></span>
+                <button type="button" class="js-edit-mobile"><i class="fas fa-pen"></i> تغییر شماره</button>
+            </div>
+
+            <div class="nx-auth-field nx-auth-pass">
+                <label for="password">رمز عبور</label>
+                <input type="password" id="password" autocomplete="current-password" enterkeyhint="go">
+                <button type="button" class="nx-auth-eye" id="togglePassword" aria-label="نمایش رمز عبور">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+
+            <button type="button" class="nx-auth-submit" id="btnPassword">
+                <i class="fas fa-right-to-bracket"></i> ورود
+            </button>
+
+            <button type="button" class="nx-auth-alt" id="btnUseOtp">
+                <i class="fas fa-comment-sms"></i> ورود با کد یکبارمصرف
+            </button>
+
+            <a class="nx-auth-link" href="/password/forgot">رمز عبور خود را فراموش کرده‌اید؟</a>
+        </section>
+
+        {{-- گام ۲-ب: کد پیامکی --}}
+        <section class="nx-auth-step" data-step="otp" hidden>
+            <div class="nx-auth-identity">
+                <span class="js-identity"></span>
+                <button type="button" class="js-edit-mobile"><i class="fas fa-pen"></i> تغییر شماره</button>
+            </div>
+
+            <div class="nx-auth-field">
+                <label for="otp">کد تأیید پیامک‌شده</label>
+                {{-- one-time-code باعث می‌شود iOS و اندروید کد را مستقیم از
+                     پیامک پیشنهاد بدهند و کاربر بین دو برنامه جابه‌جا نشود --}}
+                <input type="text" id="otp" class="is-num is-code" placeholder="——————"
+                       inputmode="numeric" autocomplete="one-time-code" enterkeyhint="go"
+                       maxlength="6" pattern="[0-9۰-۹]*">
+            </div>
+
+            <button type="button" class="nx-auth-submit" id="btnVerify">
+                <i class="fas fa-check"></i> تأیید و ورود
+            </button>
+
+            {{-- بدون شمارش معکوس، کاربر پیام «تعداد درخواست زیاد است» می‌گیرد
+                 و نمی‌داند چقدر باید صبر کند --}}
+            <div class="nx-auth-resend" id="resendWrap">
+                <span id="resendTimer">ارسال مجدد کد تا <b id="resendSeconds">۶۰</b> ثانیه دیگر</span>
+                <button type="button" id="btnResend" hidden><i class="fas fa-redo"></i> ارسال مجدد کد</button>
+            </div>
+
+            <button type="button" class="nx-auth-alt" id="btnUsePassword" hidden>
+                <i class="fas fa-lock"></i> ورود با رمز عبور
+            </button>
+        </section>
+
+        {{-- گام ۳: تکمیل ثبت‌نام. جای درستِ گرفتن رمز همین‌جاست؛ کاربر تازه
+             حساب دارد و می‌فهمد رمز به چه دردی می‌خورد. --}}
+        <section class="nx-auth-step" data-step="profile" hidden>
+            <div class="nx-auth-field">
+                <label for="first_name">نام</label>
+                <input type="text" id="first_name" autocomplete="given-name" maxlength="100" enterkeyhint="next">
+            </div>
+
+            <div class="nx-auth-field">
+                <label for="last_name">نام خانوادگی</label>
+                <input type="text" id="last_name" autocomplete="family-name" maxlength="100" enterkeyhint="next">
+            </div>
+
+            <div class="nx-auth-field nx-auth-pass">
+                <label for="new_password">رمز عبور <span style="font-weight:400;">(اختیاری)</span></label>
+                <input type="password" id="new_password" autocomplete="new-password" minlength="6"
+                       placeholder="حداقل ۶ کاراکتر">
+                <button type="button" class="nx-auth-eye" id="toggleNewPassword" aria-label="نمایش رمز عبور">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+
+            <div class="nx-auth-field" id="newPasswordConfirmWrap" hidden>
+                <label for="new_password_confirmation">تکرار رمز عبور</label>
+                <input type="password" id="new_password_confirmation" autocomplete="new-password"
+                       minlength="6" enterkeyhint="go">
+            </div>
+
+            <button type="button" class="nx-auth-submit" id="btnCompleteProfile">
+                <i class="fas fa-check"></i> ثبت و ورود به حساب
+            </button>
+
+            <button type="button" class="nx-auth-link" id="btnSkipProfile">فعلا رد شو</button>
+        </section>
+
+        <div class="nx-auth-foot">
+            <i class="fas fa-shield-halved"></i>
+            <span id="authFootNote">ورود شما امن است و شماره‌تان نزد ما محفوظ می‌ماند.</span>
+            <br>
+            <a href="/order-tracking">پیگیری سفارش بدون ورود</a>
         </div>
     </div>
-</div>
+</main>
 @endsection
+
 @section('js')
 <script>
-let mobile = '';
-let resendTimerId = null;
+(function () {
+    const state = { mobile: '', hasPassword: false, isNew: false, timerId: null, redirect: '/dashboard' };
 
-function toFaDigits(value) {
-    return String(value).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
-}
+    const $card    = $('.nx-auth-card');
+    const $error   = $('#authError');
+    const $dev     = $('#authDevCode');
+    const $title   = $('#authTitle');
+    const $sub     = $('#authSubtitle');
+    const csrf     = '{{ csrf_token() }}';
 
-// ارقام فارسی کیبورد موبایل به لاتین تبدیل می‌شوند تا سرور همان چیزی را
-// ببیند که کاربر می‌بیند
-function toEnDigits(value) {
-    return String(value)
+    const faDigits = v => String(v).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+    const enDigits = v => String(v)
         .replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d))
         .replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
-}
 
-function startResendCountdown(seconds) {
-    clearInterval(resendTimerId);
-    $('#resendOtpBtn').addClass('d-none');
-    $('#resendTimer').removeClass('d-none');
+    function showError(message) {
+        $error.text(message).prop('hidden', false);
+    }
 
-    let remaining = seconds;
-    $('#resendSeconds').text(toFaDigits(remaining));
+    function clearError() {
+        $error.prop('hidden', true);
+    }
 
-    resendTimerId = setInterval(function () {
-        remaining--;
-        if (remaining <= 0) {
-            clearInterval(resendTimerId);
-            $('#resendTimer').addClass('d-none');
-            $('#resendOtpBtn').removeClass('d-none');
+    /* خطای اعتبارسنجی لاراول در message می‌آید؛ بقیه‌ی خطاها در همان کلید. */
+    function errorOf(xhr, fallback) {
+        const body = xhr.responseJSON || {};
+        if (body.message) return body.message;
+        if (body.errors) return Object.values(body.errors)[0][0];
+        return fallback;
+    }
+
+    /* دکمه‌ی در حال ارسال؛ متن اصلی نگه داشته می‌شود تا بعد برگردد. */
+    function busy($btn, on) {
+        if (on) {
+            $btn.data('label', $btn.html())
+                .prop('disabled', true)
+                .html('<i class="fas fa-spinner fa-spin"></i> لطفا صبر کنید');
+        } else {
+            $btn.prop('disabled', false).html($btn.data('label'));
+        }
+    }
+
+    const TEXTS = {
+        mobile:   ['ورود به ناظر یدک', 'برای ورود یا ثبت‌نام، شماره موبایل خود را وارد کنید'],
+        password: ['خوش آمدید', 'رمز عبور حساب خود را وارد کنید'],
+        otp:      ['تأیید شماره موبایل', 'کد ۶ رقمی پیامک‌شده را وارد کنید'],
+        signup:   ['ثبت‌نام در ناظر یدک', 'کد ۶ رقمی پیامک‌شده را وارد کنید تا حساب شما ساخته شود'],
+        profile:  ['تکمیل حساب', 'نام خود را وارد کنید. اگر رمز عبور بگذارید، دفعه‌ی بعد بدون منتظر ماندن برای پیامک وارد می‌شوید.'],
+    };
+
+    function goStep(name) {
+        clearError();
+        $card.find('.nx-auth-step').prop('hidden', true);
+        $card.find('[data-step="' + name + '"]').prop('hidden', false);
+
+        const key = (name === 'otp' && state.isNew) ? 'signup' : name;
+        $title.text(TEXTS[key][0]);
+        $sub.text(TEXTS[key][1]);
+
+        $('.js-identity').text(faDigits(state.mobile));
+
+        if (name === 'mobile') {
+            stopTimer();
+            $('#mobile').trigger('focus');
+        } else if (name === 'password') {
+            $('#password').val('').trigger('focus');
+        } else if (name === 'profile') {
+            stopTimer();
+            showDevCode(null);
+            $('#first_name').trigger('focus');
+        } else {
+            // در گام کد، گزینه‌ی برگشت به رمز فقط وقتی معنا دارد که رمزی ثبت شده باشد
+            $('#btnUsePassword').prop('hidden', !state.hasPassword);
+            $('#otp').val('').trigger('focus');
+        }
+    }
+
+    /* ---------- شمارش معکوس ارسال مجدد ---------- */
+
+    function stopTimer() {
+        clearInterval(state.timerId);
+        state.timerId = null;
+    }
+
+    function startTimer(seconds) {
+        stopTimer();
+        $('#btnResend').prop('hidden', true);
+        $('#resendTimer').prop('hidden', false);
+
+        let remaining = seconds;
+        $('#resendSeconds').text(faDigits(remaining));
+
+        state.timerId = setInterval(function () {
+            if (--remaining <= 0) {
+                stopTimer();
+                $('#resendTimer').prop('hidden', true);
+                $('#btnResend').prop('hidden', false);
+                return;
+            }
+            $('#resendSeconds').text(faDigits(remaining));
+        }, 1000);
+    }
+
+    /* کد در محیط توسعه، وقتی درگاه پیامک تنظیم نشده است */
+    function showDevCode(code) {
+        if (!code) { $dev.prop('hidden', true); return; }
+        $dev.html('کد پیامکی (فقط محیط توسعه): <b>' + code + '</b>').prop('hidden', false);
+    }
+
+    /* ---------- گام ۱ ---------- */
+
+    $('#btnContinue').on('click', function () {
+        const $btn = $(this);
+        const mobile = enDigits($('#mobile').val()).replace(/[^\d+]/g, '');
+
+        if (!mobile) { showError('شماره موبایل را وارد کنید.'); return; }
+
+        busy($btn, true);
+        $.post('/auth/check', { _token: csrf, mobile: mobile })
+            .done(function (res) {
+                state.mobile      = mobile;
+                state.hasPassword = res.step === 'password';
+                state.isNew       = !!res.is_new;
+
+                if (res.step === 'password') {
+                    goStep('password');
+                    if (res.greeting) $sub.text(res.greeting + ' عزیز، رمز عبور خود را وارد کنید');
+                } else {
+                    goStep('otp');
+                    startTimer(res.wait || 60);
+                    showDevCode(res.dev_code);
+                }
+            })
+            .fail(function (xhr) {
+                showError(errorOf(xhr, 'ارتباط برقرار نشد. دوباره تلاش کنید.'));
+            })
+            .always(function () { busy($btn, false); });
+    });
+
+    /* ---------- گام رمز عبور ---------- */
+
+    $('#btnPassword').on('click', function () {
+        const $btn = $(this);
+        const password = $('#password').val();
+
+        if (!password) { showError('رمز عبور را وارد کنید.'); return; }
+
+        busy($btn, true);
+        $.post('/auth/login-password', { _token: csrf, mobile: state.mobile, password: password })
+            .done(function (res) { window.location = res.redirect || '/dashboard'; })
+            .fail(function (xhr) {
+                busy($btn, false);
+                showError(errorOf(xhr, 'ورود انجام نشد.'));
+
+                // اگر رمز روی این حساب حذف شده باشد، سرور مسیر کد را پیشنهاد می‌دهد
+                if (xhr.responseJSON && xhr.responseJSON.step === 'otp') {
+                    state.hasPassword = false;
+                    requestOtp($btn);
+                }
+            });
+    });
+
+    $('#togglePassword').on('click', function () {
+        const $input = $('#password');
+        const show = $input.attr('type') === 'password';
+        $input.attr('type', show ? 'text' : 'password');
+        $(this).find('i').attr('class', show ? 'fas fa-eye-slash' : 'fas fa-eye');
+        $input.trigger('focus');
+    });
+
+    /* ---------- گام کد پیامکی ---------- */
+
+    function requestOtp($btn) {
+        busy($btn, true);
+        $.post('/auth/send-otp', { _token: csrf, mobile: state.mobile })
+            .done(function (res) {
+                state.isNew = !!res.is_new;
+                goStep('otp');
+                startTimer(res.wait || 60);
+                showDevCode(res.dev_code);
+            })
+            .fail(function (xhr) {
+                goStep('otp');
+                showError(errorOf(xhr, 'ارسال کد انجام نشد.'));
+                const wait = (xhr.responseJSON || {}).wait;
+                if (wait) startTimer(wait);
+            })
+            .always(function () { busy($btn, false); });
+    }
+
+    $('#btnUseOtp').on('click', function () { requestOtp($(this)); });
+    $('#btnResend').on('click', function () { requestOtp($(this)); });
+
+    $('#btnUsePassword').on('click', function () {
+        stopTimer();
+        goStep('password');
+    });
+
+    $('#btnVerify').on('click', function () {
+        const $btn = $(this);
+        if ($btn.prop('disabled')) return;
+
+        const code = enDigits($('#otp').val()).replace(/\D/g, '');
+        if (code.length !== 6) { showError('کد ۶ رقمی را کامل وارد کنید.'); return; }
+
+        busy($btn, true);
+        $.post('/auth/verify-otp', { _token: csrf, mobile: state.mobile, otp: code })
+            .done(function (res) {
+                state.redirect = res.redirect || '/dashboard';
+
+                // حساب تازه هنوز نام ندارد؛ به‌جای پرتاب به داشبوردِ خالی،
+                // یک گام کوتاه برای تکمیل حساب نشان داده می‌شود
+                if (res.step === 'profile') {
+                    busy($btn, false);
+                    goStep('profile');
+                    return;
+                }
+
+                window.location = state.redirect;
+            })
+            .fail(function (xhr) {
+                busy($btn, false);
+                showError(errorOf(xhr, 'کد وارد شده درست نیست.'));
+                $('#otp').val('').trigger('focus');
+            });
+    });
+
+    /* ---------- گام تکمیل حساب ---------- */
+
+    // تکرار رمز فقط وقتی معنا دارد که کاربر رمزی تایپ کرده باشد
+    $('#new_password').on('input', function () {
+        $('#newPasswordConfirmWrap').prop('hidden', $(this).val().length === 0);
+    });
+
+    $('#toggleNewPassword').on('click', function () {
+        const $input = $('#new_password');
+        const show = $input.attr('type') === 'password';
+        $input.attr('type', show ? 'text' : 'password');
+        $(this).find('i').attr('class', show ? 'fas fa-eye-slash' : 'fas fa-eye');
+        $input.trigger('focus');
+    });
+
+    $('#btnCompleteProfile').on('click', function () {
+        const $btn = $(this);
+        const password = $('#new_password').val();
+        const confirm  = $('#new_password_confirmation').val();
+
+        if (!$('#first_name').val().trim() || !$('#last_name').val().trim()) {
+            showError('نام و نام خانوادگی را وارد کنید.');
             return;
         }
-        $('#resendSeconds').text(toFaDigits(remaining));
-    }, 1000);
-}
+        if (password && password.length < 6) {
+            showError('رمز عبور باید حداقل ۶ کاراکتر باشد.');
+            return;
+        }
+        if (password && password !== confirm) {
+            showError('تکرار رمز عبور با رمز یکسان نیست.');
+            return;
+        }
 
-function sendOtp(btn, doneLabel) {
-    mobile = toEnDigits($('#mobile').val()).trim();
-    btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> در حال ارسال...');
-
-    $.post("/auth/send-otp", {
-        _token: '{{ csrf_token() }}',
-        mobile: mobile
-    }, function () {
-        $('#otpBox').removeClass('d-none');
-        $('#sendOtpBtn').addClass('d-none');
-        $('#verifyOtpBtn').removeClass('d-none');
-        $('#editMobileBtn').removeClass('d-none');
-        $('#mobileBox').addClass('d-none');
-        $('#sentTo').text(toFaDigits(mobile));
-        $('#otp').val('').focus();
-        btn.prop('disabled', false).html(doneLabel);
-        startResendCountdown(60);
-    }).fail(function (res) {
-        btn.prop('disabled', false).html(doneLabel);
-        Swal.fire({ icon: 'error', text: res.responseJSON?.message ?? 'خطا در ارسال کد', confirmButtonColor: 'var(--primary)' });
+        busy($btn, true);
+        $.post('/auth/complete-profile', {
+            _token: csrf,
+            first_name: $('#first_name').val().trim(),
+            last_name: $('#last_name').val().trim(),
+            password: password,
+            password_confirmation: confirm
+        })
+            .done(function (res) { window.location = res.redirect || state.redirect; })
+            .fail(function (xhr) {
+                busy($btn, false);
+                showError(errorOf(xhr, 'ثبت اطلاعات انجام نشد.'));
+            });
     });
-}
 
-$('#sendOtpBtn').click(function () {
-    sendOtp($(this), '<i class="fas fa-paper-plane me-1"></i> دریافت کد تأیید');
-});
+    $('#btnSkipProfile').on('click', function () { window.location = state.redirect; });
 
-$('#resendOtpBtn').click(function () {
-    sendOtp($(this), '<i class="fas fa-redo me-1"></i> ارسال مجدد کد');
-});
-
-$('#verifyOtpBtn').click(function () {
-    let btn = $(this);
-    if (btn.prop('disabled')) return;
-    btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> بررسی...');
-
-    $.post("/auth/verify-otp", {
-        _token: '{{ csrf_token() }}',
-        mobile: mobile,
-        otp: toEnDigits($('#otp').val())
-    }, function (res) {
-        window.location.href = res.redirect;
-    }).fail(function (res) {
-        btn.prop('disabled', false).html('<i class="fas fa-sign-in-alt me-1"></i> ورود به حساب');
-        Swal.fire({ icon: 'error', text: res.responseJSON?.message ?? 'کد وارد شده اشتباه است', confirmButtonColor: 'var(--primary)' });
+    // با کامل شدن ۶ رقم (تایپ دستی یا تکمیل خودکار از پیامک) خودبه‌خود ارسال می‌شود
+    $('#otp').on('input', function () {
+        if (enDigits($(this).val()).replace(/\D/g, '').length === 6) $('#btnVerify').trigger('click');
     });
-});
 
-$('#editMobileBtn').click(function () {
-    clearInterval(resendTimerId);
-    $('#resendTimer, #resendOtpBtn').addClass('d-none');
-    $('#mobileBox').removeClass('d-none');
-    $('#otpBox').addClass('d-none');
-    $('#sendOtpBtn').removeClass('d-none').prop('disabled', false).html('<i class="fas fa-paper-plane me-1"></i> دریافت کد تأیید');
-    $('#verifyOtpBtn').addClass('d-none');
-    $('#editMobileBtn').addClass('d-none');
-    $('#mobile').focus();
-});
+    /* ---------- برگشت به گام شماره ---------- */
 
-// با کامل شدن ۶ رقم (تایپ دستی یا تکمیل خودکار از پیامک) خودبه‌خود وارد می‌شود
-$('#otp').on('input', function () {
-    let code = toEnDigits($(this).val()).replace(/\D/g, '');
-    if (code.length === 6) {
-        $('#verifyOtpBtn').click();
-    }
-});
-
-$('#otp').on('keyup', function(e) {
-    if (e.key === 'Enter') $('#verifyOtpBtn').click();
-});
-$('#mobile').on('keyup', function(e) {
-    if (e.key === 'Enter') passwordMode ? $('#passwordLoginBtn').click() : $('#sendOtpBtn').click();
-});
-
-/* ---------- ورود با رمز عبور ---------- */
-let passwordMode = false;
-
-$('#toggleModeBtn').click(function () {
-    passwordMode = !passwordMode;
-
-    // حالت کد پیامکی را کامل جمع می‌کنیم تا دو فرم هم‌زمان باز نمانند
-    $('#otpBox, #verifyOtpBtn, #resendOtpBtn, #resendTimer, #editMobileBtn').addClass('d-none');
-    $('#mobileBox').removeClass('d-none');
-    if (resendTimerId) { clearInterval(resendTimerId); resendTimerId = null; }
-
-    $('#passwordBox, #passwordLoginBtn').toggleClass('d-none', !passwordMode);
-    $('#sendOtpBtn').toggleClass('d-none', passwordMode);
-
-    $(this).html(passwordMode
-        ? '<i class="fas fa-comment-sms me-1"></i> ورود با کد پیامکی'
-        : '<i class="fas fa-lock me-1"></i> ورود با رمز عبور');
-
-    $('#loginModeHint').text(passwordMode
-        ? 'اگر رمز عبور تنظیم نکرده‌اید، با کد پیامکی وارد شوید'
-        : 'ورود شما با رمز یکبار مصرف (OTP) انجام می‌شود');
-
-    (passwordMode ? $('#loginPassword') : $('#mobile')).focus();
-});
-
-$('#passwordLoginBtn').click(function () {
-    const btn = $(this);
-    const mobileValue = toEnDigits($('#mobile').val()).replace(/\D/g, '');
-
-    if (!mobileValue) {
-        toast.fire({ icon: 'error', title: 'شماره موبایل را وارد کنید' });
-        return;
-    }
-    if (!$('#loginPassword').val()) {
-        toast.fire({ icon: 'error', title: 'رمز عبور را وارد کنید' });
-        return;
-    }
-
-    btn.prop('disabled', true);
-    $.post("/auth/login-password", {
-        _token: "{{ csrf_token() }}",
-        mobile: mobileValue,
-        password: $('#loginPassword').val()
-    }).done(function (res) {
-        window.location = res.redirect || '/dashboard';
-    }).fail(function (xhr) {
-        btn.prop('disabled', false);
-        toast.fire({
-            icon: 'error',
-            title: xhr.responseJSON?.message || 'ورود انجام نشد'
-        });
+    $('.js-edit-mobile').on('click', function () {
+        state.hasPassword = false;
+        state.isNew = false;
+        showDevCode(null);
+        goStep('mobile');
     });
-});
 
-$('#loginPassword').on('keyup', function (e) {
-    if (e.key === 'Enter') $('#passwordLoginBtn').click();
-});
+    /* ---------- کلید Enter ---------- */
+
+    $('#mobile').on('keyup',   e => { if (e.key === 'Enter') $('#btnContinue').trigger('click'); });
+    $('#password').on('keyup', e => { if (e.key === 'Enter') $('#btnPassword').trigger('click'); });
+    $('#otp').on('keyup',      e => { if (e.key === 'Enter') $('#btnVerify').trigger('click'); });
+})();
 </script>
 @endsection

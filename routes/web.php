@@ -8,6 +8,9 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\OrderTrackingController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\Auth\CustomerAuthController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\ImpersonationController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PaymentReceiptController;
 use App\Http\Controllers\DashboardController;
@@ -210,10 +213,26 @@ Route::group(['namespace' => 'Frontend', 'middleware' => [ShareDataInFrontend::c
     Route::post('/shipping/calc', [CheckoutController::class, 'calcShipping'])->name('shipping.calc');
     Route::post('/address/save', [CheckoutController::class, 'storeOrUpdateAddress'])->name('address.save');
 
-    Route::get('/login', [UserController::class, 'login'])->name('login');
-    Route::post('/auth/send-otp', [UserController::class, 'sendOtp'])->name('auth.sendOtp');
-    Route::post('/auth/verify-otp', [UserController::class, 'verifyOtp'])->name('auth.verifyOtp');
-    Route::post('/auth/login-password', [UserController::class, 'loginWithPassword'])->name('auth.loginPassword');
+    /*
+    | ورود و ثبت‌نام مشتری — یک صفحه با سه گام: شماره → (رمز یا کد) → ورود.
+    | «check» تصمیم می‌گیرد کدام گام دوم نشان داده شود، تا کاربری که رمز ندارد
+    | اصلا گزینه‌ی «ورود با رمز» را نبیند.
+    */
+    Route::get('/login', [CustomerAuthController::class, 'login'])->name('login');
+    Route::post('/auth/check', [CustomerAuthController::class, 'check'])->name('auth.check');
+    Route::post('/auth/send-otp', [CustomerAuthController::class, 'sendOtp'])->name('auth.sendOtp');
+    Route::post('/auth/verify-otp', [CustomerAuthController::class, 'verifyOtp'])->name('auth.verifyOtp');
+    Route::post('/auth/login-password', [CustomerAuthController::class, 'loginWithPassword'])->name('auth.loginPassword');
+    Route::post('/auth/complete-profile', [CustomerAuthController::class, 'completeProfile'])->name('auth.completeProfile');
+
+    /* بازیابی رمز فراموش‌شده با کد پیامکی */
+    Route::get('/password/forgot', [ForgotPasswordController::class, 'show'])->name('password.forgot');
+    Route::post('/password/forgot/send-otp', [ForgotPasswordController::class, 'sendOtp'])->name('password.forgot.send');
+    Route::post('/password/forgot/verify-otp', [ForgotPasswordController::class, 'verifyOtp'])->name('password.forgot.verify');
+    Route::post('/password/forgot/reset', [ForgotPasswordController::class, 'reset'])->name('password.forgot.reset');
+
+    /* پایان «ورود به‌عنوان کاربر»؛ بیرون از گروه auth چون از سمت سایت زده می‌شود */
+    Route::get('/impersonate/stop', [ImpersonationController::class, 'stop'])->name('impersonate.stop');
 
     Route::get('/logout', [UserController::class, 'logout']);
     Route::get('/products/favorite/{product_id}', [ProductController::class, 'addToFavorite'])->name('addToFavorite');
@@ -272,6 +291,9 @@ Route::group(['namespace' => 'Frontend', 'middleware' => [ShareDataInFrontend::c
         Route::post('/admin/customer/store', [OrderAdminController::class, 'admin_customer_store']);
         Route::put('/admin/customer/update/{id}', [OrderAdminController::class, 'admin_customer_update']);
         Route::delete('/admin/customer/{id}', [OrderAdminController::class, 'admin_customer_destroy']);
+        // تعیین/حذف رمز مشتری توسط پشتیبانی، و ورود به حساب او برای عیب‌یابی
+        Route::post('/admin/customer/{id}/password', [OrderAdminController::class, 'admin_customer_password']);
+        Route::get('/admin/customer/{id}/impersonate', [ImpersonationController::class, 'start'])->name('impersonate.start');
 
         /* Advertisement */
         Route::get('/admin/advertisement/create', [AdvertisementAdminController::class, 'admin_create']);

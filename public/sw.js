@@ -10,7 +10,7 @@
  * dropped on activate.
  */
 
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const STATIC_CACHE = `nazeryadak-static-${CACHE_VERSION}`;
 const PAGES_CACHE = `nazeryadak-pages-${CACHE_VERSION}`;
 const OFFLINE_URL = '/offline.html';
@@ -19,15 +19,17 @@ const OFFLINE_URL = '/offline.html';
 const MAX_CACHED_PAGES = 60;
 
 /**
- * Shell assets fetched up front: the offline page plus the stylesheets every
- * page loads, so a cached page still renders correctly with no connection.
+ * Shell assets fetched up front: the offline page plus the vendor stylesheets
+ * every page loads, so a cached page still renders correctly with no connection.
+ *
+ * The site's own stylesheets are deliberately absent: their URLs now carry a
+ * ?v=<mtime> version, so a precached copy at the bare path would never be
+ * matched and would only be downloaded for nothing. Stale-while-revalidate
+ * caches the versioned files on the first real page view instead.
  */
 const PRECACHE_URLS = [
     OFFLINE_URL,
     '/assets/css/bootstrap.rtl.css',
-    '/assets/css/style.css',
-    '/assets/css/home-digikala.css',
-    '/assets/css/mobile-appbar.css',
     '/assets/fontawesome/css/all.min.css',
     '/assets/images/logo.png',
     '/assets/images/pwa/icon-192.png',

@@ -27,6 +27,13 @@ return Application::configure(basePath: dirname(__DIR__))
         // سایت پشت پروکسی/CDN اجرا می‌شود؛ بدون این تنظیم، Laravel آدرس‌های
         // مطلق را http می‌سازد و canonical با آدرس واقعی صفحه فرق می‌کند.
         $middleware->trustProxies(at: '*');
+
+        // کاربرِ واردنشده‌ی مسیرهای پنل باید به صفحه‌ی ورود پنل برود، نه به
+        // صفحه‌ی ورود مشتری؛ مقصد پیش‌فرض لاراول مسیرِ نام‌گذاری‌شده‌ی login است
+        // که همان ورود مشتری با پیامک است و مدیر آنجا کاری نمی‌تواند بکند.
+        $middleware->redirectGuestsTo(fn (Request $request) => $request->is('admin/*', 'dashboardAdmin')
+            ? '/loginAdmin'
+            : '/login');
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->render(function (Throwable $e, Request $request) {

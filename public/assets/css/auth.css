@@ -1,0 +1,365 @@
+/* ==========================================================================
+   ورود، ثبت‌نام و بازیابی رمز عبور
+   یک کارت، سه گام. با همان زبان بصری ناحیه‌ی حساب کاربری (قرمز/سفید)
+   نوشته شده تا صفحه‌ی ورود وصله‌ی بقیه‌ی سایت به نظر نرسد.
+   ========================================================================== */
+
+.nx-auth {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 68vh;
+    padding: 32px 16px 56px;
+    background: var(--nx-bg, #f5f5f5);
+    direction: rtl;
+}
+
+.nx-auth *,
+.nx-auth *::before,
+.nx-auth *::after {
+    box-sizing: border-box;
+}
+
+.nx-auth a {
+    text-decoration: none;
+}
+
+.nx-auth-card {
+    width: 100%;
+    max-width: 400px;
+    padding: 28px 24px 22px;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 8px 30px rgba(35, 37, 78, .08);
+}
+
+/* ---------- سربرگ ---------- */
+
+.nx-auth-head {
+    text-align: center;
+    margin-bottom: 22px;
+}
+
+.nx-auth-logo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    margin-bottom: 14px;
+    border-radius: 50%;
+    background: var(--nx-red-soft, #fff1f3);
+    color: var(--nx-red, #ef4056);
+    font-size: 22px;
+}
+
+.nx-auth-head h1 {
+    margin: 0;
+    color: var(--nx-ink, #23254e);
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.nx-auth-head p {
+    margin: 8px 0 0;
+    color: var(--nx-muted, #81858b);
+    font-size: 12.5px;
+    line-height: 1.9;
+}
+
+/* ---------- گام‌ها ---------- */
+
+.nx-auth-step[hidden] {
+    display: none;
+}
+
+.nx-auth-field {
+    margin-bottom: 14px;
+}
+
+.nx-auth-field > label {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--nx-muted, #81858b);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.nx-auth-field input {
+    width: 100%;
+    height: 46px;
+    padding: 0 14px;
+    border: 1px solid var(--nx-line, #e0e0e2);
+    border-radius: var(--nx-radius, 8px);
+    background: #fff;
+    color: var(--nx-ink, #23254e);
+    font-family: inherit;
+    font-size: 14px;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+}
+
+.nx-auth-field input:focus {
+    border-color: var(--nx-red, #ef4056);
+    box-shadow: 0 0 0 3px rgba(239, 64, 86, .1);
+}
+
+.nx-auth-field input::placeholder {
+    color: #c4c6cb;
+    letter-spacing: normal;
+}
+
+/* شماره و کد، لاتین و وسط‌چین‌اند تا خواندن رقم‌ها ساده باشد */
+.nx-auth-field input.is-num {
+    direction: ltr;
+    text-align: center;
+    letter-spacing: 2px;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.nx-auth-field input.is-code {
+    letter-spacing: 10px;
+    font-size: 20px;
+}
+
+/* چشمکِ نمایش رمز */
+.nx-auth-pass {
+    position: relative;
+}
+
+.nx-auth-pass input {
+    padding-left: 42px;
+}
+
+.nx-auth-eye {
+    position: absolute;
+    left: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--nx-muted, #81858b);
+    cursor: pointer;
+}
+
+.nx-auth-eye:hover {
+    color: var(--nx-red, #ef4056);
+}
+
+/* ---------- شماره‌ی تأییدشده در گام دوم ---------- */
+
+.nx-auth-identity {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding: 10px 12px;
+    border: 1px solid var(--nx-line, #e0e0e2);
+    border-radius: var(--nx-radius, 8px);
+    background: var(--nx-soft, #f7f7f8);
+}
+
+.nx-auth-identity span {
+    color: var(--nx-ink, #23254e);
+    font-size: 13px;
+    font-weight: 700;
+    direction: ltr;
+}
+
+.nx-auth-identity button {
+    border: 0;
+    background: none;
+    color: var(--nx-red, #ef4056);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* ---------- دکمه‌ها ---------- */
+
+.nx-auth-submit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    height: 46px;
+    margin-top: 4px;
+    border: 0;
+    border-radius: var(--nx-radius, 8px);
+    background: var(--nx-red, #ef4056);
+    color: #fff;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background .15s;
+}
+
+.nx-auth-submit:hover:not(:disabled) {
+    background: var(--nx-red-dark, #d33449);
+}
+
+.nx-auth-submit:disabled {
+    opacity: .65;
+    cursor: default;
+}
+
+.nx-auth-alt {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    width: 100%;
+    height: 40px;
+    margin-top: 10px;
+    border: 1px solid var(--nx-line, #e0e0e2);
+    border-radius: var(--nx-radius, 8px);
+    background: #fff;
+    color: var(--nx-ink, #23254e);
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.nx-auth-alt:hover {
+    border-color: var(--nx-red, #ef4056);
+    color: var(--nx-red, #ef4056);
+}
+
+.nx-auth-link {
+    display: block;
+    margin-top: 12px;
+    color: var(--nx-red, #ef4056);
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+    background: none;
+    border: 0;
+    width: 100%;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+/* ---------- ارسال مجدد کد ---------- */
+
+.nx-auth-resend {
+    margin-top: 12px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--nx-muted, #81858b);
+}
+
+.nx-auth-resend button {
+    border: 0;
+    background: none;
+    color: var(--nx-red, #ef4056);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.nx-auth-resend[hidden],
+.nx-auth-hint[hidden] {
+    display: none;
+}
+
+/* ---------- پانویس ---------- */
+
+.nx-auth-foot {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid var(--nx-soft, #f0f0f1);
+    color: var(--nx-muted, #81858b);
+    font-size: 11.5px;
+    line-height: 2;
+    text-align: center;
+}
+
+.nx-auth-foot i {
+    color: #17a566;
+}
+
+.nx-auth-foot a {
+    color: var(--nx-ink, #23254e);
+    font-weight: 700;
+}
+
+/* پیام خطای درون‌کارتی؛ به‌جای toast برای خطاهای مربوط به یک فیلد */
+.nx-auth-error {
+    margin: 0 0 14px;
+    padding: 9px 12px;
+    border-radius: var(--nx-radius, 8px);
+    background: var(--nx-red-soft, #fff1f3);
+    color: var(--nx-red, #ef4056);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.8;
+}
+
+.nx-auth-error[hidden] {
+    display: none;
+}
+
+/* کد نمایش‌داده‌شده در محیط توسعه (وقتی درگاه پیامک تنظیم نیست) */
+.nx-auth-dev {
+    margin-top: 10px;
+    padding: 8px;
+    border: 1px dashed #f0b429;
+    border-radius: var(--nx-radius, 8px);
+    background: #fffbeb;
+    color: #8a6100;
+    font-size: 12px;
+    text-align: center;
+}
+
+.nx-auth-dev[hidden] {
+    display: none;
+}
+
+/* ---------- نوار «ورود به‌عنوان کاربر» ---------- */
+
+.nx-impersonate-bar {
+    position: sticky;
+    top: 0;
+    z-index: 1200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 9px 14px;
+    background: #23254e;
+    color: #fff;
+    font-size: 12.5px;
+    font-weight: 700;
+    direction: rtl;
+}
+
+.nx-impersonate-bar a {
+    padding: 5px 12px;
+    border-radius: 6px;
+    background: var(--nx-red, #ef4056);
+    color: #fff;
+    font-size: 12px;
+    text-decoration: none;
+}
+
+@media (max-width: 480px) {
+    .nx-auth {
+        padding: 16px 12px 40px;
+    }
+
+    .nx-auth-card {
+        padding: 24px 18px 18px;
+        box-shadow: none;
+    }
+}

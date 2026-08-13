@@ -37,7 +37,7 @@
 
     {{-- منابع بحرانی زودتر از موعد درخواست می‌شوند؛ مستقیم روی LCP اثر دارد --}}
     <link rel="dns-prefetch" href="//www.googletagmanager.com">
-    <link rel="preload" as="style" href="/assets/css/style.css">
+    <link rel="preload" as="style" href="{{ asset_v('/assets/css/style.css') }}">
     <link rel="preload" as="font" type="font/woff" href="/assets/font/IRANSans/IRANSansWeb(FaNum).woff" crossorigin>
     <link rel="preload" as="image" href="/assets/images/logo.png" fetchpriority="high">
 
@@ -134,12 +134,17 @@
     <link rel="stylesheet" href="/assets/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="/assets/css/owl.carousel.min.css">
     <link rel="stylesheet" href="/assets/css/owl.theme.default.min.css">
-    <link rel="stylesheet" href="/assets/css/style.css">
-    <link rel="stylesheet" href="/assets/css/home-digikala.css">
-    <link rel="stylesheet" href="/assets/css/mobile-appbar.css">
-    <link rel="stylesheet" href="/assets/css/mobile-checkout.css">
-    <link rel="stylesheet" href="/assets/css/account.css">
-    <link rel="stylesheet" href="/assets/css/search-suggest.css">
+    {{-- ?v= از زمان تغییر خود فایل می‌آید؛ بدون آن، هدر immutable در .htaccess
+         نسخه‌ی قدیمی را تا یک سال در مرورگر کاربر نگه می‌داشت --}}
+    <link rel="stylesheet" href="{{ asset_v('/assets/css/style.css') }}">
+    <link rel="stylesheet" href="{{ asset_v('/assets/css/home-digikala.css') }}">
+    <link rel="stylesheet" href="{{ asset_v('/assets/css/mobile-appbar.css') }}">
+    <link rel="stylesheet" href="{{ asset_v('/assets/css/mobile-checkout.css') }}">
+    <link rel="stylesheet" href="{{ asset_v('/assets/css/account.css') }}">
+    <link rel="stylesheet" href="{{ asset_v('/assets/css/search-suggest.css') }}">
+    {{-- صفحه‌های ورود/ثبت‌نام و نوار «ورود به‌عنوان کاربر»؛ بعد از style.css
+         می‌آید تا قواعد عمومی فرم‌ها آن را بازنویسی نکنند --}}
+    <link rel="stylesheet" href="{{ asset_v('/assets/css/auth.css') }}">
 
     @if(!empty($seoAnalytics['gtm']))
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','{{ $seoAnalytics['gtm'] }}');</script>
@@ -151,6 +156,21 @@
 {{-- صفحه‌هایی که نوار عمل چسبان موبایل دارند این کلاس را می‌فرستند تا
      محتوای انتهای صفحه زیر نوار پنهان نشود --}}
 <body class="{{ $bodyClass ?? '' }}">
+
+    {{-- مدیر در حال مشاهده‌ی سایت به‌عنوان یک مشتری است؛ این نوار در همه‌ی
+         صفحه‌ها می‌ماند تا اقدامی به حساب کاربر انجام نشود و راه بازگشت
+         همیشه یک کلیک فاصله داشته باشد --}}
+    @if(session()->has('impersonator_id'))
+    <div class="nx-impersonate-bar">
+        <span>
+            <i class="fas fa-user-secret"></i>
+            شما به‌عنوان
+            <b>{{ Auth::guard('customer')->user()?->fullName() ?: Auth::guard('customer')->user()?->phone }}</b>
+            وارد شده‌اید
+        </span>
+        <a href="/impersonate/stop"><i class="fas fa-arrow-right-from-bracket"></i> بازگشت به پنل مدیریت</a>
+    </div>
+    @endif
 
     {{-- هدر بالای صفحه - فقط تماس و ساعت کاری؛ لینک‌ها در منوی اصلی هستند --}}
     <div class="header-top-bar d-none d-lg-block">
@@ -641,9 +661,9 @@
 <script src="/assets/js/bootstrap.bundle.min.js"></script>
 <script src="/assets/js/owl.carousel.min.js"></script>
 <script src="/assets/js/jquery.simple.timer.js"></script>
-<script src="/assets/js/script.js"></script>
-<script src="/assets/js/combobox.js" defer></script>
-<script src="/assets/js/search-suggest.js" defer></script>
+<script src="{{ asset_v('/assets/js/script.js') }}"></script>
+<script src="{{ asset_v('/assets/js/combobox.js') }}" defer></script>
+<script src="{{ asset_v('/assets/js/search-suggest.js') }}" defer></script>
 <script src="/js/sweetalert2.all.js"></script>
 <script>
 const toast = Swal.mixin({

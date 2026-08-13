@@ -12,6 +12,23 @@
             @include('layout.sidebar', ['menu' => 'dashboard'])
 
             <div class="nx-account-main">
+                {{-- کسی که با کد پیامکی ثبت‌نام کرده ممکن است اصلا نداند رمز
+                     عبور هم می‌تواند داشته باشد؛ این یادآوری فقط تا وقتی
+                     می‌ماند که رمز تعیین نشده باشد --}}
+                @if(empty($customer->password))
+                <section class="nx-card" style="margin-bottom:16px;">
+                    <div class="nx-panel-body" style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+                        <span style="font-size:12.5px; line-height:2; color:var(--nx-muted,#81858b);">
+                            <i class="fas fa-lock" style="color:var(--nx-red,#ef4056);"></i>
+                            برای این حساب رمز عبور تعیین نشده و ورود فقط با کد پیامکی انجام می‌شود.
+                        </span>
+                        <a href="/profile/password" class="nx-btn-red">
+                            <i class="fas fa-plus"></i> تعیین رمز عبور
+                        </a>
+                    </div>
+                </section>
+                @endif
+
                 <div class="nx-account-grid">
                     {{-- اطلاعات شخصی --}}
                     <section class="nx-card">

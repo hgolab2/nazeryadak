@@ -36,8 +36,21 @@
                     </div>
 
                     <div class="nx-panel-body" style="padding-bottom:0; color:var(--nx-muted,#81858b); font-size:12.5px; line-height:2;">
-                        ورود به حساب همیشه با کد پیامکی ممکن است. با تعیین رمز عبور، می‌توانید بدون منتظر ماندن برای پیامک هم وارد شوید.
+                        @if($hasPassword)
+                            برای این حساب رمز عبور ثبت شده است؛ در صفحه‌ی ورود، رمز عبور به‌طور پیش‌فرض از شما خواسته می‌شود
+                            و کد پیامکی هم همیشه در دسترس است.
+                        @else
+                            هنوز رمز عبوری تعیین نکرده‌اید و ورود شما فقط با کد پیامکی انجام می‌شود.
+                            با تعیین رمز، دفعه‌ی بعد بدون منتظر ماندن برای پیامک وارد می‌شوید.
+                        @endif
                     </div>
+
+                    @if($isImpersonated ?? false)
+                        <div class="nx-panel-body" style="color:#c62828; font-size:12.5px;">
+                            <i class="fas fa-user-secret"></i>
+                            شما در حالت «ورود به‌عنوان کاربر» هستید؛ تغییر رمز از این‌جا ممکن نیست.
+                        </div>
+                    @endif
 
                     <form method="POST" action="{{ route('profile.password.update') }}">
                         @csrf
@@ -60,8 +73,16 @@
                                 <input id="password_confirmation" type="password" name="password_confirmation"
                                        autocomplete="new-password" minlength="6" required>
                             </div>
-                            <div class="is-wide" style="display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap;">
-                                <button type="submit" class="nx-btn-red">
+                            <div class="is-wide" style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+                                @if($hasPassword)
+                                    <a href="/password/forgot" style="color:var(--nx-red,#ef4056); font-size:12px; font-weight:700;">
+                                        رمز فعلی را به یاد ندارید؟ با کد پیامکی رمز تازه بسازید
+                                    </a>
+                                @else
+                                    <span></span>
+                                @endif
+
+                                <button type="submit" class="nx-btn-red" @disabled($isImpersonated ?? false)>
                                     <i class="fas fa-check"></i> {{ $hasPassword ? 'تغییر رمز عبور' : 'ثبت رمز عبور' }}
                                 </button>
                             </div>

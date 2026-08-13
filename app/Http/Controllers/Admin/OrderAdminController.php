@@ -6,9 +6,13 @@ use App\Enums\OrderItem;
 use App\Models\Order;
 use App\Models\Customer;
 use App\Models\CustomerAddress;
+use App\Support\Mobile;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rules\Enum;
+use Illuminate\Validation\Rules\Password as PasswordRule;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class OrderAdminController extends Controller
@@ -300,13 +304,18 @@ class OrderAdminController extends Controller
         if (!Auth::user()) return redirect('/login');
         access(388);
 
+        $request->merge(['phone' => Mobile::normalize($request->phone)]);
+
         $validator = Validator::make($request->all(), [
             'first_name' => 'required|string|max:255',
             'last_name'  => 'required|string|max:255',
-            'phone'      => 'required|string|max:20|unique:customers,phone',
-            /*'email'      => 'nullable|email|max:255|unique:customers,email',
-            'password'   => 'required|string|min:6',*/
+            'phone'      => 'required|regex:/^09\d{9}$/|unique:customers,phone',
+            'password'   => 'nullable|string|min:6',
             'status'     => 'required|boolean',
+        ], [
+            'phone.regex'  => 'شماره موبایل باید ۱۱ رقم و به شکل ۰۹۱۲۳۴۵۶۷۸۹ باشد.',
+            'phone.unique' => 'این شماره موبایل قبلا ثبت شده است.',
+            'password.min' => 'رمز عبور باید حداقل ۶ کاراکتر باشد.',
         ]);
 
         if ($validator->fails()) {
@@ -317,10 +326,15 @@ class OrderAdminController extends Controller
             'first_name' => $request->first_name,
             'last_name'  => $request->last_name,
             'phone'      => $request->phone,
-            //'email'      => $request->email,
             'status'     => $request->status,
-            'password'   => bcrypt($request->password),
         ];
+
+        // رمز اختیاری است؛ ورود مشتری با کد پیامکی هم ممکن است. قبلا اینجا
+        // bcrypt(null) ذخیره می‌شد، یعنی هر مشتریِ ساخته‌شده در پنل «رمز دارد»
+        // به حساب می‌آمد و صفحه‌ی ورود رمزی می‌خواست که هیچ‌کس نمی‌دانست.
+        if ($request->filled('password')) {
+            $data['password'] = Hash::make($request->password);
+        }
 
         Customer::create($data);
 
@@ -347,35 +361,71 @@ class OrderAdminController extends Controller
 
         $customer = Customer::findOrFail($id);
 
+        $request->merge(['phone' => Mobile::normalize($request->phone)]);
+
         $validator = Validator::make($request->all(), [
             'first_name' => 'required|string|max:255',
             'last_name'  => 'required|string|max:255',
-            'phone'      => "required|string|max:20|unique:customers,phone,$id",
-            /*'email'      => "nullable|email|max:255|unique:customers,email,$id",
-            'password'   => 'nullable|string|min:6',*/
+            'phone'      => "required|regex:/^09\d{9}$/|unique:customers,phone,$id",
             'status'     => 'required|boolean',
+        ], [
+            'phone.regex'  => 'شماره موبایل باید ۱۱ رقم و به شکل ۰۹۱۲۳۴۵۶۷۸۹ باشد.',
+            'phone.unique' => 'این شماره موبایل برای مشتری دیگری ثبت شده است.',
         ]);
 
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput();
         }
 
-        $data = $request->only([
-            'first_name',
-            'last_name',
-            'phone',
-            'email',
-            'status',
-        ]);
-
-        if ($request->filled('password')) {
-            $data['password'] = bcrypt($request->password);
-        }
-
-        $customer->update($data);
+        // رمز عبور در فرم جداگانه‌ی خودش تغییر می‌کند تا با ذخیره‌ی اطلاعات
+        // پروفایل به‌طور ناخواسته بازنویسی نشود.
+        $customer->update($request->only(['first_name', 'last_name', 'phone', 'email', 'status']));
 
         return redirect('/admin/customer/list')
             ->with('success', 'مشتری با موفقیت بروزرسانی شد');
+    }
+
+    /**
+     * تعیین یا حذف رمز عبور مشتری توسط پشتیبانی.
+     *
+     * مشتری‌ای که رمزش را فراموش کرده و به پیامک هم دسترسی ندارد، تنها راهش
+     * همین است. با حذف رمز، ورود به مسیر کد یکبارمصرف برمی‌گردد.
+     */
+    public function admin_customer_password(Request $request, $id)
+    {
+        if (!Auth::user()) return redirect('/login');
+        access(388);
+
+        $customer = Customer::findOrFail($id);
+
+        if ($request->input('action') === 'remove') {
+            $customer->password = null;
+            $customer->save();
+
+            return back()->with('success', 'رمز عبور حذف شد؛ ورود مشتری فقط با کد پیامکی انجام می‌شود.');
+        }
+
+        $validator = Validator::make($request->all(), [
+            'password' => ['required', 'confirmed', PasswordRule::min(6)],
+        ], [
+            'password.required'  => 'رمز عبور جدید را وارد کنید.',
+            'password.confirmed' => 'تکرار رمز عبور با رمز جدید یکسان نیست.',
+            'password.min'       => 'رمز عبور باید حداقل ۶ کاراکتر باشد.',
+        ]);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator);
+        }
+
+        $customer->password = Hash::make($request->password);
+        $customer->save();
+
+        Log::info('Customer password changed by admin', [
+            'admin_id'    => Auth::id(),
+            'customer_id' => $customer->id,
+        ]);
+
+        return back()->with('success', 'رمز عبور مشتری تغییر کرد. آن را به خود مشتری اطلاع دهید.');
     }
 
 
