@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\ProductCategory;
 use App\Models\Article1;
 use App\Models\Product;
+use App\Support\CarModels;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -14,6 +15,9 @@ use Illuminate\Support\Facades\Cache;
  */
 class SitemapController extends Controller
 {
+    /** حداقل تعداد قطعه‌ی یک خودرو، برای اینکه صفحات ترکیبی‌اش هم اعلام شوند. */
+    private const COMBO_MIN_PRODUCTS = 30;
+
     private function cacheMinutes(): int
     {
         return (int) config('seo.sitemap.cache_minutes', 180);
@@ -22,6 +26,19 @@ class SitemapController extends Controller
     private function perMap(): int
     {
         return (int) config('seo.sitemap.products_per_map', 2000);
+    }
+
+    /**
+     * محصولاتی که اجازه‌ی ایندکس دارند.
+     *
+     * محصولی که مدیر در تب سئو تیک Index را برداشته نباید در نقشه‌ی سایت
+     * بیاید؛ فرستادن آدرسی که خودش noindex است، سیگنال متناقض به گوگل می‌دهد.
+     * هر سه خروجی (شمارش، محصولات، تصاویر) باید از همین کوئری بیایند وگرنه
+     * تعداد چانک‌ها با محتوایشان جور در نمی‌آید.
+     */
+    private function indexableProducts()
+    {
+        return Product::where('is_active', 1)->where('robots_index', 1);
     }
 
     private function xml(string $body)
@@ -35,7 +52,7 @@ class SitemapController extends Controller
     public function index()
     {
         $body = Cache::remember('sitemap:index', now()->addMinutes($this->cacheMinutes()), function () {
-            $productCount = Product::where('is_active', 1)->count();
+            $productCount = $this->indexableProducts()->count();
             $chunks = max(1, (int) ceil($productCount / $this->perMap()));
 
             $maps = [
@@ -72,6 +89,7 @@ class SitemapController extends Controller
                 ['loc' => seo_url('/contact-us'), 'priority' => '0.6', 'changefreq' => 'monthly'],
                 ['loc' => seo_url('/faq'), 'priority' => '0.6', 'changefreq' => 'monthly'],
                 ['loc' => seo_url('/how-to-order'), 'priority' => '0.5', 'changefreq' => 'monthly'],
+                ['loc' => seo_url('/order-tracking'), 'priority' => '0.6', 'changefreq' => 'monthly'],
                 ['loc' => seo_url('/shipping'), 'priority' => '0.5', 'changefreq' => 'monthly'],
                 ['loc' => seo_url('/payment-methods'), 'priority' => '0.5', 'changefreq' => 'monthly'],
                 ['loc' => seo_url('/return-policy'), 'priority' => '0.5', 'changefreq' => 'monthly'],
@@ -99,14 +117,35 @@ class SitemapController extends Controller
                 ];
             }
 
-            // صفحات مدل خودرو؛ کوئری‌های اصلی بازار قطعات ایران.
-            $carModels = ['پژو 206', 'پژو 405', 'پژو پارس', 'سمند', 'دنا', 'رانا', 'تیبا', 'پراید', 'کوییک', 'ساینا', 'شاهین', 'تارا'];
-            foreach ($carModels as $model) {
+            /*
+            | صفحات مدل خودرو و ترکیب دسته × خودرو.
+            |
+            | فهرست خودروها از خود دیتابیس می‌آید نه از یک آرایه‌ی هاردکد،
+            | پس هر مدل تازه‌ای که وارد انبار شود خودبه‌خود به نقشه اضافه
+            | می‌شود. آدرس‌ها مسیری‌اند (/car/...) نه «?car_model=»؛ نسخه‌ی
+            | قدیمی 301 می‌خورد و فرستادن آدرس ریدایرکت‌شونده در نقشه‌ی
+            | سایت، خطای Search Console می‌سازد.
+            */
+            foreach (CarModels::all() as $carSlug => $car) {
                 $urls[] = [
-                    'loc' => seo_url('/shop?car_model=' . rawurlencode($model)),
+                    'loc' => seo_url('/car/' . rawurlencode($carSlug)),
                     'priority' => '0.75',
                     'changefreq' => 'daily',
                 ];
+
+                // ترکیب فقط برای خودروهای پرمحصول؛ ترکیبِ کم‌محصول اغلب
+                // صفحه‌ی خالی می‌شود و ارزش خزش ندارد.
+                if ($car['count'] < self::COMBO_MIN_PRODUCTS) {
+                    continue;
+                }
+
+                foreach (ProductCategory::cases() as $category) {
+                    $urls[] = [
+                        'loc' => seo_url('/car/' . rawurlencode($carSlug) . '/' . rawurlencode($category->slug())),
+                        'priority' => '0.6',
+                        'changefreq' => 'weekly',
+                    ];
+                }
             }
 
             return view('sitemap.urlset', ['urls' => $urls])->render();
@@ -123,7 +162,7 @@ class SitemapController extends Controller
         $body = Cache::remember('sitemap:products:' . $page, now()->addMinutes($this->cacheMinutes()), function () use ($page) {
             $urls = [];
 
-            Product::where('is_active', 1)
+            $this->indexableProducts()
                 ->select(['id', 'title', 'sku', 'updated_at'])
                 ->orderBy('id')
                 ->forPage($page, $this->perMap())
@@ -187,8 +226,8 @@ class SitemapController extends Controller
         $body = Cache::remember('sitemap:images', now()->addMinutes($this->cacheMinutes()), function () {
             $entries = [];
 
-            Product::with('images')
-                ->where('is_active', 1)
+            $this->indexableProducts()
+                ->with('images')
                 ->select(['id', 'title', 'sku', 'file_path'])
                 ->orderByDesc('id')
                 ->limit(5000)

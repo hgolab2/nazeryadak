@@ -21,6 +21,7 @@ class ProductAdminController extends Controller
         'title', 'sku', 'price', 'regular_price', 'discount_percent',
         'stock', 'weight', 'is_active', 'description', 'short_description',
         'car_model', 'category_id',
+        'seo_title', 'seo_description', 'focus_keyword', 'canonical_url',
     ];
 
     private static function rules(): array
@@ -44,6 +45,14 @@ class ProductAdminController extends Controller
             'car_model'     => 'nullable|string|max:255',
             'category_id'   => 'nullable|integer|in:' . implode(',', $categoryIds),
             'file'          => 'nullable|image|max:2048',
+
+            // سئوی دستی؛ همگی اختیاری‌اند و خالی‌شان یعنی «خودکار بساز»
+            'seo_title'       => 'nullable|string|max:255',
+            'seo_description' => 'nullable|string|max:500',
+            'focus_keyword'   => 'nullable|string|max:255',
+            'canonical_url'   => 'nullable|url|max:500',
+            'robots_index'    => 'nullable|boolean',
+            'robots_follow'   => 'nullable|boolean',
         ];
     }
 
@@ -66,6 +75,8 @@ class ProductAdminController extends Controller
             'category_id.in'     => 'دسته‌بندی انتخاب‌شده معتبر نیست.',
             'file.image'         => 'فایل انتخاب‌شده تصویر نیست.',
             'file.max'           => 'حجم تصویر نباید بیشتر از ۲ مگابایت باشد.',
+            'canonical_url.url'  => 'آدرس کانونیکال باید یک لینک کامل باشد (با https:// شروع شود).',
+            'seo_description.max'=> 'توضیحات متا نباید بیشتر از ۵۰۰ کاراکتر باشد.',
         ];
     }
 
@@ -92,6 +103,21 @@ class ProductAdminController extends Controller
             'created_at'  => now(),
             'updated_at'  => now(),
         ]);
+    }
+
+    /**
+     * پرچم‌های index/follow صفحه‌ی محصول.
+     *
+     * چک‌باکسِ تیک‌نخورده اصلا در درخواست نمی‌آید، به همین دلیل فرم کنار هر
+     * چک‌باکس یک input مخفی با مقدار صفر دارد؛ اینجا فقط تبدیل به boolean
+     * می‌شود تا مقدار «0» رشته‌ای وارد دیتابیس نشود.
+     */
+    private function robotsFlags(Request $request): array
+    {
+        return [
+            'robots_index'  => $request->boolean('robots_index'),
+            'robots_follow' => $request->boolean('robots_follow'),
+        ];
     }
 
     public function admin_list(Request $request)
@@ -149,6 +175,7 @@ class ProductAdminController extends Controller
 
         $data['slug'] = Str::slug($request->sku ?: $request->title);
         $data['is_special_offer'] = $request->boolean('is_special_offer');
+        $data += $this->robotsFlags($request);
         // تخفیف روی قیمت فروش اعمال می‌شود، نه روی regular_price که قیمت خرید است
         $discountPercent = (int) ($data['discount_percent'] ?? 0);
         unset($data['discount_percent']);
@@ -210,6 +237,7 @@ class ProductAdminController extends Controller
 
         $data = $request->only(self::EDITABLE_FIELDS);
         $data['is_special_offer'] = $request->boolean('is_special_offer');
+        $data += $this->robotsFlags($request);
         // تخفیف روی قیمت فروش اعمال می‌شود، نه روی regular_price که قیمت خرید است
         $discountPercent = (int) ($data['discount_percent'] ?? 0);
         unset($data['discount_percent']);

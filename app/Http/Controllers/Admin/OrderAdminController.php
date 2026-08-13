@@ -169,6 +169,71 @@ class OrderAdminController extends Controller
             ->with('success', 'سفارش با موفقیت بروزرسانی شد');
     }
 
+    /**
+     * برچسب پستی یک سفارش — صفحه‌ای مخصوص چاپ که روی جعبه چسبانده می‌شود.
+     */
+    public function admin_label(Request $request, $id)
+    {
+        if (!Auth::user()) return redirect('/login');
+        access(388);
+
+        $orders = Order::with(['customer', 'items', 'address.province'])
+            ->where('id', $id)
+            ->get();
+
+        if ($orders->isEmpty()) {
+            abort(404);
+        }
+
+        return view('order.admin.label', [
+            'orders' => $orders,
+            'size'   => $this->labelSize($request),
+        ]);
+    }
+
+    /**
+     * چاپ گروهی برچسب برای سفارش‌های انتخاب‌شده در لیست؛ شناسه‌ها با کاما
+     * می‌آیند تا لینک قابل باز کردن در تب جدید باشد.
+     */
+    public function admin_labels(Request $request)
+    {
+        if (!Auth::user()) return redirect('/login');
+        access(388);
+
+        $ids = collect(explode(',', (string) $request->query('ids')))
+            ->map(fn ($id) => (int) trim($id))
+            ->filter()
+            ->unique()
+            ->take(200)     // یک درخواست نباید کل جدول سفارش‌ها را چاپ کند
+            ->values();
+
+        if ($ids->isEmpty()) {
+            return redirect('/admin/order/list')
+                ->with('error', 'هیچ سفارشی برای چاپ برچسب انتخاب نشده است.');
+        }
+
+        $orders = Order::with(['customer', 'items', 'address.province'])
+            ->whereIn('id', $ids)
+            ->orderBy('id', 'desc')
+            ->get();
+
+        if ($orders->isEmpty()) {
+            return redirect('/admin/order/list')
+                ->with('error', 'سفارشی با شناسه‌های انتخاب‌شده پیدا نشد.');
+        }
+
+        return view('order.admin.label', [
+            'orders' => $orders,
+            'size'   => $this->labelSize($request),
+        ]);
+    }
+
+    /** اندازه‌ی کاغذ برچسب: رول ۱۰×۱۵ یا چهارتایی روی A4 */
+    private function labelSize(Request $request): string
+    {
+        return $request->query('size') === 'a4' ? 'a4' : '10x15';
+    }
+
     /** حذف سفارش */
     public function admin_destroy($id)
     {

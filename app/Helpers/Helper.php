@@ -157,15 +157,202 @@ function contactPriceLabel(): string
 }
 
 /** شماره‌ی تماس فروشگاه برای دکمه‌های «تماس بگیرید» (tel:). */
+/**
+ * مشخصات تماس از پنل تنظیمات خوانده می‌شود و اگر ثبت نشده باشد به مقدار
+ * config/seo.php برمی‌گردد، تا سایت پیش از اولین ذخیره هم درست کار کند.
+ */
+function siteSetting(string $key, $default = null)
+{
+    return \App\Models\Setting::get($key, $default);
+}
+
 function shopContactPhone(): string
 {
+    $raw = siteSetting('contact_phone');
+
+    if ($raw) {
+        // شماره‌ی ۰۹۱۲... را به قالب بین‌المللی tel: تبدیل می‌کند
+        $latin = strtr($raw, ['۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
+                              '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9']);
+        $digits = preg_replace('/\D/', '', $latin);
+
+        return str_starts_with($digits, '0') ? '+98' . substr($digits, 1) : $digits;
+    }
+
     return (string) seo_config('business.phone', '+989127471631');
 }
 
 /** همان شماره برای نمایش، با ارقام فارسی. */
 function shopContactPhoneDisplay(): string
 {
-    return (string) seo_config('business.phone_display', '۰۹۱۲۷۴۷۱۶۳۱');
+    $raw = siteSetting('contact_phone');
+
+    return $raw
+        ? toPersianNumbers($raw, false)
+        : (string) seo_config('business.phone_display', '۰۹۱۲۷۴۷۱۶۳۱');
+}
+
+/** نام کارشناس پشتیبانی که در هدر و منو نمایش داده می‌شود. */
+function shopExpertName(): string
+{
+    return (string) siteSetting('expert_name', 'علی حاجی ناظری');
+}
+
+/** ساعت کاری فروشگاه. */
+function shopWorkingHours(): string
+{
+    return (string) siteSetting('working_hours', 'شنبه تا پنج‌شنبه ۹ الی ۱۸');
+}
+
+/**
+ * مشخصات حساب فروشگاه برای کارت‌به‌کارت و واریز بانکی.
+ *
+ * وقتی پرداخت آنلاین خاموش است، مشتری باید بداند پول را کجا بریزد و بعد
+ * رسیدش را در پنل ثبت کند. مقادیر از تنظیمات پنل خوانده می‌شوند.
+ */
+function bankTransferInfo(): array
+{
+    return [
+        'bank_name'    => (string) siteSetting('bank_name', ''),
+        'card_number'  => (string) siteSetting('bank_card_number', ''),
+        'sheba'        => (string) siteSetting('bank_sheba', ''),
+        'account_name' => (string) siteSetting('bank_account_name', ''),
+    ];
+}
+
+/** آیا حداقل شماره کارت یا شبا در تنظیمات ثبت شده است؟ */
+function bankTransferConfigured(): bool
+{
+    $info = bankTransferInfo();
+
+    return $info['card_number'] !== '' || $info['sheba'] !== '';
+}
+
+/**
+ * تبدیل ارقام فارسی/عربی به لاتین.
+ *
+ * کاربر ایرانی مبلغ و شماره پیگیری را با کیبورد فارسی می‌نویسد؛ بدون این
+ * تبدیل، اعتبارسنجی عددی رد می‌کند و مبلغ درست هم ذخیره نمی‌شود.
+ */
+function toLatinDigits($value): string
+{
+    return strtr((string) $value, [
+        '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
+        '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
+        '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4',
+        '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
+    ]);
+}
+
+/**
+ * تعداد رسیدهای پرداختِ منتظر بررسی؛ برای نشان قرمز کنار منوی پنل.
+ * خطای دیتابیس (مثلا پیش از اجرای مایگریشن) نباید پنل را از کار بیندازد.
+ */
+function pendingPaymentReceiptsCount(): int
+{
+    try {
+        return \App\Models\Payment::awaitingReview()->count();
+    } catch (\Throwable $e) {
+        return 0;
+    }
+}
+
+/** نظر تأییدنشده نه روی صفحه‌ی محصول دیده می‌شود و نه وارد امتیاز گوگل. */
+function pendingProductReviewsCount(): int
+{
+    try {
+        return \App\Models\ProductReview::where('status', \App\Models\ProductReview::STATUS_PENDING)->count();
+    } catch (\Throwable $e) {
+        return 0;
+    }
+}
+
+/**
+ * نشانی فروشگاه؛ روی برچسب پستی به عنوان «فرستنده» چاپ می‌شود و اگر در
+ * تنظیمات پر نشده باشد جای آن روی برچسب خالی می‌ماند.
+ */
+function shopAddress(): string
+{
+    return (string) siteSetting('shop_address', '');
+}
+
+/** کد پستی فروشگاه برای بخش فرستنده‌ی برچسب. */
+function shopPostalCode(): string
+{
+    return (string) siteSetting('shop_postal_code', '');
+}
+
+/**
+ * بارکد Code128-B به صورت SVG درون‌خطی.
+ *
+ * برچسب پستی باید با اسکنر انبار خوانده شود، ولی پروژه هیچ کتابخانه‌ی
+ * بارکدی ندارد و افزودن پکیج برای یک صفحه‌ی چاپ منطقی نیست؛ پس جدول
+ * استاندارد Code128 همین‌جا پیاده شده است. خروجی SVG است تا روی کاغذ
+ * (برخلاف تصویر بیت‌مپ) لبه‌های تیز و قابل اسکن بدهد.
+ *
+ * @param string $text  فقط ASCII چاپی (۳۲ تا ۱۲۶)؛ کاراکتر خارج از این بازه حذف می‌شود.
+ * @param int    $height ارتفاع میله‌ها به پیکسل
+ * @param float  $module عرض باریک‌ترین میله به پیکسل
+ */
+function barcode_code128_svg(string $text, int $height = 45, float $module = 1.6): string
+{
+    // ۱۰۷ الگوی استاندارد Code128؛ هر رقم عرض یک میله/فاصله بر حسب مادول است
+    static $patterns = [
+        '212222','222122','222221','121223','121322','131222','122213','122312','132212','221213',
+        '221312','231212','112232','122132','122231','113222','123122','123221','223211','221132',
+        '221231','213212','223112','312131','311222','321122','321221','312212','322112','322211',
+        '212123','212321','232121','111323','131123','131321','112313','132113','132311','211313',
+        '231113','231311','112133','112331','132131','113123','113321','133121','313121','211331',
+        '231131','213113','213311','213131','311123','311321','331121','312113','312311','332111',
+        '314111','221411','431111','111224','111422','121124','121421','141122','141221','112214',
+        '112412','122114','122411','142112','142211','241211','221114','413111','241112','134111',
+        '111242','121142','121241','114212','124112','124211','411212','421112','421211','212141',
+        '214121','412121','111143','111341','131141','114113','114311','411113','411311','113141',
+        '114131','311141','411131','211412','211214','211232','2331112',
+    ];
+
+    $clean = preg_replace('/[^\x20-\x7E]/', '', $text);
+
+    if ($clean === '') {
+        return '';
+    }
+
+    $codes = [104];                       // START B
+    $checksum = 104;
+
+    foreach (str_split($clean) as $i => $char) {
+        $value     = ord($char) - 32;
+        $codes[]   = $value;
+        $checksum += $value * ($i + 1);
+    }
+
+    $codes[] = $checksum % 103;           // رقم کنترلی
+    $codes[] = 106;                       // STOP
+
+    $x    = 0.0;
+    $bars = '';
+
+    foreach ($codes as $code) {
+        $isBar = true;
+
+        foreach (str_split($patterns[$code]) as $width) {
+            $w = (int) $width * $module;
+
+            if ($isBar) {
+                $bars .= '<rect x="' . round($x, 2) . '" y="0" width="' . round($w, 2)
+                       . '" height="' . $height . '"/>';
+            }
+
+            $x    += $w;
+            $isBar = ! $isBar;
+        }
+    }
+
+    $total = round($x, 2);
+
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="' . $total . '" height="' . $height
+         . '" viewBox="0 0 ' . $total . ' ' . $height . '" shape-rendering="crispEdges" fill="#000">'
+         . $bars . '</svg>';
 }
 
 /**
@@ -742,9 +929,81 @@ function resizeMainImage($BaseFilename, $_w, $_h, $cache = FALSE, $cache_key = '
 | مقادیر پایه در config/seo.php نگهداری می‌شوند.
 */
 
+/**
+ * کلیدهای سئو که مدیر می‌تواند از پنل تغییرشان بدهد.
+ *
+ * بقیه‌ی کلیدهای config/seo.php عمدا اینجا نیستند: ساختار اسکیما و قواعد
+ * کانونیکال، تصمیم فنی‌اند نه تنظیمِ روزمره، و تغییرشان از پنل بیشتر
+ * ریسک است تا امکان.
+ */
+const SEO_EDITABLE_KEYS = [
+    'default_title',
+    'default_description',
+    'default_keywords',
+    'verification.google',
+    'verification.bing',
+    'verification.yandex',
+    'verification.enamad',
+    'analytics.ga4',
+    'analytics.gtm',
+    'analytics.clarity',
+    'business.phone',
+    'business.email',
+    'business.street',
+    'business.city',
+    'business.region',
+    'business.postal_code',
+    'business.latitude',
+    'business.longitude',
+];
+
+/**
+ * مقدارِ تنظیم‌شده در پنل بر config/seo.php مقدم است.
+ *
+ * تا پیش از این، برای عوض کردن کد تأیید سرچ‌کنسول باید فایل .env روی سرور
+ * ویرایش و کش کانفیگ پاک می‌شد. مقدار خالی در دیتابیس یعنی «تنظیم نشده»
+ * و همان مقدار فایل کانفیگ برمی‌گردد.
+ */
 function seo_config(string $key, $default = null)
 {
-    return config('seo.' . $key, $default);
+    $overrides = seo_setting_overrides();
+
+    if (in_array($key, SEO_EDITABLE_KEYS, true) && isset($overrides[$key])) {
+        return $overrides[$key];
+    }
+
+    $value = config('seo.' . $key, $default);
+
+    // کلیدهای آرایه‌ای (مثل verification) باید مقادیر دستی زیرشاخه‌ها را هم بگیرند
+    if (is_array($value)) {
+        foreach ($overrides as $overrideKey => $overrideValue) {
+            if (str_starts_with($overrideKey, $key . '.')) {
+                data_set($value, substr($overrideKey, strlen($key) + 1), $overrideValue);
+            }
+        }
+    }
+
+    return $value;
+}
+
+/** مقادیر سئویِ ذخیره‌شده در جدول settings، با پیشوند seo_. */
+function seo_setting_overrides(): array
+{
+    static $cache = null;
+
+    if ($cache !== null) {
+        return $cache;
+    }
+
+    $cache = [];
+    foreach (SEO_EDITABLE_KEYS as $key) {
+        $value = \App\Models\Setting::get('seo_' . str_replace('.', '_', $key));
+        if ($value !== null && $value !== '') {
+            $cache[$key] = $value;
+        }
+    }
+
+    return $cache;
 }
 
 function seo_site_name(): string
@@ -1283,6 +1542,48 @@ function seo_product_schema($product, array $images = [], ?array $breadcrumb = n
         ]);
     }
 
+    /*
+    | امتیاز کاربران. بدون aggregateRating، گوگل ستاره‌ی نتیجه را نشان
+    | نمی‌دهد. مقادیر باید از نظرهای واقعیِ تأییدشده بیایند؛ ساختن ستاره‌ی
+    | جعلی، جریمه‌ی دستیِ Structured Data به همراه دارد.
+    */
+    $ratingCount = (int) ($product->rating_count ?? 0);
+    if ($ratingCount > 0 && ! empty($product->rating_avg)) {
+        $schema['aggregateRating'] = [
+            '@type' => 'AggregateRating',
+            'ratingValue' => (string) round((float) $product->rating_avg, 1),
+            'reviewCount' => $ratingCount,
+            'bestRating' => '5',
+            'worstRating' => '1',
+        ];
+
+        $reviews = [];
+        foreach ($product->relationLoaded('approvedReviews') ? $product->approvedReviews : [] as $review) {
+            $reviews[] = [
+                '@type' => 'Review',
+                'reviewRating' => [
+                    '@type' => 'Rating',
+                    'ratingValue' => (string) $review->rating,
+                    'bestRating' => '5',
+                    'worstRating' => '1',
+                ],
+                'author' => ['@type' => 'Person', 'name' => $review->name],
+                'datePublished' => optional($review->created_at)->toDateString(),
+                'name' => $review->title ?: null,
+                'reviewBody' => seo_description((string) $review->comment, 400),
+            ];
+
+            // چند نظر نمونه کافی است؛ فرستادن ده‌ها نظر فقط حجم صفحه را بالا می‌برد.
+            if (count($reviews) >= 5) {
+                break;
+            }
+        }
+
+        if ($reviews) {
+            $schema['review'] = $reviews;
+        }
+    }
+
     if ($breadcrumb) {
         $schema['breadcrumb'] = ['@id' => $url . '#breadcrumb'];
     }
@@ -1379,6 +1680,36 @@ function seo_article_schema(array $data): array
 function seo_base_schema(): array
 {
     return [seo_organization_schema(), seo_website_schema(), seo_store_schema()];
+}
+
+/**
+ * شناسه‌ی محصولاتی که مشتریِ واردشده به علاقه‌مندی‌ها اضافه کرده است.
+ * یک بار در هر ریکوئست خوانده و کش می‌شود تا لیست محصولات به‌ازای هر کارت
+ * یک کوئری جدا نزند.
+ */
+function customer_favorite_ids(): array
+{
+    static $ids = null;
+
+    if ($ids !== null) {
+        return $ids;
+    }
+
+    $user = \Illuminate\Support\Facades\Auth::guard('customer')->user();
+    if (! $user) {
+        return $ids = [];
+    }
+
+    return $ids = \Illuminate\Support\Facades\DB::table('product_favorites')
+        ->where('user_id', $user->id)
+        ->pluck('product_id')
+        ->all();
+}
+
+/** آیا این محصول در علاقه‌مندی‌های مشتریِ واردشده هست؟ */
+function is_favorite_product($productId): bool
+{
+    return in_array((int) $productId, array_map('intval', customer_favorite_ids()), true);
 }
 
 /**

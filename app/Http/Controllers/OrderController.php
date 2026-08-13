@@ -34,7 +34,11 @@ class OrderController extends Controller
         }
         // کارت سفارش تعداد اقلام را نشان می‌دهد؛ بدون eager load به ازای هر
         // سفارش یک کوئری جدا اجرا می‌شد.
-        $orders = Order::with('items')->where('customer_id', $user->id)->latest()->paginate(10);
+        // pendingReceipt هم eager می‌شود چون کارت سفارش وضعیت رسید را نشان می‌دهد
+        $orders = Order::with(['items', 'pendingReceipt'])
+            ->where('customer_id', $user->id)
+            ->latest()
+            ->paginate(10);
         return View('order.orders', compact('orders'));
     }
 
@@ -45,8 +49,22 @@ class OrderController extends Controller
         if (! $user) {
             return redirect('/login');
         }
-        $order = Order::where('customer_id', $user->id)->where('id', $id)->first();
-        return View('order.orderItems', compact('order'));
+        $order = Order::with(['items.product', 'payments'])
+            ->where('customer_id', $user->id)
+            ->where('id', $id)
+            ->first();
+
+        if (! $order) {
+            return redirect('/profile/orders')->with('error', 'این سفارش پیدا نشد.');
+        }
+
+        // آخرین رسید دستی؛ صفحه‌ی جزئیات وضعیتش را به مشتری نشان می‌دهد
+        $receipt = $order->payments
+            ->where('gateway', \App\Models\Payment::GATEWAY_MANUAL)
+            ->sortByDesc('id')
+            ->first();
+
+        return View('order.orderItems', compact('order', 'receipt'));
     }
 
     function view(Request $request, $id = null)

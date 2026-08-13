@@ -118,6 +118,56 @@ class UserController extends Controller
         'mobile.regex'    => 'شماره موبایل باید ۱۱ رقم و به شکل ۰۹۱۲۳۴۵۶۷۸۹ باشد.',
     ];
 
+    /**
+     * ورود با رمز عبور، به‌عنوان راه دوم در کنار کد یکبارمصرف.
+     * کاربری که رمز تنظیم نکرده باشد به همان مسیر پیامکی هدایت می‌شود.
+     */
+    public function loginWithPassword(Request $request)
+    {
+        $request->merge(['mobile' => self::normalizeMobile($request->mobile)]);
+
+        $request->validate(
+            self::MOBILE_RULES + ['password' => 'required|string'],
+            self::MOBILE_MESSAGES + ['password.required' => 'رمز عبور را وارد کنید.']
+        );
+
+        // همان محدودیتی که روی ارسال کد هست، اینجا هم لازم است تا رمز را
+        // نشود با تلاش پشت‌سرهم حدس زد.
+        $key = 'login-password-' . $request->mobile;
+        if (RateLimiter::tooManyAttempts($key, 5)) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'تعداد تلاش زیاد است. لطفا ' . RateLimiter::availableIn($key) . ' ثانیه صبر کنید.',
+            ], 429);
+        }
+        RateLimiter::hit($key, 300);
+
+        $user = Customer::where('phone', $request->mobile)->first();
+
+        if (! $user || empty($user->password)) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'برای این شماره رمز عبوری ثبت نشده است. با کد پیامکی وارد شوید.',
+            ], 422);
+        }
+
+        if (! Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'شماره موبایل یا رمز عبور درست نیست.',
+            ], 422);
+        }
+
+        RateLimiter::clear($key);
+        Auth::guard('customer')->login($user, true);
+        $request->session()->regenerate();
+
+        return response()->json([
+            'status'   => 'success',
+            'redirect' => session()->pull('url.intended', '/dashboard'),
+        ]);
+    }
+
     public function sendOtp(Request $request)
     {
         $request->merge(['mobile' => self::normalizeMobile($request->mobile)]);

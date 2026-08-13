@@ -125,6 +125,96 @@
             </div>
         </div>
 
+        <div class="admin-card-title mt-4"><i class="fas fa-building-columns"></i> حساب فروشگاه (کارت به کارت / واریز)</div>
+        <div class="alert" style="background:#eef4ff; border:1px solid #c9dcff; border-radius:10px; font-size:0.78rem; color:#2c4b8b; line-height:2;">
+            <i class="fas fa-info-circle me-1"></i>
+            این مشخصات در صفحه‌ی «ثبت رسید پرداخت» به مشتری نشان داده می‌شود. مشتری بعد از واریز، رسیدش را ثبت می‌کند و شما
+            در <a href="/admin/payment/list">صفحه‌ی پرداخت‌ها</a> آن را تأیید یا رد می‌کنید. اگر خالی بگذارید، به مشتری گفته می‌شود
+            شماره حساب را تلفنی بگیرد.
+        </div>
+        <div class="row">
+            <div class="col-md-3 mb-3">
+                <label class="form-label" style="font-size:0.85rem; font-weight:600; color:#555;">نام بانک</label>
+                <input type="text" name="bank_name" class="form-control"
+                       value="{{ old('bank_name', $bank['bank_name']) }}" placeholder="ملت">
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label" style="font-size:0.85rem; font-weight:600; color:#555;">شماره کارت</label>
+                <input type="text" name="bank_card_number" class="form-control" dir="ltr"
+                       value="{{ old('bank_card_number', $bank['card_number']) }}" placeholder="6104337812345678">
+                <small class="d-block mt-1" style="font-size:0.75rem; color:#888;">فقط ارقام ذخیره می‌شود.</small>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label" style="font-size:0.85rem; font-weight:600; color:#555;">شماره شبا</label>
+                <input type="text" name="bank_sheba" class="form-control" dir="ltr"
+                       value="{{ old('bank_sheba', $bank['sheba']) }}" placeholder="IR120570028780010957775101">
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label" style="font-size:0.85rem; font-weight:600; color:#555;">نام صاحب حساب</label>
+                <input type="text" name="bank_account_name" class="form-control"
+                       value="{{ old('bank_account_name', $bank['account_name']) }}">
+            </div>
+        </div>
+
+        <div class="admin-card-title mt-4"><i class="fas fa-headset"></i> مشخصات کارشناس پشتیبانی</div>
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="form-label" style="font-size:0.85rem; font-weight:600; color:#555;">نام کارشناس</label>
+                <input type="text" name="expert_name" class="form-control"
+                       value="{{ old('expert_name', $contact['expert_name']) }}">
+                <small class="d-block mt-1" style="font-size:0.75rem; color:#888;">در نوار بالای سایت و منوی اصلی نمایش داده می‌شود.</small>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label" style="font-size:0.85rem; font-weight:600; color:#555;">شماره تماس</label>
+                <input type="text" name="contact_phone" class="form-control" dir="ltr"
+                       value="{{ old('contact_phone', $contact['contact_phone']) }}" placeholder="09121234567">
+                <small class="d-block mt-1" style="font-size:0.75rem; color:#888;">هم برای نمایش و هم برای لینک تماس استفاده می‌شود.</small>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label" style="font-size:0.85rem; font-weight:600; color:#555;">ساعت کاری</label>
+                <input type="text" name="working_hours" class="form-control"
+                       value="{{ old('working_hours', $contact['working_hours']) }}">
+            </div>
+        </div>
+
+        <div class="admin-card-title mt-4"><i class="fas fa-tag"></i> نشانی فرستنده (برچسب پستی)</div>
+        <div class="row">
+            <div class="col-md-8 mb-3">
+                <label class="form-label" style="font-size:0.85rem; font-weight:600; color:#555;">نشانی فروشگاه</label>
+                <input type="text" name="shop_address" class="form-control"
+                       value="{{ old('shop_address', $contact['shop_address']) }}"
+                       placeholder="قم، خیابان ...، پلاک ...">
+                <small class="d-block mt-1" style="font-size:0.75rem; color:#888;">در بخش «فرستنده» برچسب پستی چاپ می‌شود؛ برای مرسولات مرجوعی لازم است.</small>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label" style="font-size:0.85rem; font-weight:600; color:#555;">کد پستی فروشگاه</label>
+                <input type="text" name="shop_postal_code" class="form-control" dir="ltr"
+                       value="{{ old('shop_postal_code', $contact['shop_postal_code']) }}" placeholder="3714000000">
+            </div>
+        </div>
+
+        <div class="admin-card-title mt-4"><i class="fas fa-comment-sms"></i> متن پیامک‌ها</div>
+        <div class="alert" style="background:#eef4ff; border:1px solid #c9dcff; border-radius:10px; font-size:0.78rem; color:#2c4b8b; line-height:2;">
+            <i class="fas fa-info-circle me-1"></i>
+            در متن‌ها می‌توانید از این جانگهدارها استفاده کنید؛ هنگام ارسال با مقدار واقعی جایگزین می‌شوند:
+            <div class="mt-2 d-flex flex-wrap gap-2">
+                @foreach($smsPlaceholders as $token => $description)
+                    <span class="badge" style="background:#fff; color:#2c4b8b; border:1px solid #c9dcff; font-weight:600;" dir="ltr">{{ $token }}</span>
+                    <span style="font-size:0.72rem; color:#5a76b5;">{{ $description }}</span>
+                @endforeach
+            </div>
+            <div class="mt-2">اگر متنی را <strong>خالی</strong> بگذارید، آن پیامک و اعلانش اصلاً ارسال نمی‌شود.</div>
+        </div>
+        <div class="row">
+            @foreach($smsEvents as $event => $config)
+                <div class="col-md-6 mb-3">
+                    <label class="form-label" style="font-size:0.85rem; font-weight:600; color:#555;">{{ $config['label'] }}</label>
+                    <textarea name="sms[{{ $event }}]" rows="3" class="form-control"
+                              style="font-size:0.82rem; line-height:2;">{{ old('sms.' . $event, $smsTemplates[$event]) }}</textarea>
+                </div>
+            @endforeach
+        </div>
+
         <div class="text-end mt-3">
             <button type="submit" class="btn"
                     style="background:var(--admin-primary); color:#fff; border-radius:8px; font-size:0.88rem; padding:10px 24px;">

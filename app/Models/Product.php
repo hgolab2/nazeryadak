@@ -42,6 +42,13 @@ class Product extends Model
         'isaco_url',
         'stock',
         'car_model',
+        // سئوی دستی؛ خالی بودنشان یعنی مقدار خودکار صفحه‌ی محصول استفاده شود
+        'seo_title',
+        'seo_description',
+        'focus_keyword',
+        'canonical_url',
+        'robots_index',
+        'robots_follow',
     ];
 
     protected $casts = [
@@ -52,6 +59,8 @@ class Product extends Model
         'is_special_offer' => 'boolean',
         'weight'        => 'integer',
         'is_active'     => 'boolean',
+        'robots_index'  => 'boolean',
+        'robots_follow' => 'boolean',
     ];
 
     /**
@@ -182,6 +191,19 @@ class Product extends Model
         return $this->hasMany(ProductInCategory::class, 'product_id');
     }
 
+    public function reviews()
+    {
+        return $this->hasMany(ProductReview::class)->orderByDesc('id');
+    }
+
+    /** فقط نظرهای تأییدشده روی صفحه‌ی محصول و در اسکیما می‌آیند. */
+    public function approvedReviews()
+    {
+        return $this->hasMany(ProductReview::class)
+            ->where('status', ProductReview::STATUS_APPROVED)
+            ->orderByDesc('id');
+    }
+
     public function category()
     {
         return $this->categories();
@@ -191,6 +213,132 @@ class Product extends Model
     {
         $slug = seo_slug(trim(($this->sku ? $this->sku . '-' : '') . $this->title), (string) $this->id);
         return '/product/' . $this->id . '/' . $slug;
+    }
+
+    /* --------------------------------------------------------------- سئو ---
+     | عنوان و توضیحات متا تا پیش از این فقط داخل صفحه‌ی محصول ساخته می‌شد.
+     | حالا مقدار خودکار اینجاست تا هم صفحه‌ی محصول و هم پیش‌نمایشِ فرم
+     | مدیریت دقیقا یک متن را نشان بدهند، و مقدار دستیِ مدیر (در صورت وجود)
+     | جای آن را بگیرد.
+     */
+
+    /**
+     * عنوان پیش‌فرض: «خرید {نام قطعه} کد {کد ایساکو}».
+     * کد فنی عمدا داخل عنوان می‌آید چون بخش بزرگی از جستجوها با همان کد است.
+     */
+    public function autoSeoTitle(): string
+    {
+        return seo_title('خرید ' . $this->title . ($this->isaco_code ? ' کد ' . $this->isaco_code : ''));
+    }
+
+    /**
+     * توضیحات پیش‌فرض متا. توضیحات کوتاه‌تر از ۸۰ کاراکتر معمولا توسط گوگل
+     * کنار گذاشته و با متن دلخواه جایگزین می‌شود؛ در آن حالت یک جمله‌ی کامل
+     * از روی نام، کد فنی و مدل خودرو ساخته می‌شود.
+     */
+    public function autoSeoDescription(): string
+    {
+        $description = seo_description($this->description ?: ($this->short_description ?: ''));
+
+        if (mb_strlen($description) >= 80) {
+            return $description;
+        }
+
+        return seo_description(
+            'خرید ' . $this->title
+            . ($this->sku ? ' با کد فنی ' . $this->sku : '')
+            . ($this->car_model ? ' مناسب ' . $this->car_model : '')
+            . ' اصل و دارای ضمانت اصالت کالا، قیمت روز و ارسال سریع به سراسر ایران از فروشگاه ناظر یدک.'
+        );
+    }
+
+    /**
+     * پیش‌نویس توضیحات قطعه، از روی داده‌هایی که قبلا در دیتابیس هست.
+     *
+     * ۶۲٪ محصولات توضیحات ندارند و نوشتن دستی برای ۲۵۰۰ قطعه عملی نیست.
+     * این متن جای نویسنده را نمی‌گیرد — یک نقطه‌ی شروع است که مدیر ویرایشش
+     * می‌کند. عمدا از جمله‌بندی متنوع استفاده می‌شود تا هزاران صفحه با متن
+     * کاملا یکسان تولید نشوند؛ متن تکراری در مقیاس، خودش مشکل سئویی است.
+     */
+    public function generateDescription(): string
+    {
+        $name = trim((string) $this->title);
+        if ($name === '') {
+            return '';
+        }
+
+        $car = trim((string) $this->car_model);
+        $category = $this->categoryLabelForSeo();
+
+        $paragraphs = [];
+
+        // بند اول: معرفی، کد فنی و تناسب با خودرو
+        $intro = $name . ($car ? ' مناسب ' . $car : '') . ' یکی از قطعات'
+            . ($category ? ' گروه ' . $category : '') . ' موجود در فروشگاه ناظر یدک است.';
+        if ($this->isaco_code) {
+            $intro .= ' کد فنی این قطعه ' . $this->isaco_code . ' است؛ پیش از خرید، کد روی قطعه‌ی فعلی خودرو را با همین کد مقایسه کنید.';
+        } elseif ($this->sku) {
+            $intro .= ' کد انبار این قطعه ' . $this->sku . ' است.';
+        }
+        $paragraphs[] = $intro;
+
+        // بند دوم: اصالت و ضمانت — متن بر اساس id چرخش می‌کند تا یکسان نشود
+        $assurance = [
+            'همه‌ی قطعات ناظر یدک با ضمانت اصالت کالا عرضه می‌شوند و در صورت مغایرت، امکان مرجوعی تا ۷ روز وجود دارد.',
+            'این قطعه با تضمین اصالت ارائه می‌شود؛ در صورت ناسازگاری با خودرو، طبق شرایط بازگشت کالا قابل مرجوع کردن است.',
+            'اصالت این کالا تضمین شده است و در صورت عدم تطابق با کد فنی سفارش، هزینه بازگردانده می‌شود.',
+        ];
+        $paragraphs[] = $assurance[$this->id % count($assurance)];
+
+        // بند سوم: راهنمای خرید
+        $guide = $car
+            ? 'اگر از تناسب این قطعه با ' . $car . ' خود مطمئن نیستید، شماره‌ی شاسی یا کد فنی قطعه‌ی قبلی را برای کارشناسان ما بفرستید تا پیش از ثبت سفارش بررسی شود.'
+            : 'اگر از تناسب این قطعه با خودروی خود مطمئن نیستید، کد فنی قطعه‌ی قبلی را برای کارشناسان ما بفرستید تا پیش از ثبت سفارش بررسی شود.';
+        $paragraphs[] = $guide;
+
+        return '<p>' . implode('</p><p>', $paragraphs) . '</p>';
+    }
+
+    /** برچسب دسته‌بندی برای متن‌های سئویی؛ از جدول واسط یا ستون محصول. */
+    public function categoryLabelForSeo(): ?string
+    {
+        $categoryId = $this->category_id;
+
+        if (! $categoryId && $this->relationLoaded('categories')) {
+            $categoryId = optional($this->categories->firstWhere(
+                fn ($row) => $row->category_id >= 1 && $row->category_id <= 11
+            ))->category_id;
+        }
+
+        return $categoryId
+            ? (\App\Enums\ProductCategory::tryFrom((int) $categoryId)?->label())
+            : null;
+    }
+
+    public function seoTitle(): string
+    {
+        return $this->seo_title ?: $this->autoSeoTitle();
+    }
+
+    public function seoDescription(): string
+    {
+        return $this->seo_description
+            ? seo_description($this->seo_description)
+            : $this->autoSeoDescription();
+    }
+
+    /** آدرس کانونیکال دستی فقط وقتی استفاده می‌شود که مدیر صراحتا واردش کرده باشد. */
+    public function seoCanonical(): string
+    {
+        return $this->canonical_url ?: seo_url($this->url());
+    }
+
+    public function seoRobotsTag(): string
+    {
+        return seo_robots_tag(
+            (bool) ($this->robots_index ?? true),
+            (bool) ($this->robots_follow ?? true)
+        );
     }
 
     public function image()
@@ -221,7 +369,12 @@ class Product extends Model
 
     public function favorites()
     {
-        return $this->belongsToMany(User::class, 'product_favorites', 'product_id', 'user_id')->withPivot('pin')->withTimestamps();
+        /*
+        | ستون user_id در product_favorites شناسه‌ی مشتری است نه کاربر ادمین.
+        | جدول users کلید اصلی‌اش user_id است و اصلاً به این رابطه ربطی ندارد؛
+        | اگر به User وصل شود، join بی‌نتیجه می‌ماند و لیست علاقه‌مندی‌ها خالی درمی‌آید.
+        */
+        return $this->belongsToMany(Customer::class, 'product_favorites', 'product_id', 'user_id')->withPivot('pin')->withTimestamps();
     }
 
     /**

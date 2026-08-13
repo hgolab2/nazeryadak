@@ -585,6 +585,265 @@
 }
 
 /* ==========================================================================
+   پیام «به سبد خرید اضافه شد»
+   به‌جای toast پیش‌فرض SweetAlert؛ نام قطعه و راه ادامه‌ی کار را نشان می‌دهد.
+   ========================================================================== */
+
+.nx-cart-toast {
+    position: fixed;
+    top: 18px;
+    left: 50%;
+    z-index: 2000;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    width: min(400px, calc(100% - 24px));
+    padding: 14px;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 14px 40px rgba(35, 37, 78, .18);
+    transform: translate(-50%, -16px);
+    opacity: 0;
+    transition: opacity .22s ease, transform .22s ease;
+}
+
+.nx-cart-toast.is-visible {
+    transform: translate(-50%, 0);
+    opacity: 1;
+}
+
+.nx-cart-toast-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #e9f7ef;
+    color: #17a566;
+    font-size: 17px;
+}
+
+.nx-cart-toast-body {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.nx-cart-toast-body b {
+    display: block;
+    color: var(--nx-ink, #23254e);
+    font-size: 13.5px;
+    font-weight: 800;
+}
+
+.nx-cart-toast-body p {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    margin: 5px 0 0;
+    /* عنوان‌های بلند قطعات گاهی سه خط می‌شوند؛ max-height تضمین دو خط است */
+    max-height: 3.6em;
+    overflow: hidden;
+    color: var(--nx-muted, #81858b);
+    font-size: 12px;
+    line-height: 1.8;
+}
+
+.nx-cart-toast-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.nx-cart-toast-actions a,
+.nx-cart-toast-actions button {
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 34px;
+    padding: 0 14px;
+    border: 1px solid var(--nx-line, #e0e0e2);
+    border-radius: var(--nx-radius, 8px);
+    background: #fff;
+    color: var(--nx-ink, #23254e);
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.nx-cart-toast-actions .is-primary {
+    border-color: var(--nx-red, #ef4056);
+    background: var(--nx-red, #ef4056);
+    color: #fff;
+}
+
+.nx-cart-toast-close {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--nx-muted, #81858b);
+    font-size: 15px;
+    line-height: 24px;
+    cursor: pointer;
+}
+
+.nx-cart-toast-close:hover {
+    background: var(--nx-soft, #f0f0f1);
+}
+
+@media (max-width: 575px) {
+    /* روی موبایل پایین می‌نشیند تا جلوی محتوا و نوار پایین را نگیرد */
+    .nx-cart-toast {
+        top: auto;
+        bottom: 76px;
+        transform: translate(-50%, 16px);
+    }
+
+    .nx-cart-toast.is-visible {
+        transform: translate(-50%, 0);
+    }
+}
+
+/* ==========================================================================
+   کمبوباکس جستجوپذیر (فیلتر «خودرو مناسب» در فروشگاه)
+   لیست ۳۱ خودرویی در یک select ساده پیمایش‌پذیر نبود.
+   ========================================================================== */
+
+.nx-combo {
+    position: relative;
+}
+
+.nx-combo select {
+    display: none;
+}
+
+.nx-combo-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 0 12px;
+    border: 1px solid var(--nx-line, #e0e0e2);
+    border-radius: var(--nx-radius, 8px);
+    background: #fff;
+    cursor: text;
+}
+
+.nx-combo.is-open .nx-combo-control {
+    border-color: var(--nx-red, #ef4056);
+}
+
+.nx-combo-control > i {
+    flex-shrink: 0;
+    color: var(--nx-muted, #81858b);
+    font-size: 13px;
+}
+
+.nx-combo-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 40px;
+    border: 0;
+    background: transparent;
+    color: var(--nx-ink, #23254e);
+    font-family: inherit;
+    font-size: 13px;
+}
+
+.nx-combo-input:focus {
+    outline: none;
+}
+
+.nx-combo-input::placeholder {
+    color: var(--nx-muted, #81858b);
+}
+
+.nx-combo-clear {
+    display: none;
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: var(--nx-soft, #f0f0f1);
+    color: var(--nx-muted, #81858b);
+    font-size: 11px;
+    line-height: 22px;
+    cursor: pointer;
+}
+
+.nx-combo.has-value .nx-combo-clear {
+    display: block;
+}
+
+.nx-combo-clear:hover {
+    background: var(--nx-red, #ef4056);
+    color: #fff;
+}
+
+.nx-combo-list {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    left: 0;
+    z-index: 30;
+    display: none;
+    max-height: 244px;
+    margin: 0;
+    padding: 6px;
+    border: 1px solid var(--nx-line, #e0e0e2);
+    border-radius: var(--nx-radius, 8px);
+    background: #fff;
+    box-shadow: 0 12px 28px rgba(35, 37, 78, .14);
+    overflow-y: auto;
+    list-style: none;
+}
+
+.nx-combo.is-open .nx-combo-list {
+    display: block;
+}
+
+.nx-combo-list li {
+    padding: 9px 12px;
+    border-radius: 6px;
+    color: var(--nx-text, #3f4064);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.nx-combo-list li:hover,
+.nx-combo-list li.is-highlighted {
+    background: var(--nx-red-soft, #fff1f3);
+    color: var(--nx-red, #ef4056);
+}
+
+.nx-combo-list li.is-selected {
+    color: var(--nx-red, #ef4056);
+    font-weight: 800;
+}
+
+.nx-combo-list li.is-empty {
+    color: var(--nx-muted, #81858b);
+    text-align: center;
+    cursor: default;
+}
+
+.nx-combo-list li.is-empty:hover {
+    background: transparent;
+    color: var(--nx-muted, #81858b);
+}
+
+/* ==========================================================================
    واکنش‌گرایی
    ========================================================================== */
 
@@ -707,5 +966,181 @@
     .nx-notif-time {
         width: 100%;
         padding-right: 50px;
+    }
+}
+
+/* ==========================================================================
+   صفحه‌ی پیگیری سفارش (بدون ورود به حساب): فرم شماره سفارش + موبایل و
+   نوار مراحل سفارش. از همان کارت‌ها و رنگ‌های ناحیه‌ی حساب استفاده می‌کند.
+   ========================================================================== */
+
+.nx-track {
+    max-width: 780px;
+    margin: 0 auto;
+}
+
+.nx-track-hint {
+    margin: 0;
+    color: var(--nx-muted, #81858b);
+    font-size: 12.5px;
+    line-height: 2.1;
+}
+
+.nx-track-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: end;
+    margin-top: 4px;
+}
+
+.nx-track-col {
+    min-width: 0;
+}
+
+.nx-track-form .nx-field-label {
+    margin: 12px 0 6px;
+}
+
+.nx-track-form .nx-btn-red {
+    height: 42px;
+}
+
+/* ---------- پیام‌ها ---------- */
+
+.nx-track-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 12.5px;
+    line-height: 2;
+}
+
+.nx-track-alert p {
+    margin: 0;
+}
+
+.nx-track-alert > i {
+    margin-top: 6px;
+    font-size: 14px;
+}
+
+.nx-track-alert.is-info  { background: #eef4ff; color: #33499b; }
+.nx-track-alert.is-warn  { background: #fff8e1; color: #7a5c00; }
+.nx-track-alert.is-error { background: #ffeef0; color: #c62828; }
+
+/* ---------- نوار مراحل ---------- */
+
+.nx-track-steps {
+    display: flex;
+    margin: 6px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.nx-track-step {
+    position: relative;
+    flex: 1 1 0;
+    min-width: 0;
+    text-align: center;
+}
+
+/* خط رابط هر مرحله به مرحله‌ی قبلی؛ در RTL یعنی به سمت راست */
+.nx-track-step + .nx-track-step::before {
+    content: "";
+    position: absolute;
+    top: 19px;
+    left: 50%;
+    width: 100%;
+    height: 2px;
+    background: var(--nx-line, #e0e0e2);
+}
+
+.nx-track-step + .nx-track-step.is-done::before,
+.nx-track-step + .nx-track-step.is-current::before {
+    background: var(--nx-red, #ef4056);
+}
+
+.nx-track-dot {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    margin: 0 auto 8px;
+    border: 2px solid var(--nx-line, #e0e0e2);
+    border-radius: 50%;
+    background: #fff;
+    color: var(--nx-muted, #81858b);
+    font-size: 15px;
+}
+
+.nx-track-step.is-done .nx-track-dot {
+    border-color: var(--nx-red, #ef4056);
+    color: var(--nx-red, #ef4056);
+}
+
+.nx-track-step.is-current .nx-track-dot {
+    border-color: var(--nx-red, #ef4056);
+    background: var(--nx-red, #ef4056);
+    box-shadow: 0 0 0 4px var(--nx-red-soft, #fff1f3);
+    color: #fff;
+}
+
+.nx-track-label {
+    display: block;
+    color: var(--nx-muted, #81858b);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.nx-track-step.is-done .nx-track-label,
+.nx-track-step.is-current .nx-track-label {
+    color: var(--nx-ink, #23254e);
+}
+
+.nx-track-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    border-top: 1px solid var(--nx-soft, #f0f0f1);
+}
+
+/* وضعیت‌هایی که در کارت سفارش رنگ نداشتند */
+.nx-st-returned { background: #f3eaff; color: #6a3fb5; }
+.nx-st-failed   { background: #ffeef0; color: #c62828; }
+
+@media (max-width: 640px) {
+    .nx-track-form {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .nx-track-form .nx-btn-red {
+        width: 100%;
+        margin-top: 4px;
+    }
+
+    .nx-track-dot {
+        width: 34px;
+        height: 34px;
+        font-size: 13px;
+    }
+
+    .nx-track-step + .nx-track-step::before {
+        top: 16px;
+    }
+
+    .nx-track-label {
+        font-size: 10.5px;
+    }
+
+    .nx-track-actions .nx-btn-ghost,
+    .nx-track-actions .nx-btn-red {
+        flex: 1 1 auto;
     }
 }

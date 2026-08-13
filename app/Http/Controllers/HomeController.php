@@ -179,15 +179,12 @@ class HomeController extends Controller
         if (! $user) {
             return redirect('/login');
         }
-        $favorites = Product::whereHas('favorites', function ($q) use ($user) {
-                $q->where('product_favorites.user_id', $user->id);
-            })
-            ->with(['favorites' => function ($q) use ($user) {
-                $q->where('product_favorites.user_id', $user->id);
-            }])
-            ->latest()
+        $favorites = $user->favoriteProducts()
+            ->where('products.is_active', 1)
+            ->orderByDesc('product_favorites.created_at')
             ->paginate(2);
-        $orders = Order::with('items')->where('customer_id', $user->id)->latest()->paginate(5);
+        // کارت سفارش وضعیت رسید پرداخت را هم نشان می‌دهد
+        $orders = Order::with(['items', 'pendingReceipt'])->where('customer_id', $user->id)->latest()->paginate(5);
         $customer = Customer::where('id', $user->id)->first();
         $address = CustomerAddress::where('customer_id', $user->id)->first();
         return View('dashboard', compact('favorites' , 'orders' , 'customer' , 'address'));

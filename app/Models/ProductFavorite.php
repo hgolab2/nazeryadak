@@ -16,13 +16,14 @@ class ProductFavorite extends Model
     protected $hidden = ['created_at', 'updated_at'];
 
     /**
-     * کاربری که ملک را به لیست علاقه مندی ها اضافه کرده است
+     * مشتری‌ای که محصول را به لیست علاقه‌مندی‌ها اضافه کرده است
+     * (ستون user_id به جدول customers اشاره می‌کند، نه users)
      *
      * @return object
      */
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(Customer::class, 'user_id');
     }
 
     /**

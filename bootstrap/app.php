@@ -16,7 +16,13 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // یکسان‌سازی آدرس‌ها (https / بدون www / بدون پارامتر ردیابی) پیش از
         // هر پردازش دیگری، تا گوگل از هر صفحه فقط یک نسخه ببیند.
-        $middleware->prepend(\App\Http\Middleware\CanonicalUrl::class);
+        //
+        // SeoRedirect بعد از آن می‌آید تا قواعد ریدایرکتِ پنل روی آدرسِ
+        // یکسان‌شده اعمال شود، نه روی نسخه‌ی حاوی utm یا www.
+        $middleware->prepend([
+            \App\Http\Middleware\CanonicalUrl::class,
+            \App\Http\Middleware\SeoRedirect::class,
+        ]);
 
         // سایت پشت پروکسی/CDN اجرا می‌شود؛ بدون این تنظیم، Laravel آدرس‌های
         // مطلق را http می‌سازد و canonical با آدرس واقعی صفحه فرق می‌کند.

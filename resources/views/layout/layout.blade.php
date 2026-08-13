@@ -139,6 +139,7 @@
     <link rel="stylesheet" href="/assets/css/mobile-appbar.css">
     <link rel="stylesheet" href="/assets/css/mobile-checkout.css">
     <link rel="stylesheet" href="/assets/css/account.css">
+    <link rel="stylesheet" href="/assets/css/search-suggest.css">
 
     @if(!empty($seoAnalytics['gtm']))
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','{{ $seoAnalytics['gtm'] }}');</script>
@@ -155,9 +156,8 @@
     <div class="header-top-bar d-none d-lg-block">
         <div class="container">
             <div class="d-flex align-items-center gap-4">
-                <span><i class="fas fa-phone-alt"></i> مشاوره و پشتیبانی: علی حاجی ناظری - ۰۹۱۲۷۴۷۱۶۳۱</span>
-                <span><i class="fas fa-clock"></i> ساعت کاری: شنبه تا پنج‌شنبه ۹ الی ۱۸</span>
-                <a href="https://www.instagram.com/nazeryadak.ir" target="_blank" rel="noopener noreferrer" title="اینستاگرام ناظر یدک"><i class="fab fa-instagram"></i> اینستاگرام: nazeryadak.ir</a>
+                <span><i class="fas fa-phone-alt"></i> مشاوره و پشتیبانی: {{ shopExpertName() }} - {{ shopContactPhoneDisplay() }}</span>
+                <span><i class="fas fa-clock"></i> ساعت کاری: {{ shopWorkingHours() }}</span>
             </div>
         </div>
     </div>
@@ -179,7 +179,7 @@
                     <div class="flex-grow-1" style="max-width: 560px;">
                         <form method="get" action="/shop">
                             <div class="search-box-header">
-                                <input type="search" name="title" value="{{ request('title') }}" placeholder="نام قطعه، خودرو یا کد فنی را بنویسید...">
+                                <input type="search" name="title" value="{{ request('title') }}" placeholder="نام قطعه، خودرو یا کد فنی را بنویسید..." data-search-suggest>
                                 <button type="submit"><i class="fa fa-search"></i> جستجو</button>
                             </div>
                         </form>
@@ -299,6 +299,7 @@
                                 </li>
                                 <li><a href="/shop"><i class="fas fa-store me-2" style="color:var(--primary);"></i> فروشگاه</a></li>
                                 <li><a href="/blog"><i class="fas fa-newspaper me-2" style="color:var(--primary);"></i> مجله یدکی</a></li>
+                                <li><a href="/order-tracking"><i class="fas fa-map-marked-alt me-2" style="color:var(--primary);"></i> پیگیری سفارش</a></li>
                                 <li><a href="/about-us"><i class="fas fa-info-circle me-2" style="color:var(--primary);"></i> درباره ما</a></li>
                                 <li><a href="/contact-us"><i class="fas fa-envelope me-2" style="color:var(--primary);"></i> تماس با ما</a></li>
                                 <li><a href="https://www.instagram.com/nazeryadak.ir" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram me-2" style="color:#e1306c;"></i> اینستاگرام ما</a></li>
@@ -384,7 +385,7 @@
 
             {{-- جستجوی موبایل: همیشه دیده می‌شود، نه پنهان در منو --}}
             <form method="get" action="/shop" class="mobile-search">
-                <input type="search" name="title" value="{{ request('title') }}" placeholder="نام قطعه، خودرو یا کد فنی...">
+                <input type="search" name="title" value="{{ request('title') }}" placeholder="نام قطعه، خودرو یا کد فنی..." data-search-suggest>
                 <button type="submit" aria-label="جستجو"><i class="fa fa-search"></i></button>
             </form>
         </div>
@@ -408,9 +409,10 @@
                 </li>
                 <li><a href="/shop"><i class="fas fa-store me-1 d-none d-xl-inline"></i> فروشگاه</a></li>
                 <li><a href="/blog"><i class="fas fa-newspaper me-1 d-none d-xl-inline"></i> مجله یدکی</a></li>
+                <li><a href="/order-tracking"><i class="fas fa-map-marked-alt me-1 d-none d-xl-inline"></i> پیگیری سفارش</a></li>
                 <li><a href="/about-us">درباره ما</a></li>
                 <li><a href="/contact-us">تماس با ما</a></li>
-                <li class="me-0 ms-auto"><a href="tel:09127471631" class="nav-phone-link"><i class="fas fa-headset me-1"></i> علی حاجی ناظری - ۰۹۱۲۷۴۷۱۶۳۱</a></li>
+                <li class="me-0 ms-auto"><a href="tel:{{ shopContactPhone() }}" class="nav-phone-link"><i class="fas fa-headset me-1"></i> {{ shopExpertName() }} - {{ shopContactPhoneDisplay() }}</a></li>
            </ul>
         </div>
     </nav>
@@ -481,6 +483,7 @@
                     <div class="col-lg-3 col-md-6 col-6 footer-box mb-4">
                         <p class="footer-title">خدمات مشتریان</p>
                         <ul class="ps-0 footer-links">
+                            <li><a href="/order-tracking"><i class="fas fa-angle-left"></i> پیگیری سفارش</a></li>
                             <li><a href="/faq"><i class="fas fa-angle-left"></i> پرسش‌های متداول</a></li>
                             <li><a href="/terms"><i class="fas fa-angle-left"></i> شرایط استفاده</a></li>
                             <li><a href="/how-to-order"><i class="fas fa-angle-left"></i> نحوه ثبت سفارش</a></li>
@@ -618,7 +621,7 @@
             <form method="get" action="/shop">
                 <div class="app-sheet__search">
                     <i class="fa fa-search" style="color:#81858b;font-size:14px;"></i>
-                    <input type="search" name="title" value="{{ request('title') }}" placeholder="نام قطعه، خودرو یا کد فنی..." data-appbar-search>
+                    <input type="search" name="title" value="{{ request('title') }}" placeholder="نام قطعه، خودرو یا کد فنی..." data-appbar-search data-search-suggest>
                     <button type="submit">جستجو</button>
                 </div>
             </form>
@@ -639,6 +642,8 @@
 <script src="/assets/js/owl.carousel.min.js"></script>
 <script src="/assets/js/jquery.simple.timer.js"></script>
 <script src="/assets/js/script.js"></script>
+<script src="/assets/js/combobox.js" defer></script>
+<script src="/assets/js/search-suggest.js" defer></script>
 <script src="/js/sweetalert2.all.js"></script>
 <script>
 const toast = Swal.mixin({
@@ -670,6 +675,52 @@ function addFavorite(id) {
         window.location = "/login";
     @endif
 }
+/**
+ * پیام «به سبد خرید اضافه شد» با نام همان قطعه و دو راه ادامه.
+ * نام قطعه از نزدیک‌ترین کارت یا عنوان صفحه‌ی محصول برداشته می‌شود.
+ */
+let cartToastTimer = null;
+function showCartToast(btn, quantity) {
+    const card = btn.closest('.dk-product-card, .nx-gcard, .nx-item, .product-show-page, main');
+    let name = card.find('.product-title').first().text().trim();
+    if (!name) {
+        name = $('.dk-product-info h1, .product-details h1, h1').first().text().trim();
+    }
+
+    $('.nx-cart-toast').remove();
+    if (cartToastTimer) { clearTimeout(cartToastTimer); }
+
+    const countLabel = quantity > 1 ? (' (' + quantity + ' عدد)') : '';
+    const toastEl = $(
+        '<div class="nx-cart-toast" role="status">' +
+            '<span class="nx-cart-toast-icon"><i class="fas fa-check"></i></span>' +
+            '<div class="nx-cart-toast-body">' +
+                '<b>به سبد خرید اضافه شد' + countLabel + '</b>' +
+                (name ? '<p></p>' : '') +
+                '<div class="nx-cart-toast-actions">' +
+                    '<a href="/cart" class="is-primary"><i class="fas fa-basket-shopping"></i> مشاهده سبد</a>' +
+                    '<button type="button" data-close>ادامه خرید</button>' +
+                '</div>' +
+            '</div>' +
+            '<button type="button" class="nx-cart-toast-close" data-close aria-label="بستن">&times;</button>' +
+        '</div>'
+    );
+
+    // با text() به‌جای درج مستقیم، عنوان قطعه به‌عنوان HTML تفسیر نمی‌شود
+    if (name) { toastEl.find('.nx-cart-toast-body p').text(name); }
+
+    $('body').append(toastEl);
+    requestAnimationFrame(function () { toastEl.addClass('is-visible'); });
+
+    function dismiss() {
+        toastEl.removeClass('is-visible');
+        setTimeout(function () { toastEl.remove(); }, 250);
+    }
+
+    toastEl.on('click', '[data-close]', dismiss);
+    cartToastTimer = setTimeout(dismiss, 5000);
+}
+
 $(document).on('click', '.add-cart-btn', function (e) {
     e.preventDefault();
     let productId = $(this).data('id');
@@ -689,16 +740,7 @@ $(document).on('click', '.add-cart-btn', function (e) {
         },
         success: function (response) {
             if (response.status === "success") {
-                toast.fire({
-                    title: 'انجام شد!',
-                    text: quantity > 1
-                        ? quantity + ' عدد به سبد خرید اضافه شد'
-                        : 'محصول با موفقیت به سبد خرید اضافه شد',
-                    icon: 'success',
-                    confirmButtonText: 'باشه',
-                    confirmButtonColor: '#d33',
-                    timer: 2000
-                });
+                showCartToast(btn, quantity);
             }
         },
         complete: function () {

@@ -9,6 +9,7 @@
         ['menu' => 'notifs',     'url' => '/profile/notifications', 'icon' => 'fa-bell',       'label' => 'اعلان‌ها', 'badge' => $unreadNotifications],
         ['menu' => 'favourits',  'url' => '/favorite',              'icon' => 'fa-heart',      'label' => 'علاقه‌مندی‌ها'],
         ['menu' => 'info',       'url' => '/profile/info',          'icon' => 'fa-user-pen',   'label' => 'اطلاعات حساب'],
+        ['menu' => 'password',   'url' => '/profile/password',      'icon' => 'fa-lock',       'label' => 'رمز عبور'],
     ];
 @endphp
 

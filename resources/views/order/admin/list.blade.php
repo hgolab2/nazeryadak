@@ -97,6 +97,38 @@
         });
     });
     var CSRF_TOKEN = '{{ csrf_token() }}';
+
+    /* ── برچسب پستی ─────────────────────────────────────────────────
+       جدول با ajax جایگزین می‌شود، پس رویدادها باید delegate باشند و
+       printSelectedLabels باید سراسری بماند (از onclick داخل جدول صدا زده می‌شود). */
+    $(document).on('change', '#label-check-all', function () {
+        $('.label-check').prop('checked', this.checked);
+        updateLabelCount();
+    });
+
+    $(document).on('change', '.label-check', function () {
+        var all = $('.label-check').length;
+        $('#label-check-all').prop('checked', all > 0 && $('.label-check:checked').length === all);
+        updateLabelCount();
+    });
+
+    function updateLabelCount() {
+        $('#label-selected-count').text($('.label-check:checked').length);
+    }
+
+    function printSelectedLabels() {
+        var ids = $('.label-check:checked').map(function () {
+            return this.value;
+        }).get();
+
+        if (!ids.length) {
+            toast({type: 'error', title: '{{ l('ابتدا سفارش‌های موردنظر را تیک بزنید.') }}'});
+            return;
+        }
+
+        window.open('/admin/order/labels?ids=' + ids.join(','), '_blank');
+    }
+
     function destroy(id) {
         swal({
             text: " {{l('آیا از حذف سفارش مورد نظر اطمینان دارید؟')}}",

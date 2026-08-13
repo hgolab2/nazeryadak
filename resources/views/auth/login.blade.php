@@ -48,6 +48,20 @@
                         </p>
                     </div>
 
+                    {{-- ورود با رمز، راه دوم در کنار کد پیامکی --}}
+                    <div class="mb-3 d-none" id="passwordBox">
+                        <label class="font-12 mb-1 text-muted">رمز عبور</label>
+                        <input type="password" name="password" id="loginPassword"
+                            class="form-control form-control-lg text-center"
+                            autocomplete="current-password" enterkeyhint="go"
+                            style="border-radius:var(--radius-sm); font-size:1rem; direction:ltr;">
+                    </div>
+
+                    <button type="button" id="passwordLoginBtn"
+                        class="btn w-100 py-2 mt-2 d-none" style="background:#ef4056; color:#fff; border-radius:var(--radius-sm); font-size:.95rem; font-weight:600;">
+                        <i class="fas fa-right-to-bracket me-1"></i> ورود
+                    </button>
+
                     <button type="button" id="sendOtpBtn"
                         class="btn w-100 py-2 mt-2" style="background:linear-gradient(135deg, var(--primary), var(--primary-light)); color:#fff; border-radius:var(--radius-sm); font-size:.95rem; font-weight:600;">
                         <i class="fas fa-paper-plane me-1"></i> دریافت کد تأیید
@@ -70,12 +84,16 @@
                     <button type="button" id="editMobileBtn" class="btn btn-link w-100 d-none font-12 mt-1" style="color:var(--primary);">
                         <i class="fas fa-edit me-1"></i> تغییر شماره موبایل
                     </button>
+
+                    <button type="button" id="toggleModeBtn" class="btn btn-link w-100 font-12 mt-1" style="color:#ef4056;">
+                        <i class="fas fa-lock me-1"></i> ورود با رمز عبور
+                    </button>
                 </form>
 
                 <div class="text-center mt-4 pt-3 border-top">
                     <p class="font-12 text-muted mb-0" style="line-height:2;">
                         <i class="fas fa-shield-alt me-1" style="color:var(--success);"></i>
-                        ورود شما با رمز یکبار مصرف (OTP) انجام می‌شود
+                        <span id="loginModeHint">ورود شما با رمز یکبار مصرف (OTP) انجام می‌شود</span>
                     </p>
                 </div>
             </div>
@@ -191,7 +209,65 @@ $('#otp').on('keyup', function(e) {
     if (e.key === 'Enter') $('#verifyOtpBtn').click();
 });
 $('#mobile').on('keyup', function(e) {
-    if (e.key === 'Enter') $('#sendOtpBtn').click();
+    if (e.key === 'Enter') passwordMode ? $('#passwordLoginBtn').click() : $('#sendOtpBtn').click();
+});
+
+/* ---------- ورود با رمز عبور ---------- */
+let passwordMode = false;
+
+$('#toggleModeBtn').click(function () {
+    passwordMode = !passwordMode;
+
+    // حالت کد پیامکی را کامل جمع می‌کنیم تا دو فرم هم‌زمان باز نمانند
+    $('#otpBox, #verifyOtpBtn, #resendOtpBtn, #resendTimer, #editMobileBtn').addClass('d-none');
+    $('#mobileBox').removeClass('d-none');
+    if (resendTimerId) { clearInterval(resendTimerId); resendTimerId = null; }
+
+    $('#passwordBox, #passwordLoginBtn').toggleClass('d-none', !passwordMode);
+    $('#sendOtpBtn').toggleClass('d-none', passwordMode);
+
+    $(this).html(passwordMode
+        ? '<i class="fas fa-comment-sms me-1"></i> ورود با کد پیامکی'
+        : '<i class="fas fa-lock me-1"></i> ورود با رمز عبور');
+
+    $('#loginModeHint').text(passwordMode
+        ? 'اگر رمز عبور تنظیم نکرده‌اید، با کد پیامکی وارد شوید'
+        : 'ورود شما با رمز یکبار مصرف (OTP) انجام می‌شود');
+
+    (passwordMode ? $('#loginPassword') : $('#mobile')).focus();
+});
+
+$('#passwordLoginBtn').click(function () {
+    const btn = $(this);
+    const mobileValue = toEnDigits($('#mobile').val()).replace(/\D/g, '');
+
+    if (!mobileValue) {
+        toast.fire({ icon: 'error', title: 'شماره موبایل را وارد کنید' });
+        return;
+    }
+    if (!$('#loginPassword').val()) {
+        toast.fire({ icon: 'error', title: 'رمز عبور را وارد کنید' });
+        return;
+    }
+
+    btn.prop('disabled', true);
+    $.post("/auth/login-password", {
+        _token: "{{ csrf_token() }}",
+        mobile: mobileValue,
+        password: $('#loginPassword').val()
+    }).done(function (res) {
+        window.location = res.redirect || '/dashboard';
+    }).fail(function (xhr) {
+        btn.prop('disabled', false);
+        toast.fire({
+            icon: 'error',
+            title: xhr.responseJSON?.message || 'ورود انجام نشد'
+        });
+    });
+});
+
+$('#loginPassword').on('keyup', function (e) {
+    if (e.key === 'Enter') $('#passwordLoginBtn').click();
 });
 </script>
 @endsection

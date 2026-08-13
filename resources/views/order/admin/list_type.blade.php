@@ -4,6 +4,13 @@
             <b>{{ l('تعداد نتایج') }}:</b>
             {{ $totalCount }}
         </p>
+
+        {{-- چاپ گروهی برچسب پستی سفارش‌های تیک‌خورده --}}
+        <button type="button" class="btn btn-sm btn-outline-dark ms-auto" onclick="printSelectedLabels()">
+            <i class="fa fa-tag me-1"></i>
+            {{ l('چاپ برچسب پستی انتخاب‌شده‌ها') }}
+            <span class="badge bg-dark ms-1" id="label-selected-count">0</span>
+        </button>
     </div>
 </div>
 
@@ -11,6 +18,10 @@
     <table class="table table-bordered table-striped table-hover">
         <thead class="table-primary">
         <tr>
+            <th class="text-center" style="width:38px;">
+                <input type="checkbox" class="form-check-input" id="label-check-all"
+                       title="{{ l('انتخاب همه') }}">
+            </th>
             <th class="text-center">{{ l('ابزار') }}</th>
             <th class="text-center">{{ l('کد سفارش') }}</th>
             <th class="text-center">{{ l('مشتری') }}</th>
@@ -24,6 +35,11 @@
 
         @forelse($model as $order)
             <tr>
+                <td class="text-center">
+                    <input type="checkbox" class="form-check-input label-check"
+                           value="{{ $order->id }}">
+                </td>
+
                 {{-- ابزار --}}
                 <td class="text-center">
                     <button class="btn btn-icon btn-light btn-xs rounded-circle shadow-sm"
@@ -41,6 +57,12 @@
                             <a class="dropdown-item" href="/admin/order/edit/{{ $order->id }}">
                                 <i class="fa fa-edit me-2"></i>
                                 {{ l('ویرایش') }}
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="/admin/order/label/{{ $order->id }}" target="_blank">
+                                <i class="fa fa-tag me-2"></i>
+                                {{ l('برچسب پستی') }}
                             </a>
                         </li>
                         <li>

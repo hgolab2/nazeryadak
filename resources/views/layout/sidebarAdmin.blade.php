@@ -16,6 +16,14 @@
 <a href="/admin/order/list" class="admin-menu-item {{ ($menu ?? '') == 'order/list' ? 'active' : '' }}">
     <i class="fas fa-shopping-cart"></i> سفارشات
 </a>
+@php $pendingReceipts = pendingPaymentReceiptsCount(); @endphp
+<a href="/admin/payment/list" class="admin-menu-item {{ ($menu ?? '') == 'payment/list' ? 'active' : '' }}">
+    <i class="fas fa-money-check-dollar"></i> پرداخت‌ها
+    @if($pendingReceipts > 0)
+        {{-- رسید ثبت‌شده‌ای منتظر تأیید است؛ باید از هر صفحه‌ی پنل دیده شود --}}
+        <span class="badge bg-danger" style="margin-right:6px;">{{ $pendingReceipts }}</span>
+    @endif
+</a>
 <a href="/admin/customer/list" class="admin-menu-item {{ ($menu ?? '') == 'customer/list' ? 'active' : '' }}">
     <i class="fas fa-users"></i> مشتریان
 </a>
@@ -30,6 +38,31 @@
 
 <a href="/admin/advertisement/list" class="admin-menu-item {{ ($menu ?? '') == 'advertisement/list' ? 'active' : '' }}">
     <i class="fas fa-images"></i> تبلیغات و بنر
+</a>
+
+<div class="admin-menu-title">سئو</div>
+<a href="/admin/seo/health" class="admin-menu-item {{ ($menu ?? '') == 'seo/health' ? 'active' : '' }}">
+    <i class="fas fa-heart-pulse"></i> سلامت سئو
+</a>
+<a href="/admin/seo/terms" class="admin-menu-item {{ ($menu ?? '') == 'seo/terms' ? 'active' : '' }}">
+    <i class="fas fa-signs-post"></i> صفحات فرود
+</a>
+@php $pendingReviews = pendingProductReviewsCount(); @endphp
+<a href="/admin/seo/reviews" class="admin-menu-item {{ ($menu ?? '') == 'seo/reviews' ? 'active' : '' }}">
+    <i class="fas fa-star"></i> نظرات محصولات
+    @if($pendingReviews > 0)
+        {{-- نظر تأییدنشده روی صفحه‌ی محصول دیده نمی‌شود و وارد امتیاز گوگل هم نمی‌شود --}}
+        <span class="badge bg-danger" style="margin-right:6px;">{{ $pendingReviews }}</span>
+    @endif
+</a>
+<a href="/admin/seo/redirects" class="admin-menu-item {{ ($menu ?? '') == 'seo/redirects' ? 'active' : '' }}">
+    <i class="fas fa-exchange-alt"></i> مدیریت ریدایرکت
+</a>
+<a href="/admin/seo/404" class="admin-menu-item {{ ($menu ?? '') == 'seo/404' ? 'active' : '' }}">
+    <i class="fas fa-unlink"></i> خطاهای ۴۰۴
+</a>
+<a href="/admin/seo/settings" class="admin-menu-item {{ ($menu ?? '') == 'seo/settings' ? 'active' : '' }}">
+    <i class="fas fa-sliders-h"></i> تنظیمات سئو
 </a>
 
 <div class="admin-menu-title">تنظیمات</div>

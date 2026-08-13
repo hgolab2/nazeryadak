@@ -2,18 +2,13 @@
     $fa = fn($s) => urldecode($s);
     $productUrl = seo_url($model->url());
     $productImage = str_starts_with($model->image(), 'http') ? $model->image() : seo_url($model->image());
-    /* توضیحات متا: ابتدا متن خودِ محصول، و اگر خالی یا کوتاه بود یک جمله‌ی
-       کامل از روی نام، کد فنی و مدل خودرو ساخته می‌شود. توضیحات زیر ۷۰
-       کاراکتر معمولا توسط گوگل کنار گذاشته و با متن دلخواه جایگزین می‌شود. */
-    $productDescription = seo_description($model->description ?: ($model->short_description ?: ''));
-    if (mb_strlen($productDescription) < 80) {
-        $productDescription = seo_description(
-            $fa('%D8%AE%D8%B1%DB%8C%D8%AF%20') . $model->title
-            . ($model->sku ? ' ' . $fa('%D8%A8%D8%A7%20%DA%A9%D8%AF%20%D9%81%D9%86%DB%8C%20') . $model->sku : '')
-            . ($model->car_model ? $fa('%20%D9%85%D9%86%D8%A7%D8%B3%D8%A8%20') . $model->car_model : '')
-            . $fa('%20%D8%A7%D8%B5%D9%84%20%D9%88%20%D8%AF%D8%A7%D8%B1%D8%A7%DB%8C%20%D8%B6%D9%85%D8%A7%D9%86%D8%AA%20%D8%A7%D8%B5%D8%A7%D9%84%D8%AA%20%DA%A9%D8%A7%D9%84%D8%A7%D8%8C%20%D9%82%DB%8C%D9%85%D8%AA%20%D8%B1%D9%88%D8%B2%20%D9%88%20%D8%A7%D8%B1%D8%B3%D8%A7%D9%84%20%D8%B3%D8%B1%DB%8C%D8%B9%20%D8%A8%D9%87%20%D8%B3%D8%B1%D8%A7%D8%B3%D8%B1%20%D8%A7%DB%8C%D8%B1%D8%A7%D9%86%20%D8%A7%D8%B2%20%D9%81%D8%B1%D9%88%D8%B4%DA%AF%D8%A7%D9%87%20%D9%86%D8%A7%D8%B8%D8%B1%20%DB%8C%D8%AF%DA%A9.')
-        );
-    }
+    /* عنوان، توضیحات متا، کانونیکال و robots از مدل خوانده می‌شوند: اگر مدیر
+       در تب «سئوی محصول» مقداری وارد کرده باشد همان می‌آید، وگرنه نسخه‌ی
+       خودکار از روی نام، کد فنی و مدل خودرو ساخته می‌شود. */
+    $productDescription = $model->seoDescription();
+    // کانونیکال ممکن است دستی به صفحه‌ی دیگری اشاره کند؛ اسکیما و @id باید
+    // روی آدرس واقعی همین صفحه بمانند.
+    $productCanonical = $model->seoCanonical();
     $galleryImages = $model->images->count() ? $model->images : collect([(object) ['path' => $model->image(), 'alt' => $model->title]]);
 
     /* --- سئوی صفحه محصول --- */
@@ -27,10 +22,7 @@
     $contactPrice = $model->isContactPrice();
 
     // عنوان: «خرید {نام قطعه} + کد فنی» تا کوئری‌های کد فنی هم پوشش داده شود.
-    $productTitle = seo_title(
-        $fa('%D8%AE%D8%B1%DB%8C%D8%AF%20') . $model->title
-        . ($model->isaco_code ? ' ' . $fa('%DA%A9%D8%AF%20') . $model->isaco_code : '')
-    );
+    $productTitle = $model->seoTitle();
 
     $productBreadcrumb = [
         ['name' => seo_site_name(), 'url' => seo_url()],
@@ -49,13 +41,15 @@
     'title' => $productTitle,
     'metaDescription' => $productDescription,
     'keywords' => trim(implode(', ', array_filter([
+        $model->focus_keyword,
         $model->title,
         $model->sku,
         $model->isaco_code,
         $model->car_model ? $fa('%D9%82%D8%B7%D8%B9%D8%A7%D8%AA%20') . $model->car_model : null,
         seo_default_keywords(),
     ])), ', '),
-    'canonical' => $productUrl,
+    'canonical' => $productCanonical,
+    'robots' => $model->seoRobotsTag(),
     'bodyClass' => 'has-actionbar',
     'ogImage' => $productImage,
     'ogImageAlt' => $model->title,
@@ -82,7 +76,7 @@
         <section class="nx-card dk-product-detail">
             <div class="dk-product-gallery">
                 <div class="dk-product-actions">
-                    <button type="button" onclick="addFavorite({{ $model->id }})" class="itemFavorite_{{ $model->id }}"><i class="far fa-heart"></i></button>
+                    <button type="button" onclick="addFavorite({{ $model->id }})" class="itemFavorite_{{ $model->id }}"><i class="{{ is_favorite_product($model->id) ? 'fas' : 'far' }} fa-heart"></i></button>
                     <button type="button" data-bs-toggle="modal" data-bs-target="#share-modal"><i class="fa fa-share-alt"></i></button>
                 </div>
                 @php $heroImage = $galleryImages->first()->path; $heroWebp = webp_variant($heroImage); @endphp
@@ -192,6 +186,73 @@
             <div class="dk-detail-tabs-body">@if($model->description)<div class="product-description-html">{!! $model->description !!}</div>@else<p>{{ $fa('%D8%AA%D9%88%D8%B6%DB%8C%D8%AD%D8%A7%D8%AA%DB%8C%20%D8%A8%D8%B1%D8%A7%DB%8C%20%D8%A7%DB%8C%D9%86%20%D9%85%D8%AD%D8%B5%D9%88%D9%84%20%D8%AB%D8%A8%D8%AA%20%D9%86%D8%B4%D8%AF%D9%87%20%D8%A7%D8%B3%D8%AA.') }}</p>@endif</div>
         </section>
 
+        {{-- نظرات کاربران.
+             دو کارکرد همزمان: محتوای یکتا برای صفحه‌ای که اغلب فقط مشخصات
+             فنی دارد، و منبع aggregateRating که ستاره‌ی نتیجه‌ی گوگل را
+             فعال می‌کند. --}}
+        <section class="nx-card" id="reviews">
+            <div class="nx-card-head">
+                <h2><i class="fas fa-star"></i> نظرات کاربران درباره {{ $model->title }}</h2>
+                @if($model->rating_count)
+                    <span class="dk-rating-summary">
+                        <b>{{ toPersianNumbers(number_format((float) $model->rating_avg, 1)) }}</b>
+                        از ۵ — {{ toPersianNumbers($model->rating_count) }} نظر
+                    </span>
+                @endif
+            </div>
+
+            <div class="dk-reviews">
+                @if(session('review_notice'))
+                    <div class="dk-review-notice">{{ session('review_notice') }}</div>
+                @endif
+
+                @if($model->approvedReviews->count())
+                    @foreach($model->approvedReviews as $review)
+                        <article class="dk-review">
+                            <div class="dk-review-head">
+                                <b>{{ $review->name }}</b>
+                                @if($review->is_buyer)<span class="dk-review-buyer">خریدار</span>@endif
+                                <span class="dk-review-stars" aria-label="{{ $review->rating }} از ۵">
+                                    @for($i = 1; $i <= 5; $i++)<i class="fa{{ $i <= $review->rating ? 's' : 'r' }} fa-star"></i>@endfor
+                                </span>
+                            </div>
+                            @if($review->title)<div class="dk-review-title">{{ $review->title }}</div>@endif
+                            <p class="dk-review-body">{{ $review->comment }}</p>
+                        </article>
+                    @endforeach
+                @else
+                    <p class="dk-review-empty">هنوز نظری برای این قطعه ثبت نشده است. اولین نفر باشید.</p>
+                @endif
+
+                <form method="POST" action="/product/{{ $model->id }}/review" class="dk-review-form">
+                    @csrf
+                    <h3>ثبت نظر و امتیاز</h3>
+
+                    @if($errors->any())
+                        <div class="dk-review-errors">
+                            @foreach($errors->all() as $error)<div>{{ $error }}</div>@endforeach
+                        </div>
+                    @endif
+
+                    <div class="dk-review-stars-input">
+                        <span>امتیاز شما:</span>
+                        @for($i = 5; $i >= 1; $i--)
+                            <input type="radio" name="rating" id="rating-{{ $i }}" value="{{ $i }}" {{ (int) old('rating') === $i ? 'checked' : '' }} required>
+                            <label for="rating-{{ $i }}" title="{{ $i }} ستاره"><i class="fas fa-star"></i></label>
+                        @endfor
+                    </div>
+
+                    <div class="dk-review-fields">
+                        <input type="text" name="name" placeholder="نام شما" value="{{ old('name', auth('customer')->user()->name ?? '') }}" maxlength="100">
+                        <input type="text" name="title" placeholder="عنوان نظر (اختیاری)" value="{{ old('title') }}" maxlength="255">
+                    </div>
+                    <textarea name="comment" rows="4" placeholder="تجربه‌ی خود از این قطعه را بنویسید؛ کیفیت، تناسب با خودرو و نصب." maxlength="2000" required>{{ old('comment') }}</textarea>
+                    <button type="submit" class="btn btn-info">ثبت نظر</button>
+                    <small>نظر شما پس از تأیید مدیر نمایش داده می‌شود.</small>
+                </form>
+            </div>
+        </section>
+
         @if(isset($products) && $products->count())
         <section class="nx-card">
             <div class="nx-card-head">
@@ -205,6 +266,34 @@
         @endif
     </div>
 </main>
+
+<style>
+.dk-rating-summary{font-size:.85rem;color:#666}
+.dk-rating-summary b{color:#f5a623;font-size:1.05rem}
+.dk-reviews{padding:16px 20px}
+.dk-review{border-bottom:1px solid #eef2f7;padding:14px 0}
+.dk-review:last-of-type{border-bottom:0}
+.dk-review-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.dk-review-buyer{background:#e8f7ee;color:#176b3a;border-radius:999px;padding:2px 9px;font-size:11px}
+.dk-review-stars{color:#f5a623;font-size:.8rem;margin-right:auto}
+.dk-review-title{font-weight:700;font-size:.9rem;margin-bottom:4px}
+.dk-review-body{font-size:.87rem;line-height:2;color:#444;margin:0}
+.dk-review-empty,.dk-review-notice{font-size:.87rem;color:#666;padding:10px 0}
+.dk-review-notice{background:#e8f7ee;color:#176b3a;border-radius:8px;padding:10px 14px;margin-bottom:12px}
+.dk-review-errors{background:#fff5f5;color:#842029;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:.85rem}
+.dk-review-form{border-top:1px solid #eef2f7;margin-top:14px;padding-top:16px}
+.dk-review-form h3{font-size:.95rem;font-weight:700;margin-bottom:12px}
+.dk-review-form textarea,.dk-review-fields input{width:100%;border:1px solid #e3e8ef;border-radius:8px;padding:10px 12px;font-size:.85rem;font-family:inherit;margin-bottom:10px}
+.dk-review-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:600px){.dk-review-fields{grid-template-columns:1fr}}
+/* ستاره‌ها با direction:rtl از راست پر می‌شوند؛ انتخاب ۴ باید ۴ ستاره‌ی
+   اول را هم روشن کند، به همین دلیل از سلکتور برادرِ بعدی استفاده شده. */
+.dk-review-stars-input{display:flex;align-items:center;gap:4px;margin-bottom:12px;font-size:.85rem}
+.dk-review-stars-input input{position:absolute;opacity:0;width:0;height:0}
+.dk-review-stars-input label{color:#d7dde5;cursor:pointer;font-size:1.25rem;order:1}
+.dk-review-stars-input input:checked ~ label{color:#f5a623}
+.dk-review-stars-input span{margin-left:8px}
+</style>
 
 {{-- نوار خرید چسبان موبایل: قیمت و دکمه‌ی خرید همیشه در دسترس شست کاربر است
      و دیگر لازم نیست برای افزودن به سبد تا پایین صفحه اسکرول شود --}}

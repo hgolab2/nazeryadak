@@ -4,86 +4,101 @@ namespace App\Services;
 
 use App\Models\CustomerNotification;
 use App\Models\Order;
+use App\Models\Setting;
 use Illuminate\Support\Facades\Log;
 
 /**
  * اطلاع‌رسانی سفارش از یک نقطه: هم پیامک و هم اعلان داخل سایت.
  *
- * هر دو مسیرِ «ثبت سفارش» و «تغییر وضعیت توسط ادمین» از همین کلاس استفاده
- * می‌کنند تا متن‌ها یکی بماند و اضافه‌شدن یک وضعیت جدید فقط یک جا تغییر بخواهد.
- * اگر درگاه پیامک تنظیم نشده باشد، sendSms خودش بی‌سروصدا لاگ می‌کند و
- * اعلان داخل سایت مستقل از آن ساخته می‌شود.
+ * متن هر پیامک از پنل تنظیمات خوانده می‌شود و اگر ادمین چیزی ذخیره نکرده
+ * باشد، متن پیش‌فرض همین کلاس استفاده می‌شود؛ پس سایت پیش از اولین ذخیره هم
+ * دقیقا مثل قبل کار می‌کند.
  */
 class OrderNotifier
 {
     /**
-     * متن پیامک و اعلان برای هر وضعیت. کلید null یعنی برای آن وضعیت
-     * اطلاع‌رسانی نمی‌کنیم (مثلا «در انتظار پرداخت» که هنوز کاری نشده).
+     * جانگهدارهایی که ادمین می‌تواند در متن پیامک بنویسد.
+     * در صفحه‌ی تنظیمات هم همین فهرست به ادمین نشان داده می‌شود.
      */
-    private const STATUS_MESSAGES = [
+    public const PLACEHOLDERS = [
+        '{order}'  => 'شماره سفارش',
+        '{amount}' => 'مبلغ سفارش (تومان)',
+        '{name}'   => 'نام مشتری',
+        '{shop}'   => 'نام فروشگاه',
+        '{phone}'  => 'شماره تماس پشتیبانی',
+    ];
+
+    /**
+     * کلید تنظیمات، عنوان اعلان، آیکن و متن پیش‌فرض هر رویداد.
+     * وضعیتی که اینجا نباشد (مثل «در انتظار پرداخت») اطلاع‌رسانی نمی‌شود.
+     */
+    public const EVENTS = [
+        'order_placed' => [
+            'label'   => 'ثبت سفارش (پرداخت آنلاین)',
+            'title'   => 'سفارش شما ثبت شد',
+            'icon'    => 'fa-receipt',
+            'default' => "{shop}\nسفارش {order} با مبلغ {amount} تومان ثبت شد. وضعیت آن را از حساب کاربری پیگیری کنید.",
+        ],
         'awaiting_call' => [
-            'title' => 'سفارش در انتظار تماس کارشناس',
-            'sms'   => 'ناظر یدک%sسفارش %s ثبت شد. کارشناسان ما برای هماهنگی نهایی با شما تماس می‌گیرند.',
-            'icon'  => 'fa-phone-volume',
+            'label'   => 'ثبت سفارش (در انتظار تماس کارشناس)',
+            'title'   => 'سفارش شما ثبت شد؛ منتظر تماس ما باشید',
+            'icon'    => 'fa-phone-volume',
+            'default' => "{shop}\nسفارش {order} ثبت شد و پیش‌فاکتور آن صادر شد. کارشناسان ما به‌زودی برای تأیید و هماهنگی پرداخت با شما تماس می‌گیرند.",
         ],
         'paid' => [
-            'title' => 'پرداخت سفارش تأیید شد',
-            'sms'   => 'ناظر یدک%sپرداخت سفارش %s با موفقیت تأیید شد. سفارش شما در حال بررسی است.',
-            'icon'  => 'fa-circle-check',
+            'label'   => 'تأیید پرداخت',
+            'title'   => 'پرداخت سفارش تأیید شد',
+            'icon'    => 'fa-circle-check',
+            'default' => "{shop}\nپرداخت سفارش {order} با موفقیت تأیید شد. سفارش شما در حال بررسی است.",
         ],
         'processing' => [
-            'title' => 'سفارش در حال آماده‌سازی است',
-            'sms'   => 'ناظر یدک%sسفارش %s در حال آماده‌سازی است و به‌زودی ارسال می‌شود.',
-            'icon'  => 'fa-box-open',
+            'label'   => 'در حال آماده‌سازی',
+            'title'   => 'سفارش در حال آماده‌سازی است',
+            'icon'    => 'fa-box-open',
+            'default' => "{shop}\nسفارش {order} در حال آماده‌سازی است و به‌زودی ارسال می‌شود.",
         ],
         'shipped' => [
-            'title' => 'سفارش ارسال شد',
-            'sms'   => 'ناظر یدک%sسفارش %s ارسال شد. لطفا در دسترس باشید.',
-            'icon'  => 'fa-truck',
+            'label'   => 'ارسال شد',
+            'title'   => 'سفارش ارسال شد',
+            'icon'    => 'fa-truck',
+            'default' => "{shop}\nسفارش {order} ارسال شد. لطفا در دسترس باشید.",
         ],
         'delivered' => [
-            'title' => 'سفارش تحویل داده شد',
-            'sms'   => 'ناظر یدک%sسفارش %s تحویل داده شد. از خرید شما سپاسگزاریم.',
-            'icon'  => 'fa-circle-check',
+            'label'   => 'تحویل داده شد',
+            'title'   => 'سفارش تحویل داده شد',
+            'icon'    => 'fa-circle-check',
+            'default' => "{shop}\nسفارش {order} تحویل داده شد. از خرید شما سپاسگزاریم.",
         ],
         'canceled' => [
-            'title' => 'سفارش لغو شد',
-            'sms'   => 'ناظر یدک%sسفارش %s لغو شد. در صورت نیاز با پشتیبانی تماس بگیرید.',
-            'icon'  => 'fa-circle-xmark',
+            'label'   => 'لغو سفارش',
+            'title'   => 'سفارش لغو شد',
+            'icon'    => 'fa-circle-xmark',
+            'default' => "{shop}\nسفارش {order} لغو شد. در صورت نیاز با پشتیبانی تماس بگیرید.",
         ],
     ];
+
+    /** کلید تنظیماتِ متن هر رویداد. */
+    public static function settingKey(string $event): string
+    {
+        return 'sms_' . $event;
+    }
+
+    /** متن ذخیره‌شده‌ی ادمین یا متن پیش‌فرض. */
+    public static function template(string $event): string
+    {
+        $default = self::EVENTS[$event]['default'] ?? '';
+
+        return (string) Setting::get(self::settingKey($event), $default);
+    }
 
     /** پیام ثبت سفارش، جدا از تغییر وضعیت است. */
     public function orderPlaced(Order $order): void
     {
         // سفارشی که بدون پرداخت آنلاین ثبت شده، منتظر تماس کارشناس است؛
         // پیامکش هم باید همین را بگوید نه «پرداخت شد».
-        if ((string) $order->status === 'awaiting_call') {
-            $this->push(
-                $order,
-                'سفارش شما ثبت شد؛ منتظر تماس ما باشید',
-                sprintf(
-                    'ناظر یدک%sسفارش %s ثبت شد و پیش‌فاکتور آن صادر شد. کارشناسان ما به‌زودی برای تأیید و هماهنگی پرداخت با شما تماس می‌گیرند.',
-                    "\n",
-                    $this->orderNumber($order)
-                ),
-                'fa-phone-volume'
-            );
+        $event = (string) $order->status === 'awaiting_call' ? 'awaiting_call' : 'order_placed';
 
-            return;
-        }
-
-        $this->push(
-            $order,
-            'سفارش شما ثبت شد',
-            sprintf(
-                'ناظر یدک%sسفارش %s با مبلغ %s تومان ثبت شد. وضعیت آن را از حساب کاربری پیگیری کنید.',
-                "\n",
-                $this->orderNumber($order),
-                number_format((int) $order->final_price)
-            ),
-            'fa-receipt'
-        );
+        $this->dispatch($order, $event);
     }
 
     /** فقط وقتی وضعیت واقعا عوض شده باشد صدا زده می‌شود. */
@@ -95,18 +110,39 @@ class OrderNotifier
             return;
         }
 
-        if (! isset(self::STATUS_MESSAGES[$status])) {
+        // order_placed رویداد ثبت است نه وضعیت؛ از این مسیر نباید بیرون بیاید
+        if ($status === 'order_placed' || ! isset(self::EVENTS[$status])) {
             return;
         }
 
-        $template = self::STATUS_MESSAGES[$status];
+        $this->dispatch($order, $status);
+    }
 
-        $this->push(
-            $order,
-            $template['title'],
-            sprintf($template['sms'], "\n", $this->orderNumber($order)),
-            $template['icon']
-        );
+    private function dispatch(Order $order, string $event): void
+    {
+        $config  = self::EVENTS[$event];
+        $message = trim($this->render(self::template($event), $order));
+
+        if ($message === '') {
+            // ادمین متن را خالی گذاشته یعنی این اطلاع‌رسانی را نمی‌خواهد
+            return;
+        }
+
+        $this->push($order, $config['title'], $message, $config['icon']);
+    }
+
+    /** جایگذاری جانگهدارها در متن */
+    private function render(string $template, Order $order): string
+    {
+        $customer = $order->customer;
+
+        return strtr($template, [
+            '{order}'  => $this->orderNumber($order),
+            '{amount}' => number_format((int) $order->final_price),
+            '{name}'   => $customer?->fullName() ?: '',
+            '{shop}'   => seo_site_name(),
+            '{phone}'  => shopContactPhoneDisplay(),
+        ]);
     }
 
     private function push(Order $order, string $title, string $message, string $icon): void

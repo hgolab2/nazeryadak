@@ -5,9 +5,11 @@ use App\Http\Controllers\BlogController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\OrderTrackingController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PaymentReceiptController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Admin\ProductAdminController;
 use App\Http\Controllers\Admin\OrderAdminController;
@@ -16,6 +18,8 @@ use App\Http\Controllers\Admin\UserAdminController;
 use App\Http\Controllers\Admin\ImportController;
 use App\Http\Controllers\Admin\ArticleAdminController;
 use App\Http\Controllers\Admin\SettingAdminController;
+use App\Http\Controllers\Admin\SeoAdminController;
+use App\Http\Controllers\Admin\PaymentAdminController;
 
 use App\Http\Controllers\SitemapController;
 use App\Http\Middleware\ShareDataInFrontend;
@@ -85,6 +89,13 @@ Route::get('/site.webmanifest', function () {
         ->header('Cache-Control', 'public, max-age=86400');
 });
 
+/*
+| پیشنهاد زنده‌ی جعبه‌ی جستجوی هدر. عمدا بیرون از گروه Frontend است تا
+| داده‌های مشترکِ صفحات (منو، سبد، دسته‌ها) برای یک پاسخ JSON کوچک
+| ساخته نشود؛ این مسیر با هر حرفِ تایپ‌شده صدا زده می‌شود.
+*/
+Route::get('/search-suggest', [ProductController::class, 'suggest'])->name('search.suggest');
+
 Route::group(['namespace' => 'Frontend', 'middleware' => [ShareDataInFrontend::class]], function () {
     Route::get('/payment/zarinpal/{id}', [PaymentController::class, 'request'])->name('payment.request');
     Route::get('/payment/zarinpal/callback', [PaymentController::class, 'callback'])->name('payment.callback');
@@ -116,7 +127,23 @@ Route::group(['namespace' => 'Frontend', 'middleware' => [ShareDataInFrontend::c
     Route::get('shop/{category}', [ProductController::class, 'category'])
         ->where('category', '[^/]+')
         ->name('shop.category');
+
+    /*
+    | صفحات فرود مدل خودرو و ترکیب دسته × خودرو.
+    |
+    | «/car/پژو-206» و «/car/پژو-206/سیستم-چرخ-و-ترمز» جای «?car_model=»
+    | را می‌گیرند. نسخه‌ی query string با 301 به همین‌جا هدایت می‌شود.
+    */
+    Route::get('car/{car}', [ProductController::class, 'car'])
+        ->where('car', '[^/]+')
+        ->name('shop.car');
+    Route::get('car/{car}/{category}', [ProductController::class, 'carCategory'])
+        ->where(['car' => '[^/]+', 'category' => '[^/]+'])
+        ->name('shop.car.category');
     Route::get('/product/fetch-image/{id}', [ProductController::class, 'fetchImage']);
+    // ثبت نظر باید پیش از مسیر عمومی محصول تعریف شود؛ وگرنه «review» به
+    // عنوان slug خوانده می‌شود و درخواست به show می‌رسد.
+    Route::post('/product/{id}/review', [ProductController::class, 'storeReview'])->name('product.review');
     Route::get('/product/{id}/{slug?}', [ProductController::class, 'show']);
     Route::get('/about-us', [HomeController::class, 'aboutUs']);
     Route::get('/contact-us', [HomeController::class, 'contactUs']);
@@ -152,12 +179,27 @@ Route::group(['namespace' => 'Frontend', 'middleware' => [ShareDataInFrontend::c
     Route::post('/order/place/{id}', [CheckoutController::class, 'place'])->name('order.place');
     Route::get('/order/invoice/{id}', [CheckoutController::class, 'invoice'])->name('order.invoice');
 
+    /*
+    | پیگیری سفارش بدون ورود به حساب: شماره سفارش + شماره موبایل.
+    | برای مشتری‌هایی که تلفنی سفارش داده‌اند یا حوصله‌ی ورود ندارند.
+    */
+    Route::get('/order-tracking', [OrderTrackingController::class, 'form'])->name('order.track');
+    Route::post('/order-tracking', [OrderTrackingController::class, 'track'])->name('order.track.submit');
+
+    // ثبت رسید پرداخت (کارت‌به‌کارت/واریز) توسط مشتری
+    Route::get('/profile/order/{id}/payment-receipt', [PaymentReceiptController::class, 'create'])->name('order.receipt');
+    Route::post('/profile/order/{id}/payment-receipt', [PaymentReceiptController::class, 'store'])->name('order.receipt.store');
+
     Route::get('/profile/order/{id}', [OrderController::class, 'view'])->name('order.view');
     Route::get('/profile/orders', [OrderController::class, 'orders'])->name('order.orders');
     Route::get('/profile/orderDetail/{id}', [OrderController::class, 'orderDetails'])->name('order.orderDetails');
     Route::get('/profile/info', [OrderController::class, 'info'])->name('profile.info');
     Route::put('/profile/infoUpdate', [OrderController::class, 'infoUpdate'])->name('customer.profile.update');
     Route::get('/favorite', [ProductController::class, 'favorite'])->name('favorite');
+
+    Route::get('/profile/password', [\App\Http\Controllers\CustomerPasswordController::class, 'edit'])->name('profile.password');
+    Route::put('/profile/password', [\App\Http\Controllers\CustomerPasswordController::class, 'update'])->name('profile.password.update');
+    Route::delete('/profile/password', [\App\Http\Controllers\CustomerPasswordController::class, 'destroy'])->name('profile.password.destroy');
 
     Route::get('/profile/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('profile.notifications');
     Route::get('/profile/notifications/count', [\App\Http\Controllers\NotificationController::class, 'unreadCount'])->name('profile.notifications.count');
@@ -171,6 +213,7 @@ Route::group(['namespace' => 'Frontend', 'middleware' => [ShareDataInFrontend::c
     Route::get('/login', [UserController::class, 'login'])->name('login');
     Route::post('/auth/send-otp', [UserController::class, 'sendOtp'])->name('auth.sendOtp');
     Route::post('/auth/verify-otp', [UserController::class, 'verifyOtp'])->name('auth.verifyOtp');
+    Route::post('/auth/login-password', [UserController::class, 'loginWithPassword'])->name('auth.loginPassword');
 
     Route::get('/logout', [UserController::class, 'logout']);
     Route::get('/products/favorite/{product_id}', [ProductController::class, 'addToFavorite'])->name('addToFavorite');
@@ -212,7 +255,15 @@ Route::group(['namespace' => 'Frontend', 'middleware' => [ShareDataInFrontend::c
         Route::get('/admin/order/edit/{id}', [OrderAdminController::class, 'admin_edit']);
         Route::post('/admin/order/store', [OrderAdminController::class, 'admin_store']);
         Route::put('/admin/order/update/{id}', [OrderAdminController::class, 'admin_update']);
+        // برچسب پستی؛ مسیر گروهی قبل از {id} تا «labels» شناسه تلقی نشود
+        Route::get('/admin/order/labels', [OrderAdminController::class, 'admin_labels']);
+        Route::get('/admin/order/label/{id}', [OrderAdminController::class, 'admin_label']);
         Route::delete('/admin/order/{id}', [OrderAdminController::class, 'destroy']);
+
+        /* Payment — رسیدهای پرداخت و تأیید/رد آن‌ها */
+        Route::get('/admin/payment/list', [PaymentAdminController::class, 'index']);
+        Route::post('/admin/payment/{id}/approve', [PaymentAdminController::class, 'approve']);
+        Route::post('/admin/payment/{id}/reject', [PaymentAdminController::class, 'reject']);
 
         /* Customer */
         Route::get('/admin/customer/list', [OrderAdminController::class, 'admin_customer_list']);
@@ -242,6 +293,31 @@ Route::group(['namespace' => 'Frontend', 'middleware' => [ShareDataInFrontend::c
         /* Settings */
         Route::get('/admin/settings', [SettingAdminController::class, 'index'])->name('admin.settings');
         Route::put('/admin/settings', [SettingAdminController::class, 'update'])->name('admin.settings.update');
+
+        /* SEO — گزارش سلامت، صفحات فرود، نظرات، تنظیمات */
+        Route::get('/admin/seo/health', [SeoAdminController::class, 'health']);
+        Route::post('/admin/seo/health/generate', [SeoAdminController::class, 'healthGenerate']);
+
+        Route::get('/admin/seo/terms', [SeoAdminController::class, 'terms']);
+        Route::get('/admin/seo/terms/edit', [SeoAdminController::class, 'termEdit']);
+        Route::post('/admin/seo/terms', [SeoAdminController::class, 'termSave']);
+        Route::delete('/admin/seo/terms/{id}', [SeoAdminController::class, 'termDestroy']);
+
+        Route::get('/admin/seo/reviews', [SeoAdminController::class, 'reviews']);
+        Route::put('/admin/seo/reviews/{id}/status', [SeoAdminController::class, 'reviewStatus']);
+        Route::delete('/admin/seo/reviews/{id}', [SeoAdminController::class, 'reviewDestroy']);
+
+        Route::get('/admin/seo/settings', [SeoAdminController::class, 'settings']);
+        Route::put('/admin/seo/settings', [SeoAdminController::class, 'settingsUpdate']);
+
+        /* SEO — ریدایرکت و مانیتور ۴۰۴ */
+        Route::get('/admin/seo/redirects', [SeoAdminController::class, 'redirects']);
+        Route::post('/admin/seo/redirects', [SeoAdminController::class, 'redirectStore']);
+        Route::put('/admin/seo/redirects/{id}', [SeoAdminController::class, 'redirectUpdate']);
+        Route::delete('/admin/seo/redirects/{id}', [SeoAdminController::class, 'redirectDestroy']);
+        Route::get('/admin/seo/404', [SeoAdminController::class, 'notFound']);
+        Route::delete('/admin/seo/404/clear', [SeoAdminController::class, 'notFoundClear']);
+        Route::delete('/admin/seo/404/{id}', [SeoAdminController::class, 'notFoundDestroy']);
 
     });
 });

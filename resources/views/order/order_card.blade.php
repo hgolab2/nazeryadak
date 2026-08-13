@@ -46,5 +46,17 @@
                 <i class="fas fa-file-invoice"></i> پیش‌فاکتور
             </a>
         @endif
+        @if($order->canReceiveReceipt())
+            @if($order->pendingReceipt)
+                {{-- رسید فرستاده شده؛ دکمه‌ی تکراری فقط باعث ثبت دوباره می‌شود --}}
+                <span class="nx-btn-ghost" style="cursor:default; color:#b8860b;">
+                    <i class="fas fa-hourglass-half"></i> رسید در حال بررسی
+                </span>
+            @else
+                <a href="/profile/order/{{ $order->id }}/payment-receipt" class="nx-btn-ghost">
+                    <i class="fas fa-receipt"></i> ثبت رسید پرداخت
+                </a>
+            @endif
+        @endif
     </footer>
 </article>

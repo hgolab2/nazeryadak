@@ -5,6 +5,8 @@ use App\Models\ProductFavorite;
 use App\Enums\ProductCategory;
 use App\Models\Category;
 use App\Models\EshopCategory;
+use App\Models\ProductReview;
+use App\Support\CarModels;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -32,7 +34,44 @@ class ProductController extends Controller
         return $this->index($request, $slug);
     }
 
-    public function index(Request $request, ?string $categorySlug = null)
+    /**
+     * صفحه‌ی فرود مدل خودرو: /car/{slug}
+     *
+     * جای «/shop?car_model=پژو 206» را می‌گیرد. آدرسی که کلمه‌ی کلیدی را در
+     * مسیر دارد، یک صفحه‌ی مستقل به حساب می‌آید نه نسخه‌ای فیلترشده از
+     * فروشگاه — و «قطعات پژو ۲۰۶» یکی از پرحجم‌ترین کوئری‌های این بازار است.
+     */
+    public function car(Request $request, string $car)
+    {
+        $carName = CarModels::fromSlug(rawurldecode($car));
+
+        if ($carName === null) {
+            return response()->view('errors.404', [], 404);
+        }
+
+        return $this->index($request, null, $carName);
+    }
+
+    /**
+     * صفحه‌ی ترکیبی دسته × خودرو: /car/{car}/{category}
+     *
+     * «لنت ترمز پژو ۲۰۶» — دقیق‌ترین شکل کوئری کاربر. اگر ترکیب هیچ محصولی
+     * نداشته باشد، صفحه ساخته می‌شود ولی noindex می‌گیرد (در ویو، از روی
+     * تعداد نتایج) تا صفحه‌ی خالی وارد ایندکس نشود.
+     */
+    public function carCategory(Request $request, string $car, string $category)
+    {
+        $carName = CarModels::fromSlug(rawurldecode($car));
+        $categorySlug = rawurldecode($category);
+
+        if ($carName === null || ! ProductCategory::fromSlug($categorySlug)) {
+            return response()->view('errors.404', [], 404);
+        }
+
+        return $this->index($request, $categorySlug, $carName);
+    }
+
+    public function index(Request $request, ?string $categorySlug = null, ?string $carLanding = null)
     {
         /*
         | آدرس قدیمی /shop?category=X دیگر کانونیکال نیست. اگر کاربر یا
@@ -49,6 +88,28 @@ class ProductController extends Controller
                     '/shop/' . rawurlencode($enum->slug()) . ($query ? '?' . http_build_query($query) : ''),
                     301
                 );
+            }
+        }
+
+        /*
+        | همان قاعده برای مدل خودرو: «/shop?car_model=پژو 206» با 301 به
+        | «/car/پژو-206» می‌رود. فقط نام‌های شناخته‌شده ریدایرکت می‌شوند؛
+        | car_model عددی، شناسه‌ی EshopCategory است که از فیلتر سایدبار
+        | می‌آید و صفحه‌ی فرود ندارد.
+        */
+        if ($carLanding === null && $request->filled('car_model') && ! $request->ajax() && ! $request->filled('ajaxi')) {
+            $known = ctype_digit((string) $request->car_model)
+                ? null
+                : CarModels::fromSlug($request->car_model);
+
+            if ($known !== null) {
+                $query = $request->except('car_model');
+                $target = '/car/' . rawurlencode(CarModels::slugFor($known));
+                if ($categorySlug !== null) {
+                    $target .= '/' . rawurlencode($categorySlug);
+                }
+
+                return redirect($target . ($query ? '?' . http_build_query($query) : ''), 301);
             }
         }
 
@@ -79,7 +140,10 @@ class ProductController extends Controller
             // Search part name, SKU, and car model together.
             $query->searchText($request->title);
         }
-        if ($request->filled('car_model')) {
+        // فیلتر خودرو یا از مسیر صفحه‌ی فرود می‌آید یا از سایدبار فروشگاه
+        if ($carLanding !== null) {
+            $query->searchCarModel($carLanding);
+        } elseif ($request->filled('car_model')) {
             if (ctype_digit((string) $request->car_model)) {
                 $query->whereHas('categories', function ($q) use ($request) {
                     $q->where('category_id', (int) $request->car_model);
@@ -126,9 +190,109 @@ class ProductController extends Controller
                 'hasPage'    => $model->hasMorePages(),
             ]);
         }
-        $carModel = $request->get('car_model', '');
+        $carModel = $carLanding ?: $request->get('car_model', '');
         $carCategories = EshopCategory::orderBy('name')->get();
-        return view('product.list', compact('model', 'totalCount', 'categories', 'categoryCounts', 'selectedCategoryIds', 'title', 'carModel', 'carCategories', 'categorySlug'));
+
+        // صفحه‌ی فرود: اسلاگ خودرو برای ساخت canonical و لینک‌های داخلی
+        $carLandingSlug = $carLanding !== null ? CarModels::slugFor($carLanding) : null;
+
+        return view('product.list', compact(
+            'model', 'totalCount', 'categories', 'categoryCounts', 'selectedCategoryIds',
+            'title', 'carModel', 'carCategories', 'categorySlug', 'carLanding', 'carLandingSlug'
+        ));
+    }
+
+    /**
+     * پیشنهاد زنده‌ی جستجوی هدر.
+     *
+     * همان عبارتی که کاربر تایپ می‌کند (بدون تغییر یا حدس زدن) با همان
+     * scopeSearchText صفحه‌ی فروشگاه جستجو می‌شود، تا نتیجه‌ی این لیست و
+     * نتیجه‌ی صفحه‌ی /shop هرگز با هم فرق نکنند. کنار محصول‌ها، مدل خودرو
+     * و دسته‌بندیِ متناظر هم پیشنهاد می‌شود چون بخش بزرگی از جستجوها
+     * به‌جای نام قطعه، نام خودرو است.
+     */
+    public function suggest(Request $request)
+    {
+        $raw  = trim((string) $request->get('q', ''));
+        $term = Product::normalizeTerm($raw);
+
+        // یک حرف تنها تقریبا همه‌ی محصولات را برمی‌گرداند؛ نه برای کاربر
+        // مفید است و نه برای دیتابیس ارزان.
+        if (mb_strlen($term) < 2) {
+            return $this->suggestResponse(['q' => $raw, 'products' => [], 'terms' => [], 'total' => 0, 'url' => null]);
+        }
+
+        $payload = \Cache::remember('search_suggest:' . md5($term), 300, function () use ($term) {
+            $products = Product::with(['images', 'categories'])
+                ->where('is_active', 1)
+                ->searchText($term)
+                // مثل صفحه‌ی فروشگاه، محصولات عکس‌دار جلوتر می‌آیند؛ ردیف
+                // بدون تصویر در یک لیست کوچک بیشتر به چشم می‌آید.
+                ->orderByRaw("CASE WHEN file_path IS NULL OR file_path = '' OR file_path = '/images/no-image.svg' THEN 1 ELSE 0 END")
+                ->orderByDesc('id')
+                ->limit(7)
+                ->get()
+                ->map(fn (Product $product) => [
+                    'title' => (string) $product->title,
+                    'url'   => $product->url(),
+                    'image' => $product->image(),
+                    'sku'   => (string) $product->sku,
+                    'car'   => (string) $product->car_model,
+                    'price' => $product->isContactPrice()
+                        ? contactPriceLabel()
+                        : ((int) $product->price > 0 ? toPersianNumbers($product->price) . ' تومان' : ''),
+                ])
+                ->all();
+
+            $terms = [];
+            foreach (ProductCategory::cases() as $case) {
+                if (count($terms) >= 3) {
+                    break;
+                }
+                if (mb_strpos(Product::normalizeTerm($case->label()), $term) !== false) {
+                    $terms[] = [
+                        'label' => 'دسته‌بندی: ' . $case->label(),
+                        'url'   => '/shop/' . rawurlencode($case->slug()),
+                        'icon'  => 'fa-th-large',
+                    ];
+                }
+            }
+
+            $carModels = Product::where('is_active', 1)
+                ->searchCarModel($term)
+                ->whereNotNull('car_model')
+                ->where('car_model', '<>', '')
+                ->distinct()
+                ->orderBy('car_model')
+                ->limit(4)
+                ->pluck('car_model');
+
+            foreach ($carModels as $carModel) {
+                $terms[] = [
+                    'label' => 'قطعات ' . $carModel,
+                    'url'   => '/shop?car_model=' . urlencode($carModel),
+                    'icon'  => 'fa-car',
+                ];
+            }
+
+            return [
+                'products' => $products,
+                'terms'    => $terms,
+                'total'    => Product::where('is_active', 1)->searchText($term)->count(),
+            ];
+        });
+
+        return $this->suggestResponse($payload + [
+            'q'   => $raw,
+            'url' => '/shop?title=' . urlencode($raw),
+        ]);
+    }
+
+    private function suggestResponse(array $payload)
+    {
+        return response()
+            ->json($payload, 200, [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+            ->header('Cache-Control', 'public, max-age=120');
     }
 
     public function getProduct($count)
@@ -141,7 +305,9 @@ class ProductController extends Controller
         if(!$id){
             return response()->view('errors.404', [], 404);
         }
-        $model = Product::with('images')->where('is_active' , 1)->where('id' , $id)->first();
+        // approvedReviews همراه محصول لود می‌شود چون هم در صفحه نمایش
+        // داده می‌شود و هم seo_product_schema از آن اسکیمای Review می‌سازد.
+        $model = Product::with(['images', 'approvedReviews'])->where('is_active' , 1)->where('id' , $id)->first();
         if(!$model)
         {
             return response()->view('errors.404', [], 404);
@@ -159,19 +325,83 @@ class ProductController extends Controller
         return view('product.show' , compact('model','products'));
     }
 
+    /**
+     * ثبت نظر و امتیاز روی محصول.
+     *
+     * نظر مستقیم منتشر نمی‌شود؛ تا تأیید مدیر در وضعیت pending می‌ماند.
+     * محتوای اسپم روی صفحه‌ی محصول، دقیقا همان صفحه‌ای را خراب می‌کند که
+     * قرار بود با نظر کاربران تقویت شود.
+     */
+    public function storeReview(Request $request, $id)
+    {
+        $product = Product::where('is_active', 1)->where('id', $id)->first();
+
+        if (! $product) {
+            return response()->view('errors.404', [], 404);
+        }
+
+        $customer = Auth::guard('customer')->user();
+
+        $validator = Validator::make($request->all(), [
+            'name'    => $customer ? 'nullable|string|max:100' : 'required|string|max:100',
+            'rating'  => 'required|integer|min:1|max:5',
+            'title'   => 'nullable|string|max:255',
+            'comment' => 'required|string|min:10|max:2000',
+        ], [
+            'name.required'    => 'نام خود را وارد کنید.',
+            'rating.required'  => 'امتیاز خود را انتخاب کنید.',
+            'rating.min'       => 'امتیاز باید بین ۱ تا ۵ ستاره باشد.',
+            'rating.max'       => 'امتیاز باید بین ۱ تا ۵ ستاره باشد.',
+            'comment.required' => 'متن نظر را بنویسید.',
+            'comment.min'      => 'متن نظر باید حداقل ۱۰ کاراکتر باشد.',
+        ]);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput()->withFragment('reviews');
+        }
+
+        // یک نظرِ در انتظار تأیید از هر کاربر برای هر محصول کافی است
+        $duplicate = ProductReview::where('product_id', $product->id)
+            ->where('status', ProductReview::STATUS_PENDING)
+            ->where(fn ($q) => $customer
+                ? $q->where('customer_id', $customer->id)
+                : $q->where('ip', $request->ip()))
+            ->exists();
+
+        if ($duplicate) {
+            return back()->with('review_notice', 'نظر قبلی شما هنوز در انتظار تأیید است.')->withFragment('reviews');
+        }
+
+        ProductReview::create([
+            'product_id'  => $product->id,
+            'customer_id' => $customer->id ?? null,
+            'name'        => trim((string) $request->input('name')) ?: ($customer->name ?? 'کاربر ناظر یدک'),
+            'rating'      => (int) $request->input('rating'),
+            'title'       => trim((string) $request->input('title')) ?: null,
+            'comment'     => trim((string) $request->input('comment')),
+            'status'      => ProductReview::STATUS_PENDING,
+            'is_buyer'    => (bool) $customer,
+            'ip'          => $request->ip(),
+        ]);
+
+        return back()->with('review_notice', 'نظر شما ثبت شد و پس از تأیید نمایش داده می‌شود.')->withFragment('reviews');
+    }
+
     public function favorite(Request $request)
     {
         $user = Auth::guard('customer')->user();
         if (! $user) {
             return redirect('/login');
         }
-        $products = Product::whereHas('favorites', function ($q) use ($user) {
-                $q->where('product_favorites.user_id', $user->id);
-            })
-            ->with(['categories', 'favorites' => function ($q) use ($user) {
-                $q->where('product_favorites.user_id', $user->id);
-            }])
-            ->latest()
+        /*
+        | خواندن مستقیم از رابطه‌ی pivot؛ تازه‌ترین علاقه‌مندی بالاتر می‌آید.
+        | محصولات غیرفعال نمایش داده نمی‌شوند تا کاربر روی قطعه‌ای که دیگر
+        | در فروشگاه نیست کلیک نکند.
+        */
+        $products = $user->favoriteProducts()
+            ->where('products.is_active', 1)
+            ->with('categories')
+            ->orderByDesc('product_favorites.created_at')
             ->get();
         return view('product.favorite', compact('products'));
     }

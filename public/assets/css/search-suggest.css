@@ -1,0 +1,175 @@
+/* پنل پیشنهاد جعبه‌ی جستجو (هدر دسکتاپ، نوار موبایل و شیت جستجو).
+   پنل absolute است تا داخل جعبه‌های flexِ جستجو به آیتم فلکس تبدیل نشود
+   و ارتفاع فیلد را به هم نریزد. */
+.nx-suggest {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    left: 0;
+    z-index: 1080;
+    max-height: 68vh;
+    overflow-y: auto;
+    padding: 6px;
+    border: 1px solid #e6e8ec;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, .14);
+    text-align: right;
+    direction: rtl;
+}
+
+.nx-suggest[hidden] {
+    display: none;
+}
+
+.nx-suggest__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 8px 4px;
+    color: #8a9099;
+    font-size: 11.5px;
+    font-weight: 700;
+}
+
+.nx-suggest__head button {
+    border: 0;
+    background: transparent;
+    color: #d32f2f;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.nx-suggest__term,
+.nx-suggest__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    border-radius: 9px;
+    color: #202b38;
+    text-decoration: none;
+    transition: background-color .15s ease;
+}
+
+.nx-suggest__term i {
+    flex-shrink: 0;
+    width: 22px;
+    color: #8a9099;
+    font-size: 13px;
+    text-align: center;
+}
+
+.nx-suggest__term span {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.nx-suggest__item img {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border: 1px solid #f0f1f3;
+    border-radius: 8px;
+    object-fit: contain;
+    background: #fff;
+}
+
+.nx-suggest__body {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.nx-suggest__title {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 12.5px;
+    font-weight: 600;
+    line-height: 1.7;
+}
+
+.nx-suggest__meta {
+    display: block;
+    margin-top: 2px;
+    color: #8a9099;
+    font-size: 11px;
+}
+
+.nx-suggest__price {
+    flex-shrink: 0;
+    color: #202b38;
+    font-size: 12px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+/* تکه‌ی تایپ‌شده‌ی کاربر داخل عنوان */
+.nx-suggest mark {
+    padding: 0;
+    background: transparent;
+    color: #d32f2f;
+    font-weight: 800;
+}
+
+.nx-suggest__term:hover,
+.nx-suggest__item:hover,
+.nx-suggest__term.is-active,
+.nx-suggest__item.is-active,
+.nx-suggest__all.is-active {
+    background: #f5f6f8;
+}
+
+.nx-suggest__all {
+    display: block;
+    margin-top: 4px;
+    padding: 10px 8px;
+    border-top: 1px solid #f0f1f3;
+    border-radius: 0 0 9px 9px;
+    color: #0f3d6e;
+    font-size: 12.5px;
+    font-weight: 700;
+    text-align: center;
+    text-decoration: none;
+}
+
+.nx-suggest__all b {
+    color: #8a9099;
+    font-weight: 700;
+}
+
+.nx-suggest__empty {
+    padding: 18px 10px;
+    color: #8a9099;
+    text-align: center;
+}
+
+.nx-suggest__empty i {
+    font-size: 20px;
+    opacity: .5;
+}
+
+.nx-suggest__empty p {
+    margin: 8px 0 2px;
+    color: #202b38;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.nx-suggest__empty span {
+    font-size: 11.5px;
+}
+
+/* جعبه‌های جستجو باید مرجع موقعیت پنل باشند */
+.search-box-header,
+.mobile-search,
+.app-sheet__search {
+    position: relative;
+}
+
+/* در شیت پایینِ موبایل ارتفاع محدود است؛ پنل نباید از شیت بیرون بزند */
+#app-search-sheet .nx-suggest {
+    max-height: 46vh;
+}

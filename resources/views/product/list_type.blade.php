@@ -29,7 +29,7 @@
     @endif
 
     <span class="nx-gcard-fav itemFavorite_{{ $product->id }}">
-        <i class="{{ count($product->favorites) > 0 ? 'fas' : 'far' }} fa-heart favorite-icon"
+        <i class="{{ is_favorite_product($product->id) ? 'fas' : 'far' }} fa-heart favorite-icon"
            onclick="addFavorite({{ $product->id }})"></i>
     </span>
 

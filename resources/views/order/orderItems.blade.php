@@ -141,6 +141,61 @@
                     </div>
                     @endif
                 </section>
+
+                {{-- پرداخت: وضعیت رسیدِ ثبت‌شده و دکمه‌ی ثبت رسید تازه --}}
+                @php $receipt = $receipt ?? null; @endphp
+                @if($receipt || $order->canReceiveReceipt())
+                <section class="nx-card" style="margin-top:16px;">
+                    <div class="nx-card-head">
+                        <h2><i class="fas fa-money-check-dollar"></i> پرداخت</h2>
+                        @if($receipt)
+                            <span class="nx-order-date" style="font-weight:700; color:{{ $receipt->status === 'paid' ? '#17a566' : ($receipt->status === 'rejected' ? '#c62828' : '#b8860b') }};">
+                                {{ $receipt->statusLabel() }}
+                            </span>
+                        @endif
+                    </div>
+
+                    @if($receipt)
+                        <ul class="nx-datalist">
+                            <li><span>مبلغ ثبت‌شده</span> {{ toPersianNumbers(number_format((int) $receipt->amount)) }} تومان</li>
+                            <li><span>روش پرداخت</span> {{ $receipt->methodLabel() }}</li>
+                            <li>
+                                <span>تاریخ پرداخت</span>
+                                {{ $receipt->paid_at ? gregorian_to_jalali2($receipt->paid_at) : '—' }}
+                            </li>
+                            @if($receipt->reference)
+                                <li><span>شماره پیگیری</span> <bdi>{{ toPersianNumbers($receipt->reference, false) }}</bdi></li>
+                            @endif
+                        </ul>
+
+                        <div class="nx-panel-body" style="font-size:12.5px; line-height:2;">
+                            @if($receipt->status === 'pending')
+                                <i class="fas fa-hourglass-half" style="color:#b8860b;"></i>
+                                رسید شما ثبت شده و در حال بررسی توسط کارشناسان است؛ نتیجه را پیامک می‌کنیم.
+                            @elseif($receipt->status === 'paid')
+                                <i class="fas fa-circle-check" style="color:#17a566;"></i>
+                                پرداخت شما تأیید شد.
+                            @elseif($receipt->status === 'rejected')
+                                <i class="fas fa-circle-exclamation" style="color:#c62828;"></i>
+                                رسید تأیید نشد@if($receipt->admin_note) — دلیل: {{ $receipt->admin_note }}@endif.
+                                در صورت نیاز با {{ shopContactPhoneDisplay() }} تماس بگیرید.
+                            @endif
+                        </div>
+                    @else
+                        <div class="nx-panel-body" style="font-size:12.5px; line-height:2; color:var(--nx-muted,#81858b);">
+                            اگر مبلغ سفارش را کارت‌به‌کارت یا واریز کرده‌اید، مشخصات پرداخت را ثبت کنید تا کارشناسان بررسی و تأیید کنند.
+                        </div>
+                    @endif
+
+                    @if($order->canReceiveReceipt() && (! $receipt || $receipt->status === 'rejected'))
+                        <div class="nx-panel-body" style="padding-top:0;">
+                            <a href="/profile/order/{{ $order->id }}/payment-receipt" class="nx-btn-red">
+                                <i class="fas fa-receipt"></i> {{ $receipt ? 'ثبت رسید جدید' : 'ثبت رسید پرداخت' }}
+                            </a>
+                        </div>
+                    @endif
+                </section>
+                @endif
             </div>
         </div>
     </div>
