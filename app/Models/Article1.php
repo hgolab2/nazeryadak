@@ -21,6 +21,12 @@ class Article1 extends Model
         'imageId',
         'isElastic',
         'keywords',
+        'seo_title',
+        'seo_description',
+        'focus_keyword',
+        'canonical_url',
+        'robots_index',
+        'robots_follow',
         'mainid',
         'rutitr',
         'selective',
@@ -62,7 +68,8 @@ class Article1 extends Model
     }
     public function getUrl()
     {
-        return '/blog/'.$this->articleid.'.html';
+        $slug = seo_slug($this->titr ?: ('article-' . $this->articleid), (string) $this->articleid);
+        return '/blog/' . $this->articleid . '/' . $slug;
     }
     public function get_full_tags()
     {

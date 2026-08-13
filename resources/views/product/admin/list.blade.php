@@ -50,7 +50,12 @@
             </div>
             <div class="col-md-6 col-lg-3 col-sm-12 mt-3">
                 <label for="car_model" class="form-label fw-bold">خودرو</label>
-                <input type="text" name="car_model" id="car_model" value="" class="form-control" placeholder="مثلاً: پژو 206">
+                <select name="car_model" id="car_model" class="form-control">
+                    <option value="">همه خودروها</option>
+                    @foreach($carCategories as $carCategory)
+                        <option value="{{ $carCategory->id }}">{{ $carCategory->name }}</option>
+                    @endforeach
+                </select>
             </div>
             <div class="col-md-6 col-lg-3 col-sm-12 mt-3">
                 <label class="form-label fw-bold">{{l('تعداد نمایش')}}</label>

@@ -8,6 +8,7 @@
         $seoCanonical = $canonical ?? url()->current();
         $seoImage = $ogImage ?? seo_url('/assets/images/logo.png');
         $seoType = $ogType ?? 'website';
+        $seoRobots = $robots ?? (!empty($follow) ? 'noindex,nofollow' : 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1');
         $schemaItems = $schema ?? [];
         if (!empty($schemaItems) && array_is_list($schemaItems) === false) {
             $schemaItems = [$schemaItems];
@@ -16,8 +17,8 @@
     <title>{{ $seoTitle }}</title>
     <meta name="description" content="{{ $seoDescription }}">
     <meta name="keywords" content="{{ $seoKeywords }}">
-    <meta name="robots" content="{{ !empty($follow) ? 'noindex,nofollow' : 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1' }}">
-    <meta name="googlebot" content="{{ !empty($follow) ? 'noindex,nofollow' : 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1' }}">
+    <meta name="robots" content="{{ $seoRobots }}">
+    <meta name="googlebot" content="{{ $seoRobots }}">
     <link rel="canonical" href="{{ $seoCanonical }}">
     <meta property="og:locale" content="fa_IR">
     <meta property="og:site_name" content="{{ seo_site_name() }}">

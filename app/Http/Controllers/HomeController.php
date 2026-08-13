@@ -48,15 +48,27 @@ class HomeController extends Controller
     }
     public function home(Request $request)
 	{
-        $articles = $this->getArticle(17, 'farsi' , 'showdate' , 4);
+        $articles = Article1::orderBy('showdate', 'desc')
+            ->where('hidden', '0')
+            ->where('deleted', '0')
+            ->where('showdate', '<', date('Y-m-d H:i:s'))
+            ->take(4)
+            ->get();
         $products = $this->getProduct(8);
+        $specialProducts = Product::with(['images', 'categories'])
+            ->where('is_active', 1)
+            ->where('is_special_offer', 1)
+            ->where('discount_percent', '>', 0)
+            ->latest('updated_at')
+            ->take(10)
+            ->get();
         $advertisements = $this->getAdvertisement('farsi');
         $carCategories = \App\Models\EshopCategory::withCount('products')
             ->where('is_featured', 1)
             ->orderByDesc('products_count')
             ->take(10)
             ->get();
-        return View('index' , compact('articles','products','advertisements','carCategories'));
+        return View('index' , compact('articles','products','specialProducts','advertisements','carCategories'));
 	}
 
     public function getAdvertisement($lang)
@@ -72,16 +84,10 @@ class HomeController extends Controller
 
     public function getProduct($count)
     {
-        // صفحه‌ی اول فقط چند محصول را در اسلایدر نشان می‌دهد و صفحه‌بندی ندارد؛
-        // paginate() یک کوئری count(*) اضافه روی کل جدول می‌زد که بی‌استفاده بود.
-        return Product::orderBy('id', 'desc')
-            ->where('is_active', '1')
-            ->where('file_path', '!=', '')
-            ->limit($count)
-            ->get();
+        return Product::with(['images', 'categories'])->orderBy('id' , 'desc')->where('is_active' , '1')->where('file_path' ,'!=', '')->paginate($count);
     }
 
-    public function getArticle($categoryid , $lang = 'farsi' , $sort = 'showdate' , $count)
+    public function getArticle($categoryid, $count, $lang = 'farsi', $sort = 'showdate')
     {
         Config::set('app.locale' , $lang);
         $category = Category::find($categoryid);
@@ -176,3 +182,4 @@ class HomeController extends Controller
         return View('dashboard', compact('favorites' , 'orders' , 'customer' , 'address'));
 	}
 }
+

@@ -4,6 +4,7 @@ use App\Models\Product;
 use App\Models\ProductFavorite;
 use App\Enums\ProductCategory;
 use App\Models\Category;
+use App\Models\EshopCategory;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -35,11 +36,17 @@ class ProductController extends Controller
             ->pluck('cnt', 'product_in_category.category_id');
         $query = Product::where('is_active', 1);
         if ($request->filled('title')) {
-            // نام قطعه، کد فنی و خودرو را با هم می‌گردد و ک/ی عربی و فارسی را یکسان می‌گیرد
+            // Search part name, SKU, and car model together.
             $query->searchText($request->title);
         }
         if ($request->filled('car_model')) {
-            $query->searchCarModel($request->car_model);
+            if (ctype_digit((string) $request->car_model)) {
+                $query->whereHas('categories', function ($q) use ($request) {
+                    $q->where('category_id', (int) $request->car_model);
+                });
+            } else {
+                $query->searchCarModel($request->car_model);
+            }
         }
         if ($request->filled('categories')) {
             $categoryIds = explode(',', $request->categories);
@@ -73,7 +80,8 @@ class ProductController extends Controller
             ]);
         }
         $carModel = $request->get('car_model', '');
-        return view('product.list', compact('model', 'totalCount', 'categories', 'categoryCounts', 'selectedCategoryIds', 'title', 'carModel'));
+        $carCategories = EshopCategory::orderBy('name')->get();
+        return view('product.list', compact('model', 'totalCount', 'categories', 'categoryCounts', 'selectedCategoryIds', 'title', 'carModel', 'carCategories'));
     }
 
     public function getProduct($count)
@@ -86,12 +94,13 @@ class ProductController extends Controller
         if(!$id){
             return view('errors.404');
         }
-        $model = Product::where('is_active' , 1)->where('id' , $id)->first();
+        $model = Product::with('images')->where('is_active' , 1)->where('id' , $id)->first();
         if(!$model)
         {
             return view('errors.404');
         }
-                if ($slug !== null && request()->path() !== ltrim($model->url(), '/')) {
+                $currentPath = rawurldecode(request()->path());
+        if ($slug !== null && $currentPath !== ltrim($model->url(), '/')) {
             return redirect($model->url(), 301);
         }
         $products = $this->getProduct(8);
@@ -167,3 +176,4 @@ class ProductController extends Controller
         ], config('StatusCode.SUCCESS'));
     }
 }
+

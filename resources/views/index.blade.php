@@ -1,181 +1,74 @@
+@php
+    $fa = fn($s) => urldecode($s);
+@endphp
 @extends('layout.layout', [
-    'title' => 'ناظر یدک | خرید لوازم یدکی اصلی خودرو و قطعات ایساکو',
-    'metaDescription' => 'ناظر یدک فروشگاه تخصصی خرید لوازم یدکی خودرو، قطعات اصلی ایساکو، قطعات مصرفی، موتوری، برقی، بدنه و جلوبندی با ضمانت اصالت کالا و ارسال سراسر کشور است.',
+    'title' => $fa('%D9%86%D8%A7%D8%B8%D8%B1%20%DB%8C%D8%AF%DA%A9%20%7C%20%D9%81%D8%B1%D9%88%D8%B4%DA%AF%D8%A7%D9%87%20%D9%82%D8%B7%D8%B9%D8%A7%D8%AA%20%D9%88%20%D9%84%D9%88%D8%A7%D8%B2%D9%85%20%DB%8C%D8%AF%DA%A9%DB%8C'),
+    'metaDescription' => $fa('%D9%86%D8%A7%D8%B8%D8%B1%20%DB%8C%D8%AF%DA%A9%20%D9%81%D8%B1%D9%88%D8%B4%DA%AF%D8%A7%D9%87%20%D8%AA%D8%AE%D8%B5%D8%B5%DB%8C%20%D9%82%D8%B7%D8%B9%D8%A7%D8%AA%20%D8%AE%D9%88%D8%AF%D8%B1%D9%88%20%D8%A8%D8%A7%20%D8%AA%D9%85%D8%B1%DA%A9%D8%B2%20%D8%A8%D8%B1%20%D9%82%D8%B7%D8%B9%D8%A7%D8%AA%20%D8%A7%D8%B5%D9%84%DB%8C%20%D8%A7%DB%8C%D8%B3%D8%A7%DA%A9%D9%88%20%D8%A7%D8%B3%D8%AA.'),
     'keywords' => seo_default_keywords(),
     'canonical' => seo_url(),
     'ogImage' => seo_url('/assets/images/logo.png'),
     'schema' => [seo_store_schema(), ['@context' => 'https://schema.org', '@type' => 'WebSite', '@id' => seo_url('#website'), 'url' => seo_url(), 'name' => seo_site_name(), 'inLanguage' => 'fa-IR', 'potentialAction' => ['@type' => 'SearchAction', 'target' => seo_url('/shop?title={search_term_string}'), 'query-input' => 'required name=search_term_string']]],
 ])
 @section('main_content')
-<main class="home-page">
-    <section class="home-hero">
+<main class="dk-home">
+    <section class="dk-hero-wrap">
         <div class="container">
-            <div class="home-hero-grid">
-                <div class="home-hero-content">
-                    <span class="home-kicker"><i class="fas fa-shield-alt"></i> تمرکز ویژه بر قطعات اصلی ایساکو</span>
-                    <h1>خرید <span class="hero-highlight">سریع</span> لوازم یدکی خودرو با کد فنی یا نام قطعه</h1>
-                    <p>قطعات مصرفی، موتوری، برقی، بدنه، ترمز و جلوبندی برای پژو، سمند، دنا، پراید، تیبا و تارا — با ضمانت اصالت و ارسال به سراسر کشور.</p>
-                    <div class="home-hero-actions">
-                        <a href="/shop" class="home-primary-action"><i class="fas fa-store"></i> فروشگاه قطعات</a>
-                        <a href="tel:09127471631" class="home-secondary-action"><i class="fas fa-headset"></i> مشاوره خرید</a>
+            <div class="dk-hero-grid">
+                <section class="dk-main-slider" aria-label="{{ $fa('%D8%A7%D8%B3%D9%84%D8%A7%DB%8C%D8%AF%D8%B1%20%D8%AA%D8%A8%D9%84%DB%8C%D8%BA%D8%A7%D8%AA') }}">
+                    <div class="owl-carousel owl-theme home-ad-carousel">
+                        @if(isset($advertisements) && $advertisements->count())
+                            @foreach($advertisements as $ad)
+                                @if($ad->media)
+                                    <a href="{{ $ad->link ?: '#' }}" class="dk-main-slide"><img src="{{ $ad->media->getPath() }}" alt="{{ $ad->title }}"></a>
+                                @endif
+                            @endforeach
+                        @else
+                            <a href="/admin/advertisement/create" class="dk-main-slide dk-slide-fallback"><span>{{ $fa('%D9%88%DB%8C%D8%AA%D8%B1%DB%8C%D9%86%20%D9%88%DB%8C%DA%98%D9%87%20%D9%86%D8%A7%D8%B8%D8%B1%20%DB%8C%D8%AF%DA%A9') }}</span><strong>{{ $fa('%D8%A8%D9%86%D8%B1%20%D8%AA%D8%A8%D9%84%DB%8C%D8%BA%D8%A7%D8%AA%DB%8C%20%D8%B5%D9%81%D8%AD%D9%87%20%D8%A7%D9%88%D9%84') }}</strong><small>{{ $fa('%D8%A7%D8%B2%20%D9%85%D8%AF%DB%8C%D8%B1%DB%8C%D8%AA%20%D8%AA%D8%A8%D9%84%DB%8C%D8%BA%D8%A7%D8%AA%D8%8C%20%D8%AC%D8%A7%DB%8C%DA%AF%D8%A7%D9%87%20%D8%A7%D8%B3%D9%84%D8%A7%DB%8C%D8%AF%D8%B1%20%D9%81%D8%B1%D9%88%D8%B4%DA%AF%D8%A7%D9%87%20%D8%B1%D8%A7%20%D8%AB%D8%A8%D8%AA%20%DA%A9%D9%86%DB%8C%D8%AF.') }}</small></a>
+                            <a href="/shop" class="dk-main-slide dk-slide-alt"><span>{{ $fa('%D8%AE%D8%B1%DB%8C%D8%AF%20%D9%85%D8%B7%D9%85%D8%A6%D9%86') }}</span><strong>{{ $fa('%D9%82%D8%B7%D8%B9%D8%A7%D8%AA%20%D8%A7%D8%B5%D9%84%DB%8C%20%D8%AE%D9%88%D8%AF%D8%B1%D9%88') }}</strong><small>{{ $fa('%D8%AC%D8%B3%D8%AA%D8%AC%D9%88%20%D8%A8%D8%A7%20%DA%A9%D8%AF%20%D9%81%D9%86%DB%8C%D8%8C%20%D9%86%D8%A7%D9%85%20%D9%82%D8%B7%D8%B9%D9%87%20%DB%8C%D8%A7%20%D9%85%D8%AF%D9%84%20%D8%AE%D9%88%D8%AF%D8%B1%D9%88') }}</small></a>
+                        @endif
                     </div>
-                </div>
-                <div class="home-hero-media home-isaco-card" aria-label="قطعات ایساکو">
-                    <img src="/assets/images/isaco-logo.png" class="home-isaco-logo" alt="لوگوی ایساکو - قطعات اصلی خودرو">
-                    <div class="isaco-card-copy">
-                        <strong>تمرکز بر قطعات اصلی ایساکو</strong>
-                        <span>جستجو با نام قطعه، خودرو یا کد فنی</span>
-                    </div>
-                </div>
+                </section>
+                <aside class="dk-hero-side">
+                    <img src="/assets/images/isaco-logo.png" alt="{{ $fa('%D9%84%D9%88%DA%AF%D9%88%DB%8C%20%D8%A7%DB%8C%D8%B3%D8%A7%DA%A9%D9%88') }}">
+                    <strong>{{ $fa('%D9%82%D8%B7%D8%B9%D8%A7%D8%AA%20%D8%A7%D8%B5%D9%84%DB%8C%20%D8%A7%DB%8C%D8%B3%D8%A7%DA%A9%D9%88') }}</strong>
+                    <p>{{ $fa('%D8%A7%D8%B5%D8%A7%D9%84%D8%AA%D8%8C%20%D9%85%D9%88%D8%AC%D9%88%D8%AF%DB%8C%20%D9%88%20%D8%AE%D8%B1%DB%8C%D8%AF%20%D8%B3%D8%B1%DB%8C%D8%B9') }}</p>
+                    <a href="/shop">{{ $fa('%D9%88%D8%B1%D9%88%D8%AF%20%D8%A8%D9%87%20%D9%81%D8%B1%D9%88%D8%B4%DA%AF%D8%A7%D9%87') }}</a>
+                </aside>
             </div>
         </div>
     </section>
 
     <div class="container">
-        <section class="home-mobile-shortcuts" aria-label="دسترسی سریع">
-            <a href="/shop?title=لنت ترمز"><i class="fas fa-compact-disc"></i><span>لنت ترمز</span></a>
-            <a href="/shop?title=فیلتر روغن"><i class="fas fa-oil-can"></i><span>فیلتر روغن</span></a>
-            <a href="/shop?title=تسمه تایم"><i class="fas fa-cogs"></i><span>تسمه تایم</span></a>
-            <a href="/shop?title=سنسور"><i class="fas fa-bolt"></i><span>سنسورها</span></a>
+        <section class="dk-quick-icons" aria-label="{{ $fa('%D8%AF%D8%B3%D8%AA%D8%B1%D8%B3%DB%8C%20%D8%B3%D8%B1%DB%8C%D8%B9') }}">
+            <a href="/shop?title={{ $fa('%D9%84%D9%86%D8%AA%20%D8%AA%D8%B1%D9%85%D8%B2') }}"><i class="fas fa-compact-disc"></i><span>{{ $fa('%D9%84%D9%86%D8%AA%20%D8%AA%D8%B1%D9%85%D8%B2') }}</span></a>
+            <a href="/shop?title={{ $fa('%D9%81%DB%8C%D9%84%D8%AA%D8%B1%20%D8%B1%D9%88%D8%BA%D9%86') }}"><i class="fas fa-oil-can"></i><span>{{ $fa('%D9%81%DB%8C%D9%84%D8%AA%D8%B1%20%D8%B1%D9%88%D8%BA%D9%86') }}</span></a>
+            <a href="/shop?title={{ $fa('%D8%AA%D8%B3%D9%85%D9%87%20%D8%AA%D8%A7%DB%8C%D9%85') }}"><i class="fas fa-cogs"></i><span>{{ $fa('%D8%AA%D8%B3%D9%85%D9%87%20%D8%AA%D8%A7%DB%8C%D9%85') }}</span></a>
+            <a href="/shop?title={{ $fa('%D8%B3%D9%86%D8%B3%D9%88%D8%B1') }}"><i class="fas fa-bolt"></i><span>{{ $fa('%D8%B3%D9%86%D8%B3%D9%88%D8%B1%D9%87%D8%A7') }}</span></a>
+            <a href="/shop?title={{ $fa('%D8%B3%D9%BE%D8%B1') }}"><i class="fas fa-car-side"></i><span>{{ $fa('%D8%A8%D8%AF%D9%86%D9%87') }}</span></a>
+            <a href="/shop?title={{ $fa('%DA%86%D8%B1%D8%A7%D8%BA') }}"><i class="fas fa-lightbulb"></i><span>{{ $fa('%DA%86%D8%B1%D8%A7%D8%BA') }}</span></a>
         </section>
 
-        <section class="product-slider home-section">
-            <div class="section-header">
-                <h2 class="section-title">پیشنهاد ویژه قطعات خودرو و ایساکو</h2>
-                <a href="/shop" class="section-link">مشاهده همه محصولات <i class="fa fa-chevron-left"></i></a>
-            </div>
-            <div class="owl-carousel owl-theme custom-product-slider">
-                @foreach($products as $product)
-                    @include('product.product_card', ['product' => $product])
-                @endforeach
-            </div>
-        </section>
-
-        @if(isset($carCategories) && $carCategories->count() > 0)
-        <section class="home-section car-select-section">
-            <div class="section-header">
-                <h2 class="section-title"><i class="fas fa-car me-2" style="color:var(--accent);"></i> خرید بر اساس خودرو</h2>
-                <a href="/shop" class="section-link">مشاهده همه <i class="fa fa-chevron-left"></i></a>
-            </div>
-            <div class="home-car-grid">
-                @foreach($carCategories as $cat)
-                <a href="/shop?car_model={{ urlencode($cat->name) }}" class="home-car-card">
-                    @if($cat->image)
-                        <img src="{{ $cat->image }}" alt="لوازم یدکی {{ $cat->name }}">
-                    @else
-                        <span class="home-car-icon"><i class="fas fa-car"></i></span>
-                    @endif
-                    <strong>{{ $cat->name }}</strong>
-                    <span>{{ number_format($cat->products_count) }} قطعه</span>
-                </a>
-                @endforeach
-            </div>
+        @if(isset($specialProducts) && $specialProducts->count())
+        <section class="dk-amazing-section">
+            <div class="dk-amazing-head"><strong>{{ $fa('%D9%81%D8%B1%D9%88%D8%B4%20%D9%88%DB%8C%DA%98%D9%87') }}</strong><span>{{ $fa('%D9%BE%DB%8C%D8%B4%D9%86%D9%87%D8%A7%D8%AF%D9%87%D8%A7%DB%8C%20%D8%B4%DA%AF%D9%81%D8%AA%E2%80%8C%D8%A7%D9%86%DA%AF%DB%8C%D8%B2%20%D8%A7%D9%85%D8%B1%D9%88%D8%B2') }}</span><a href="/shop">{{ $fa('%D9%87%D9%85%D9%87') }}</a></div>
+            <div class="owl-carousel owl-theme custom-product-slider dk-amazing-slider">@foreach($specialProducts as $product) @include('product.product_card', ['product' => $product]) @endforeach</div>
         </section>
         @endif
 
-        <section class="home-section home-category-band">
-            <div class="section-header">
-                <h2 class="section-title">دسته‌بندی‌های پرجستجو</h2>
-                <a href="/shop" class="section-link">ورود به فروشگاه <i class="fa fa-chevron-left"></i></a>
-            </div>
-            <div class="home-category-grid">
-                <a href="/shop?category=قطعات-مصرفی"><i class="fas fa-oil-can"></i><strong>قطعات مصرفی</strong><span>روغن، فیلتر، لنت و تسمه</span></a>
-                <a href="/shop?category=موتور-و-اجزای-متعلقه"><i class="fas fa-cogs"></i><strong>قطعات موتوری</strong><span>قطعات اصلی موتور خودرو</span></a>
-                <a href="/shop?category=سیستم-چرخ-و-ترمز"><i class="fas fa-compact-disc"></i><strong>ترمز و جلوبندی</strong><span>ایمنی و کنترل خودرو</span></a>
-                <a href="/shop?category=سیستم-برق"><i class="fas fa-bolt"></i><strong>برق و سنسورها</strong><span>چراغ، سنسور و برق خودرو</span></a>
-            </div>
-        </section>
+        <section class="dk-product-section"><div class="dk-section-head"><h2>{{ $fa('%D9%BE%DB%8C%D8%B4%D9%86%D9%87%D8%A7%D8%AF%20%D9%88%DB%8C%DA%98%D9%87%20%D9%82%D8%B7%D8%B9%D8%A7%D8%AA%20%D8%AE%D9%88%D8%AF%D8%B1%D9%88%20%D9%88%20%D8%A7%DB%8C%D8%B3%D8%A7%DA%A9%D9%88') }}</h2><a href="/shop">{{ $fa('%D9%85%D8%B4%D8%A7%D9%87%D8%AF%D9%87%20%D9%87%D9%85%D9%87') }}</a></div><div class="owl-carousel owl-theme custom-product-slider">@foreach($products as $product) @include('product.product_card', ['product' => $product]) @endforeach</div></section>
 
-        <section class="home-section home-help-panel">
-            <div>
-                <h2>قطعه مناسب خودروی خود را پیدا نمی‌کنید؟</h2>
-                <p>نام خودرو، نام قطعه یا کد فنی را بفرستید تا برای انتخاب لوازم یدکی اصلی راهنمایی شوید.</p>
-            </div>
-            <a href="/contact-us"><i class="fas fa-phone-alt"></i> تماس با کارشناسان</a>
-        </section>
+        @if(isset($carCategories) && $carCategories->count() > 0)
+        <section class="dk-car-section"><div class="dk-section-head"><h2>{{ $fa('%D8%AE%D8%B1%DB%8C%D8%AF%20%D8%A8%D8%B1%20%D8%A7%D8%B3%D8%A7%D8%B3%20%D8%AE%D9%88%D8%AF%D8%B1%D9%88') }}</h2><a href="/shop">{{ $fa('%D9%87%D9%85%D9%87') }}</a></div><div class="home-car-grid">@foreach($carCategories as $cat)<a href="/shop?car_model={{ urlencode($cat->name) }}" class="home-car-card">@if($cat->image)<img src="{{ $cat->image }}" alt="{{ $cat->name }}">@else<span class="home-car-icon"><i class="fas fa-car"></i></span>@endif<strong>{{ $cat->name }}</strong><span>{{ number_format($cat->products_count) }} {{ $fa('%D9%82%D8%B7%D8%B9%D9%87') }}</span></a>@endforeach</div></section>
+        @endif
 
-        <section class="product-slider home-section">
-            <div class="section-header">
-                <h2 class="section-title">آخرین مطالب راهنمای خرید</h2>
-                <a href="/blog" class="section-link">مشاهده همه مطالب <i class="fa fa-chevron-left"></i></a>
-            </div>
-            <div class="row mt-2 g-3">
-                @foreach ($articles as $article)
-                    <div class="col-6 col-lg-3">
-                        <a href="{{$article->getUrl()}}" class="d-block h-100 text-decoration-none">
-                            <div class="blog-card-new">
-                                @if($article->image && $article->images)
-                                    <img title="{{$article->titr}}" src="{{$article->images->getPath()}}" alt="{{$article->titr}}">
-                                @else
-                                    @php
-                                        $blogIcons = ['fa-oil-can','fa-cogs','fa-fan','fa-car-battery'];
-                                        $blogColors = ['#e65100','#1565c0','#2e7d32','#7b1fa2'];
-                                        $idx = $loop->index % 4;
-                                    @endphp
-                                    <div class="blog-card-fallback" style="background:{{ $blogColors[$idx] }}12; color:{{ $blogColors[$idx] }}55;"><i class="fas {{ $blogIcons[$idx] }}"></i></div>
-                                @endif
-                                <div class="p-3">
-                                    <h3>{{$article->titr}}</h3>
-                                    @if($article->sutitr)
-                                        <p>{{ Str::limit($article->sutitr, 72) }}</p>
-                                    @endif
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                @endforeach
-            </div>
-        </section>
+        <section class="dk-help-strip"><div><strong>{{ $fa('%D9%82%D8%B7%D8%B9%D9%87%20%D9%85%D9%86%D8%A7%D8%B3%D8%A8%20%D8%B1%D8%A7%20%D9%BE%DB%8C%D8%AF%D8%A7%20%D9%86%D9%85%DB%8C%E2%80%8C%DA%A9%D9%86%DB%8C%D8%AF%D8%9F') }}</strong><span>{{ $fa('%D8%A8%D8%A7%20%DA%A9%D8%AF%20%D9%81%D9%86%DB%8C%20%DB%8C%D8%A7%20%D9%85%D8%AF%D9%84%20%D8%AE%D9%88%D8%AF%D8%B1%D9%88%20%D8%B1%D8%A7%D9%87%D9%86%D9%85%D8%A7%DB%8C%DB%8C%20%D9%85%DB%8C%E2%80%8C%D8%B4%D9%88%DB%8C%D8%AF.') }}</span></div><a href="/contact-us">{{ $fa('%D8%AA%D9%85%D8%A7%D8%B3%20%D8%A8%D8%A7%20%DA%A9%D8%A7%D8%B1%D8%B4%D9%86%D8%A7%D8%B3') }}</a></section>
 
-        {{-- متن معرفی و لینک‌های پرجستجو: انتهای صفحه تا جلوی خرید را نگیرد --}}
-        <section class="home-section home-seo-hub" aria-labelledby="home-seo-title">
-            <h2 class="home-seo-title" id="home-seo-title">فروشگاه تخصصی لوازم یدکی و قطعات ایساکو</h2>
-            <div class="home-seo-copy">
-                <p>در ناظر یدک می‌توانید برای خودروهای پرتقاضا مثل پژو ۲۰۶، پژو ۴۰۵، سمند، دنا، رانا، تارا، تیبا و پراید قطعات اصلی و مصرفی را بر اساس نام قطعه، کد فنی، دسته‌بندی و خودرو مناسب پیدا کنید. تمرکز فروشگاه روی قطعات اصلی ایساکو، قیمت شفاف، ضمانت اصالت و ارسال سراسر کشور است.</p>
-                <div class="home-keyword-links">
-                    <a href="/shop?title=لنت ترمز">خرید لنت ترمز</a>
-                    <a href="/shop?title=فیلتر روغن">خرید فیلتر روغن</a>
-                    <a href="/shop?title=تسمه تایم">خرید تسمه تایم</a>
-                    <a href="/shop?car_model=پژو 206">لوازم یدکی پژو ۲۰۶</a>
-                    <a href="/shop?car_model=سمند">لوازم یدکی سمند</a>
-                    <a href="/shop?car_model=دنا">لوازم یدکی دنا</a>
-                    <a href="/shop?car_model=پراید">لوازم یدکی پراید</a>
-                    <a href="/shop?title=ایساکو">قطعات اصلی ایساکو</a>
-                </div>
-            </div>
-        </section>
+        <section class="dk-blog-section"><div class="dk-section-head"><h2>{{ $fa('%D8%A2%D8%AE%D8%B1%DB%8C%D9%86%20%D9%85%D8%B7%D8%A7%D9%84%D8%A8%20%D8%B1%D8%A7%D9%87%D9%86%D9%85%D8%A7%DB%8C%20%D8%AE%D8%B1%DB%8C%D8%AF') }}</h2><a href="/blog">{{ $fa('%D9%87%D9%85%D9%87') }}</a></div><div class="row g-3">@foreach ($articles as $article)<div class="col-6 col-lg-3"><a href="{{$article->getUrl()}}" class="d-block h-100 text-decoration-none"><div class="blog-card-new">@if($article->image && $article->images)<img title="{{$article->titr}}" src="{{$article->images->getPath()}}" alt="{{$article->titr}}">@else<div class="blog-card-fallback"><i class="fas fa-cogs"></i></div>@endif<div class="p-3"><h3>{{$article->titr}}</h3>@if($article->sutitr)<p>{{ Str::limit($article->sutitr, 72) }}</p>@endif</div></div></a></div>@endforeach</div></section>
     </div>
 </main>
 @endsection
-
 @section('js')
 <script>
-// ظاهر شدن نرم بخش‌ها هنگام اسکرول.
-// کلاس فقط وقتی اضافه می‌شود که مرورگر IntersectionObserver داشته باشد،
-// در غیر این صورت صفحه بدون انیمیشن و کاملاً قابل مشاهده می‌ماند.
-(function () {
-    if (!('IntersectionObserver' in window)) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-    var targets = document.querySelectorAll('.home-section, .home-trust-strip, .home-mobile-shortcuts');
-    if (!targets.length) return;
-
-    document.body.classList.add('joy-reveal');
-
-    var observer = new IntersectionObserver(function (entries) {
-        entries.forEach(function (entry) {
-            if (!entry.isIntersecting) return;
-            entry.target.classList.add('is-revealed');
-            observer.unobserve(entry.target);
-        });
-    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.06 });
-
-    targets.forEach(function (el) { observer.observe(el); });
-
-    // اگر به هر دلیلی observer کار نکرد، بعد از ۲ ثانیه همه‌چیز نمایش داده شود
-    setTimeout(function () {
-        targets.forEach(function (el) { el.classList.add('is-revealed'); });
-    }, 2000);
-})();
+$(function(){if($('.home-ad-carousel').length){$('.home-ad-carousel').owlCarousel({rtl:true,items:1,loop:true,dots:true,nav:true,autoplay:true,autoplayTimeout:4500,autoplayHoverPause:true});}});
 </script>
 @endsection
