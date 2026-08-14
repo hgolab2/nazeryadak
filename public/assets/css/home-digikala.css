@@ -2017,6 +2017,60 @@ body {
     box-shadow: 0 0 0 3px rgba(23, 165, 102, .12);
 }
 
+/* نوار «چقدر مانده تا عمده» و دکمه‌ی پرش به آستانه */
+.dk-wholesale-progress {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed #cfe9dd;
+}
+
+.dk-wholesale-remain {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #8a6100;
+    font-size: 12.5px;
+    font-weight: 800;
+}
+
+.dk-wholesale-remain i {
+    color: #f0b429;
+}
+
+.dk-wholesale-remain.is-done {
+    color: #0f8a5f;
+}
+
+.dk-wholesale-remain.is-done i {
+    color: #17a566;
+}
+
+.dk-wholesale-jump {
+    margin-right: auto;
+    padding: 5px 12px;
+    border: 1px solid #17a566;
+    border-radius: 999px;
+    background: #fff;
+    color: #0f8a5f;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.dk-wholesale-jump:hover {
+    background: #17a566;
+    color: #fff;
+}
+
+.dk-wholesale-jump[hidden] {
+    display: none;
+}
+
 /* برچسب کارت محصول در فهرست‌ها */
 .nx-pcard-wholesale {
     display: inline-flex;

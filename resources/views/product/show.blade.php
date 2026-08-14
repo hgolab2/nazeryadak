@@ -185,6 +185,21 @@
                             چون مبلغ سفارش به {{ shippingAmountWords(wholesaleTargetAmount()) }} می‌رسد،
                             <b>ارسال رایگان</b> است.
                         </p>
+                        @if($stock >= $wsQty)
+                            {{-- وضعیت زنده‌ی تعدادِ انتخاب‌شده نسبت به آستانه؛ بدون این، کاربر
+                                 باید خودش عددها را کم و زیاد کند تا بفهمد کِی قیمت عوض می‌شود --}}
+                            <div class="dk-wholesale-progress">
+                                <span class="dk-wholesale-remain" id="dk-ws-remain">
+                                    <i class="fas fa-arrow-up-long"></i>
+                                    <span class="js-ws-remain-text">
+                                        {{ toPersianNumbers($wsQty - 1, false) }} عدد دیگر تا قیمت عمده
+                                    </span>
+                                </span>
+                                <button type="button" class="dk-wholesale-jump js-ws-jump" data-qty="{{ $wsQty }}">
+                                    انتخاب {{ toPersianNumbers($wsQty, false) }} عدد
+                                </button>
+                            </div>
+                        @endif
                         @if($stock > 0 && $stock < $wsQty)
                             <p class="dk-wholesale-line dk-wholesale-warn">
                                 <i class="fas fa-circle-info"></i>
@@ -406,6 +421,17 @@ $(function () {
         $('#dk-price-mode').prop('hidden', !isWholesale);
         $('#dk-unit-price').text(money(isWholesale ? wsPrice : retail));
         $('.mobile-actionbar__price .js-bar-price').text(money(isWholesale ? wsPrice : retail));
+
+        // فاصله‌ی تا آستانه به‌جای یک جمله‌ی ثابت، همراه با تعدادِ انتخاب‌شده جلو می‌رود
+        var $remain = $('#dk-ws-remain');
+        if ($remain.length) {
+            $remain.toggleClass('is-done', isWholesale);
+            $remain.find('i').attr('class', isWholesale ? 'fas fa-circle-check' : 'fas fa-arrow-up-long');
+            $remain.find('.js-ws-remain-text').text(isWholesale
+                ? 'قیمت عمده روی این تعداد اعمال شد'
+                : toFa(wsMin - value) + ' عدد دیگر تا قیمت عمده');
+            $('.js-ws-jump').prop('hidden', isWholesale);
+        }
     }
 
     function setQty(value) {
@@ -419,6 +445,8 @@ $(function () {
 
     $(document).on('click', '.js-qty-plus', function () { setQty((parseInt($qty.val(), 10) || 1) + 1); });
     $(document).on('click', '.js-qty-minus', function () { setQty((parseInt($qty.val(), 10) || 1) - 1); });
+    // پرش مستقیم به آستانه؛ وگرنه کاربر باید چندین بار روی + بزند
+    $(document).on('click', '.js-ws-jump', function () { setQty(parseInt($(this).data('qty'), 10) || 1); });
     setQty(1);
 });
 </script>
