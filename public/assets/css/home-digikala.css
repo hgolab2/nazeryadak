@@ -1929,6 +1929,108 @@ body {
     font-weight: 700;
 }
 
+/* ---------- فروش عمده ---------- */
+
+/* برچسبی که کنار قیمت روشن می‌شود وقتی تعداد انتخابی به آستانه‌ی عمده رسیده */
+.dk-price-mode {
+    display: inline-block;
+    margin-right: 8px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: #e8f6ef;
+    color: #17a566;
+    font-size: 11.5px;
+    font-weight: 900;
+    vertical-align: middle;
+}
+
+.dk-price-mode[hidden] {
+    display: none;
+}
+
+.dk-wholesale {
+    margin: 0 0 16px;
+    padding: 12px 14px;
+    border: 1px solid #cfe9dd;
+    border-radius: 10px;
+    background: #f4fbf8;
+}
+
+.dk-wholesale-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    color: #0f8a5f;
+    font-size: 13.5px;
+    font-weight: 900;
+}
+
+.dk-wholesale-head i {
+    font-size: 15px;
+}
+
+.dk-wholesale-off {
+    margin-right: auto;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: #17a566;
+    color: #fff;
+    font-size: 11.5px;
+    font-weight: 900;
+}
+
+.dk-wholesale-line {
+    margin: 0 0 6px;
+    color: #3f4064;
+    font-size: 12.5px;
+    line-height: 2;
+}
+
+.dk-wholesale-line:last-child {
+    margin-bottom: 0;
+}
+
+.dk-wholesale-line b {
+    color: #0f8a5f;
+    font-weight: 900;
+}
+
+.dk-wholesale-saving i,
+.dk-wholesale-ship i {
+    margin-left: 4px;
+    color: #17a566;
+}
+
+.dk-wholesale-warn {
+    color: #8a6100;
+}
+
+.dk-wholesale-warn i {
+    margin-left: 4px;
+    color: #f0b429;
+}
+
+/* حالت فعال: کاربر تعداد را به آستانه رسانده است */
+.dk-wholesale.is-active {
+    border-color: #17a566;
+    box-shadow: 0 0 0 3px rgba(23, 165, 102, .12);
+}
+
+/* برچسب کارت محصول در فهرست‌ها */
+.nx-pcard-wholesale {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 6px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #e8f6ef;
+    color: #0f8a5f;
+    font-size: 10.5px;
+    font-weight: 800;
+}
+
 .nx-detail .dk-buy-box .add-cart-btn {
     display: flex;
     align-items: center;

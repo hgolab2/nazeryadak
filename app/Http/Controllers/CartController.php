@@ -39,41 +39,66 @@ class CartController extends Controller
         $contactPrice = $product->isContactPrice();
 
         if ($inCart > 0) {
-            $cart[$product->id]['quantity']      = $inCart + $quantity;
-            $cart[$product->id]['price']         = $product->sellablePrice();
-            $cart[$product->id]['contact_price'] = $contactPrice;
+            $cart[$product->id]['quantity'] = $inCart + $quantity;
         } else {
             $cart[$product->id] = [
-                'title'         => $product->title,
-                'price'         => $product->sellablePrice(),
-                'contact_price' => $contactPrice,
-                'quantity'      => $quantity,
-                'image'         => $product->image(),
-                'url'           => $product->url(),
+                'title'    => $product->title,
+                'quantity' => $quantity,
+                'image'    => $product->image(),
+                'url'      => $product->url(),
             ];
         }
 
+        self::syncLine($cart, $product);
         session()->put('cart', $cart);
+
+        $line = $cart[$product->id];
 
         return response()->json([
             'status'        => 'success',
-            'quantity'      => $cart[$product->id]['quantity'],
+            'quantity'      => $line['quantity'],
             'cart_count'    => count($cart),
             'contact_price' => $contactPrice,
+            'is_wholesale'  => (bool) ($line['is_wholesale'] ?? false),
             'message'       => $contactPrice
                 ? 'قطعه به سبد اضافه شد؛ قیمت این قطعه تلفنی اعلام می‌شود'
-                : null,
+                : ($line['is_wholesale'] ?? false ? 'قیمت عمده برای این قطعه اعمال شد' : null),
         ]);
     }
 
     /**
-     * سبدهایی که پیش از افزوده‌شدن «قطعات استعلامی» ساخته شده‌اند کلید
-     * contact_price ندارند و ممکن است قیمت قطعه‌ی بدنه و شاسی را نگه داشته
-     * باشند. این متد یک‌بار آن ردیف‌ها را با محصول واقعی هماهنگ می‌کند.
+     * قیمت یک ردیف سبد را با تعداد فعلی هماهنگ می‌کند.
+     *
+     * قیمت واحد به تعداد وابسته است (عمده/تکی)، پس هر بار که تعداد عوض
+     * می‌شود باید دوباره از روی محصول خوانده شود؛ وگرنه کاربر می‌توانست با
+     * رسیدن به تعداد عمده قیمت تکی بپردازد یا برعکس.
+     */
+    private static function syncLine(array &$cart, Product $product): void
+    {
+        $id  = $product->id;
+        $qty = max(1, (int) ($cart[$id]['quantity'] ?? 1));
+
+        $cart[$id]['quantity']          = $qty;
+        $cart[$id]['price']             = $product->unitPriceFor($qty);
+        $cart[$id]['contact_price']     = $product->isContactPrice();
+        $cart[$id]['unit_price']        = $product->sellablePrice();
+        $cart[$id]['wholesale_min_qty'] = $product->hasWholesale() ? $product->wholesaleMinQty() : null;
+        $cart[$id]['wholesale_price']   = $product->hasWholesale() ? $product->wholesalePrice() : null;
+        $cart[$id]['is_wholesale']      = $product->hasWholesale() && $qty >= $product->wholesaleMinQty();
+    }
+
+    /**
+     * سبدهای ساخته‌شده پیش از «قطعات استعلامی» یا پیش از «فروش عمده» کلیدهای
+     * تازه را ندارند و ممکن است قیمتِ نادرست نگه داشته باشند. این متد آن
+     * ردیف‌ها را یک‌بار با محصول واقعی هماهنگ می‌کند.
      */
     private static function normalizeCart(array $cart): array
     {
-        $stale = array_keys(array_filter($cart, fn ($item) => !array_key_exists('contact_price', $item)));
+        $stale = array_keys(array_filter(
+            $cart,
+            fn ($item) => !array_key_exists('contact_price', $item) || !array_key_exists('is_wholesale', $item)
+        ));
+
         if (!$stale) {
             return $cart;
         }
@@ -82,10 +107,14 @@ class CartController extends Controller
 
         foreach ($stale as $id) {
             $product = $products->get($id);
-            $cart[$id]['contact_price'] = $product ? $product->isContactPrice() : false;
-            if ($product) {
-                $cart[$id]['price'] = $product->sellablePrice();
+
+            if (! $product) {
+                $cart[$id]['contact_price'] = false;
+                $cart[$id]['is_wholesale']  = false;
+                continue;
             }
+
+            self::syncLine($cart, $product);
         }
 
         session()->put('cart', $cart);
@@ -143,8 +172,7 @@ class CartController extends Controller
             }
             $cart[$id]['quantity']++;
             if ($product) {
-                $cart[$id]['price']         = $product->sellablePrice();
-                $cart[$id]['contact_price'] = $product->isContactPrice();
+                self::syncLine($cart, $product);
             }
             session()->put('cart', $cart);
         }
@@ -159,6 +187,10 @@ class CartController extends Controller
 
         if (isset($cart[$id]) && ($cart[$id]['quantity'] ?? 1) > 1) {
             $cart[$id]['quantity']--;
+            // با پایین‌آمدن از آستانه، قیمت باید به تکی برگردد
+            if ($product = Product::find($id)) {
+                self::syncLine($cart, $product);
+            }
             session()->put('cart', $cart);
         }
 
@@ -174,6 +206,10 @@ class CartController extends Controller
             'status'        => 'success',
             'item_quantity'  => $cart[$id]['quantity'] ?? 0,
             'item_subtotal'  => $itemSubtotal,
+            'item_unit_price' => (int) ($cart[$id]['price'] ?? 0),
+            // آیا این ردیف با قیمت عمده حساب شده است؟ صفحه‌ی سبد نشان می‌دهد
+            'item_is_wholesale' => (bool) ($cart[$id]['is_wholesale'] ?? false),
+            'item_wholesale_min_qty' => $cart[$id]['wholesale_min_qty'] ?? null,
             // ردیف استعلامی مبلغ ندارد؛ جاوااسکریپت به‌جای عدد «تماس بگیرید» می‌نویسد
             'item_contact_price' => (bool) ($cart[$id]['contact_price'] ?? false),
             'cart_total'     => $cartTotal,

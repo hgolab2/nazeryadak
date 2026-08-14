@@ -109,6 +109,22 @@
             </a>
         </nav>
 
+        {{-- علاقه‌مندی‌های کاربر؛ بالاتر از پیشنهاد ویژه، چون احتمال خریدِ
+             قطعه‌ای که خود کاربر نشان کرده از هر پیشنهاد دیگری بیشتر است --}}
+        @if(isset($favoriteProducts) && $favoriteProducts->count())
+            <section class="nx-card">
+                <div class="nx-card-head">
+                    <h2><i class="fas fa-heart"></i> علاقه‌مندی‌های شما</h2>
+                    <a href="/favorite">مشاهده همه <i class="fas fa-chevron-left"></i></a>
+                </div>
+                <div class="nx-rail owl-carousel owl-theme nx-slider">
+                    @foreach($favoriteProducts as $product)
+                        @include('product.product_card', ['product' => $product])
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
         {{-- پیشنهاد ویژه --}}
         @if(isset($specialProducts) && $specialProducts->count())
             <section class="nx-amazing" aria-label="پیشنهاد ویژه">

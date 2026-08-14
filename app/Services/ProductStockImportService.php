@@ -11,7 +11,12 @@ use Illuminate\Support\Str;
 
 class ProductStockImportService
 {
-    private const PRICE_MARKUP = 1.2;
+    /**
+     * ضریب قیمت خرده‌فروشی روی قیمت فایل اکسل. در مدل محصول تعریف شده تا
+     * محاسبه‌ی قیمت عمده (که از همان قیمت اکسل بازسازی می‌شود) با ایمپورت
+     * از یک عدد پیروی کند.
+     */
+    private const PRICE_MARKUP = Product::RETAIL_MARKUP;
 
     public function import(string $path, ?string $fileName = null, ?int $userId = null, bool $deactivateMissing = false): array
     {

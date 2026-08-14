@@ -45,10 +45,11 @@ class CheckoutController extends Controller
 
         foreach ($cart as $id => $item) {
             $product = Product::find($id);
+            $quantity = $item['quantity'] ?? 1;
             // قطعات استعلامی (بدنه و شاسی) با مبلغ صفر ثبت می‌شوند تا در جمع
             // فاکتور نیایند؛ مبلغشان بعدا تلفنی هماهنگ و به فاکتور اضافه می‌شود.
-            $price = $product ? $product->sellablePrice() : (int) ($item['price'] ?? 0);
-            $quantity = $item['quantity'] ?? 1;
+            // قیمت از روی تعداد خوانده می‌شود تا خرید عمده در فاکتور هم اعمال شود.
+            $price = $product ? $product->unitPriceFor($quantity) : (int) ($item['price'] ?? 0);
 
             $order->items()->create([
                 'product_id' => $id,
@@ -306,8 +307,13 @@ class CheckoutController extends Controller
                 $item['quantity'] = $product->stock;
                 $changed = true;
             }
-            $item['price']         = $product->sellablePrice();
-            $item['contact_price'] = $product->isContactPrice();
+            // قیمت واحد به تعداد وابسته است (عمده/تکی)؛ اگر تعداد بالا به
+            // خاطر موجودی کم شده باشد، قیمت هم باید به تکی برگردد.
+            $item['price']             = $product->unitPriceFor((int) $item['quantity']);
+            $item['contact_price']     = $product->isContactPrice();
+            $item['wholesale_min_qty'] = $product->hasWholesale() ? $product->wholesaleMinQty() : null;
+            $item['wholesale_price']   = $product->hasWholesale() ? $product->wholesalePrice() : null;
+            $item['is_wholesale']      = $product->hasWholesale() && (int) $item['quantity'] >= $product->wholesaleMinQty();
         }
         if ($changed) {
             session()->put('cart', $cart);

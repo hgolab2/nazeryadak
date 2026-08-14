@@ -46,7 +46,7 @@
 
             <div class="product-price-row">
                 @if($contactPrice)
-                    <span class="product-price is-contact-price"><i class="fas fa-phone-alt me-1"></i>{{ contactPriceLabel() }}</span>
+                    <x-contact-price-link class="product-price is-contact-price" />
                 @else
                     @if($product->compareAtPrice())
                         <del class="product-old-price">{{toPersianNumbers($product->compareAtPrice())}}</del>
@@ -54,6 +54,14 @@
                     <span class="product-price">{{toPersianNumbers($product->price)}} <small>{{ $fa('%D8%AA%D9%88%D9%85%D8%A7%D9%86') }}</small></span>
                 @endif
             </div>
+
+            {{-- وجود قیمت عمده در فهرست هم دیده شود؛ عدد دقیقش در صفحه‌ی محصول است --}}
+            @if(!$contactPrice && $product->hasWholesale())
+                <span class="nx-pcard-wholesale">
+                    <i class="fas fa-boxes-stacked"></i>
+                    عمده از {{ toPersianNumbers($product->wholesaleMinQty(), false) }} عدد
+                </span>
+            @endif
 
             @if($cardStock > 0)
                 <button class="btn add-cart-btn" data-id="{{ $product->id }}">

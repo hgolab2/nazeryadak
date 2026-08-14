@@ -14,6 +14,18 @@ class Product extends Model
      */
     public const CONTACT_PRICE_CATEGORY_ID = 3;
 
+    /**
+     * ضریب قیمت خرده‌فروشی روی قیمت فایل اکسل (همان ضریبی که
+     * ProductStockImportService هنگام ایمپورت اعمال می‌کند).
+     */
+    public const RETAIL_MARKUP = 1.2;
+
+    /** ضریب قیمت عمده روی قیمت فایل اکسل؛ ۱۰٪ بالاتر از قیمت خرید. */
+    public const WHOLESALE_MARKUP = 1.1;
+
+    /** کمترین تعداد ممکن برای عمده، حتی وقتی محصول گران است. */
+    public const WHOLESALE_FLOOR_QTY = 6;
+
     /** کش درون‌درخواستی نتیجه‌ی isContactPrice برای محصولاتی که رابطه‌شان لود نشده. */
     private static array $contactPriceCache = [];
 
@@ -34,6 +46,9 @@ class Product extends Model
         'compare_at_price',
         'discount_percent',
         'is_special_offer',
+        'wholesale_min_qty',
+        'wholesale_price',
+        'wholesale_enabled',
         'file_path',
         'weight',
         'is_active',
@@ -57,10 +72,19 @@ class Product extends Model
         'compare_at_price' => 'integer',
         'discount_percent' => 'integer',
         'is_special_offer' => 'boolean',
+        'wholesale_enabled' => 'boolean',
         'weight'        => 'integer',
         'is_active'     => 'boolean',
         'robots_index'  => 'boolean',
         'robots_follow' => 'boolean',
+    ];
+
+    /**
+     * پیش‌فرض ستون در دیتابیس هست، ولی نمونه‌ی تازه‌ساخته‌شده در همان درخواست
+     * مقدارش را ندارد و hasWholesale() اشتباه false برمی‌گرداند.
+     */
+    protected $attributes = [
+        'wholesale_enabled' => 1,
     ];
 
     /**
@@ -403,6 +427,12 @@ class Product extends Model
             ->exists();
     }
 
+    /** پاک‌کردن کش درون‌درخواستیِ isContactPrice (تست‌ها و کارگرهای ماندگار). */
+    public static function flushContactPriceCache(): void
+    {
+        self::$contactPriceCache = [];
+    }
+
     /**
      * قیمتی که در سبد و سفارش ثبت می‌شود؛ برای قطعات استعلامی صفر است تا
      * نه در جمع کل بیاید و نه از طریق API سبد به کاربر نشت کند.
@@ -421,6 +451,116 @@ class Product extends Model
         $compare = (int) $this->compare_at_price;
 
         return $compare > 0 && $compare > (int) $this->price ? $compare : null;
+    }
+
+    /* ==================== فروش عمده ==================== */
+
+    /**
+     * تعدادی که از آن به بالا خرید «عمده» حساب می‌شود.
+     *
+     * اگر برای محصول عدد دستی ثبت نشده باشد، از روی همان آستانه‌ای که برای
+     * ارسال رایگان کشوری در تنظیمات هست حساب می‌شود: چند عدد لازم است تا
+     * فاکتور به آن مبلغ برسد. پس خریدِ عمده همیشه ارسال رایگان هم دارد.
+     *
+     * برای قطعه‌ی گران که همین حالا هم با تعداد کم به آن مبلغ می‌رسد،
+     * کف ۶ عددی اعمال می‌شود؛ وگرنه «عمده» به دو عدد هم می‌رسید.
+     *
+     * مثال با آستانه‌ی ۲۰ میلیون تومان:
+     *   قیمت ۱٬۰۰۰٬۰۰۰ → ۲۰ عدد
+     *   قیمت ۱۰٬۰۰۰٬۰۰۰ → ۲ عدد که زیر کف است → ۶ عدد
+     *
+     * تقسیم به بالا گرد می‌شود، نه به پایین: با گردکردن به پایین، قطعه‌ی
+     * ۳٬۰۰۰٬۰۰۰ تومانی ۶ عدد می‌شد یعنی ۱۸ میلیون، و وعده‌ی «ارسال رایگان
+     * چون به ۲۰ میلیون می‌رسید» درباره‌اش دروغ از آب درمی‌آمد.
+     */
+    public function wholesaleMinQty(): int
+    {
+        $manual = (int) $this->wholesale_min_qty;
+        if ($manual > 0) {
+            return $manual;
+        }
+
+        $price = (int) $this->price;
+        if ($price <= 0) {
+            return self::WHOLESALE_FLOOR_QTY;
+        }
+
+        return max(self::WHOLESALE_FLOOR_QTY, (int) ceil(wholesaleTargetAmount() / $price));
+    }
+
+    /**
+     * قیمت هر واحد در خرید عمده: ۱۰٪ بالاتر از قیمت فایل اکسل.
+     *
+     * قیمت فروش سایت همان قیمت اکسل با ضریب ۱.۲ است، پس قیمت عمده از روی
+     * قیمتِ پیش از تخفیف بازسازی می‌شود؛ اگر مبنا را قیمتِ تخفیف‌خورده
+     * بگیریم، تخفیف دوبار اعمال می‌شود.
+     */
+    public function wholesalePrice(): int
+    {
+        $manual = (int) $this->wholesale_price;
+        if ($manual > 0) {
+            return $manual;
+        }
+
+        $base = (int) ($this->compare_at_price ?: $this->price);
+        if ($base <= 0) {
+            return 0;
+        }
+
+        return (int) round($base / self::RETAIL_MARKUP * self::WHOLESALE_MARKUP);
+    }
+
+    /**
+     * آیا این محصول قیمت عمده دارد؟
+     *
+     * قطعه‌ی استعلامی قیمت ندارد، و اگر تخفیف خرده‌فروشی از قیمت عمده بهتر
+     * شده باشد نمایش «قیمت عمده» فقط کاربر را گمراه می‌کند.
+     */
+    public function hasWholesale(): bool
+    {
+        if (! $this->wholesale_enabled || $this->isContactPrice()) {
+            return false;
+        }
+
+        $price = (int) $this->price;
+        $wholesale = $this->wholesalePrice();
+
+        return $price > 0 && $wholesale > 0 && $wholesale < $price;
+    }
+
+    /** درصد صرفه‌جویی خرید عمده نسبت به قیمت تکی. */
+    public function wholesaleDiscountPercent(): int
+    {
+        if (! $this->hasWholesale()) {
+            return 0;
+        }
+
+        return (int) round((($this->price - $this->wholesalePrice()) / $this->price) * 100);
+    }
+
+    /** صرفه‌جویی کل در صورت خرید به تعداد آستانه. */
+    public function wholesaleSaving(int $qty): int
+    {
+        if (! $this->hasWholesale()) {
+            return 0;
+        }
+
+        return max(0, ((int) $this->price - $this->wholesalePrice()) * $qty);
+    }
+
+    /**
+     * قیمت هر واحد برای این تعداد؛ تنها جایی که سبد، فاکتور و صفحه‌ی محصول
+     * باید برای قیمت‌گذاری به آن مراجعه کنند.
+     */
+    public function unitPriceFor(int $qty): int
+    {
+        if ($this->isContactPrice()) {
+            return 0;
+        }
+
+        return $this->hasWholesale() && $qty >= $this->wholesaleMinQty()
+            ? $this->wholesalePrice()
+            : (int) $this->price;
     }
 
     public function discountPercent()

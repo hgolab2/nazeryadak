@@ -88,18 +88,43 @@
                                         <button class="cart-qty-minus btn-qty" type="button" data-id="{{ $id }}" style="background:var(--border-color); color:var(--text-dark); border:none; border-radius:6px; width:32px; height:32px; font-size:1rem; cursor:pointer;">−</button>
                                     </div>
                                     @if($itemContactPrice)
-                                        <p class="font-12 mt-1 mb-0" style="color:var(--accent, #ef394e);">
-                                            <i class="fas fa-phone-alt me-1"></i> قیمت واحد: استعلام تلفنی
+                                        <p class="font-12 mt-1 mb-0">
+                                            <x-contact-price-link class="nx-contact-call"
+                                                                  label="قیمت واحد: استعلام تلفنی"
+                                                                  :show-phone="true" />
                                         </p>
                                     @else
-                                        <p class="font-12 text-muted mt-1 mb-0">قیمت واحد: {{ toPersianNumbers(number_format($item['price'] ?? 0)) }} تومان</p>
+                                        <p class="font-12 text-muted mt-1 mb-0">قیمت واحد:
+                                            <span class="item-unit-price">{{ toPersianNumbers(number_format($item['price'] ?? 0)) }}</span> تومان
+                                        </p>
+
+                                        {{-- وضعیت عمده‌ی همین ردیف: یا اعمال شده، یا فاصله‌ی
+                                             باقی‌مانده تا اعمال‌شدنش گفته می‌شود --}}
+                                        @if(!empty($item['wholesale_min_qty']))
+                                            @php
+                                                $wsMin  = (int) $item['wholesale_min_qty'];
+                                                $wsLeft = max(0, $wsMin - (int) ($item['quantity'] ?? 1));
+                                            @endphp
+                                            <p class="font-12 mt-1 mb-0 item-wholesale-note"
+                                               data-min-qty="{{ $wsMin }}"
+                                               data-price="{{ (int) $item['wholesale_price'] }}"
+                                               style="color:{{ $wsLeft ? '#8a6100' : '#17a566' }};">
+                                                @if($wsLeft)
+                                                    <i class="fas fa-boxes-stacked me-1"></i>
+                                                    {{ toPersianNumbers($wsLeft, false) }} عدد دیگر تا قیمت عمده
+                                                    ({{ toPersianNumbers(number_format((int) $item['wholesale_price'])) }} تومان)
+                                                @else
+                                                    <i class="fas fa-check-circle me-1"></i> قیمت عمده اعمال شد
+                                                @endif
+                                            </p>
+                                        @endif
                                     @endif
                                 </div>
                                 {{-- قیمت کل و حذف --}}
                                 <div class="col-lg-3 col-6 mt-2 mt-lg-0 text-end">
                                     @if($itemContactPrice)
-                                        <p class="mb-1" style="font-weight:700; color:var(--accent, #ef394e); font-size:.85rem;">
-                                            {{ contactPriceLabel() }}
+                                        <p class="mb-1" style="font-size:.85rem;">
+                                            <x-contact-price-link class="nx-contact-call is-contact-price" />
                                         </p>
                                     @else
                                         <p class="mb-1" style="font-weight:700; color:var(--primary); font-size:.95rem;">
@@ -280,28 +305,46 @@
             }
         });
     });
+    /* قیمت واحد با تعداد عوض می‌شود (عمده/تکی)، پس بعد از هر کم و زیاد کردن
+       باید هم قیمت واحد و هم یادداشت عمده‌ی همان ردیف تازه‌سازی شود */
+    function applyRowUpdate(id, res) {
+        var row = $('.shopping-cart-item[data-id="'+id+'"]');
+        row.find('.qty').val(res.item_quantity);
+        row.find('.item-subtotal').text(toPersianNumbers(numberWithCommas(res.item_subtotal)));
+        row.find('.item-unit-price').text(toPersianNumbers(numberWithCommas(res.item_unit_price)));
+
+        var note = row.find('.item-wholesale-note');
+        if (note.length) {
+            var minQty = parseInt(note.data('min-qty'), 10) || 0;
+            var wsPrice = parseInt(note.data('price'), 10) || 0;
+            var left = Math.max(0, minQty - (parseInt(res.item_quantity, 10) || 0));
+
+            if (left) {
+                note.css('color', '#8a6100').html(
+                    '<i class="fas fa-boxes-stacked me-1"></i> ' +
+                    toPersianNumbers(left) + ' عدد دیگر تا قیمت عمده (' +
+                    toPersianNumbers(numberWithCommas(wsPrice)) + ' تومان)'
+                );
+            } else {
+                note.css('color', '#17a566').html('<i class="fas fa-check-circle me-1"></i> قیمت عمده اعمال شد');
+            }
+        }
+
+        updateTotals(res.cart_total, res.items_count);
+    }
+
     $(document).on('click', '.cart-qty-plus', function (e) {
         e.preventDefault();
         var id = $(this).data('id');
         $.post("/cart/increase", { id: id, _token: csrf }, function(res) {
-            if(res.status === 'success') {
-                var row = $('.shopping-cart-item[data-id="'+id+'"]');
-                row.find('.qty').val(res.item_quantity);
-                row.find('.item-subtotal').text(toPersianNumbers(numberWithCommas(res.item_subtotal)));
-                updateTotals(res.cart_total, res.items_count);
-            }
+            if(res.status === 'success') applyRowUpdate(id, res);
         });
     });
     $(document).on('click', '.cart-qty-minus', function (e) {
         e.preventDefault();
         var id = $(this).data('id');
         $.post("/cart/decrease", { id: id, _token: csrf }, function(res) {
-            if(res.status === 'success') {
-                var row = $('.shopping-cart-item[data-id="'+id+'"]');
-                row.find('.qty').val(res.item_quantity);
-                row.find('.item-subtotal').text(toPersianNumbers(numberWithCommas(res.item_subtotal)));
-                updateTotals(res.cart_total, res.items_count);
-            }
+            if(res.status === 'success') applyRowUpdate(id, res);
         });
     });
 </script>

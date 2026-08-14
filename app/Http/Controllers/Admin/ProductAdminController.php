@@ -19,6 +19,7 @@ class ProductAdminController extends Controller
      */
     private const EDITABLE_FIELDS = [
         'title', 'sku', 'price', 'regular_price', 'discount_percent',
+        'wholesale_min_qty', 'wholesale_price', 'wholesale_enabled',
         'stock', 'weight', 'is_active', 'description', 'short_description',
         'car_model', 'category_id',
         'seo_title', 'seo_description', 'focus_keyword', 'canonical_url',
@@ -35,6 +36,10 @@ class ProductAdminController extends Controller
             'regular_price' => 'nullable|integer|min:0',
             'discount_percent' => 'nullable|integer|min:0|max:100',
             'is_special_offer' => 'nullable|boolean',
+            // خالی یعنی «خودکار حساب کن»؛ رفتار پیش‌فرض همه‌ی محصولات فعلی
+            'wholesale_min_qty' => 'nullable|integer|min:1',
+            'wholesale_price'   => 'nullable|integer|min:0',
+            'wholesale_enabled' => 'nullable|boolean',
             // موجودی دیگر اختیاری نیست؛ محصول با stock خالی در فروشگاه دیده
             // می‌شد ولی به سبد خرید اضافه نمی‌شد
             'stock'         => 'required|integer|min:0',

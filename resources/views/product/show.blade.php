@@ -134,8 +134,8 @@
                 @endif
                 @if($contactPrice)
                     {{-- قطعات بدنه و شاسی: قیمت روی سایت اعلام نمی‌شود --}}
-                    <div class="dk-detail-price is-contact-price" style="font-size:1.05rem; color:var(--accent, #ef394e);">
-                        <i class="fas fa-phone-alt me-1"></i> {{ contactPriceLabel() }}
+                    <div class="dk-detail-price is-contact-price" style="font-size:1.05rem;">
+                        <x-contact-price-link class="nx-contact-call" :show-phone="true" />
                     </div>
                     <p class="font-12 text-muted mb-2" style="line-height:1.9;">
                         قیمت قطعات بدنه و شاسی بسته به رنگ، کیفیت و موجودی روز تعیین می‌شود؛
@@ -147,7 +147,52 @@
                     </a>
                 @else
                     @if($model->compareAtPrice())<div class="dk-detail-old"><del>{{ toPersianNumbers($model->compareAtPrice()) }} {{ $fa('%D8%AA%D9%88%D9%85%D8%A7%D9%86') }}</del><span class="dk-detail-discount">{{ toPersianNumbers(round($model->discountPercent()), false) }}%</span></div>@endif
-                    <div class="dk-detail-price">{{ toPersianNumbers($model->price) }} <small>{{ $fa('%D8%AA%D9%88%D9%85%D8%A7%D9%86') }}</small></div>
+                    <div class="dk-detail-price">
+                        <span id="dk-unit-price">{{ toPersianNumbers($model->price) }}</span>
+                        <small>{{ $fa('%D8%AA%D9%88%D9%85%D8%A7%D9%86') }}</small>
+                        <span class="dk-price-mode" id="dk-price-mode" hidden>قیمت عمده</span>
+                    </div>
+                @endif
+
+                {{-- فروش عمده: تعداد آستانه و قیمت واحدش پیش از خرید و به‌صورت
+                     عدد دقیق نشان داده می‌شود، نه در قالب یک شعار کلی --}}
+                @if(!$contactPrice && $model->hasWholesale())
+                    @php
+                        $wsQty   = $model->wholesaleMinQty();
+                        $wsPrice = $model->wholesalePrice();
+                    @endphp
+                    <div class="dk-wholesale" id="dk-wholesale"
+                         data-min-qty="{{ $wsQty }}"
+                         data-price="{{ $wsPrice }}"
+                         data-retail="{{ (int) $model->price }}">
+                        <div class="dk-wholesale-head">
+                            <i class="fas fa-boxes-stacked"></i>
+                            <b>خرید عمده</b>
+                            <span class="dk-wholesale-off">{{ toPersianNumbers($model->wholesaleDiscountPercent(), false) }}٪ ارزان‌تر</span>
+                        </div>
+                        <p class="dk-wholesale-line">
+                            با خرید <b>{{ toPersianNumbers($wsQty, false) }} عدد</b> یا بیشتر،
+                            قیمت هر عدد <b>{{ toPersianNumbers($wsPrice) }} تومان</b> می‌شود
+                            (به‌جای {{ toPersianNumbers((int) $model->price) }} تومان).
+                        </p>
+                        <p class="dk-wholesale-line dk-wholesale-saving">
+                            <i class="fas fa-piggy-bank"></i>
+                            صرفه‌جویی شما در این تعداد:
+                            <b>{{ toPersianNumbers($model->wholesaleSaving($wsQty)) }} تومان</b>
+                        </p>
+                        <p class="dk-wholesale-line dk-wholesale-ship">
+                            <i class="fas fa-truck-fast"></i>
+                            چون مبلغ سفارش به {{ shippingAmountWords(wholesaleTargetAmount()) }} می‌رسد،
+                            <b>ارسال رایگان</b> است.
+                        </p>
+                        @if($stock > 0 && $stock < $wsQty)
+                            <p class="dk-wholesale-line dk-wholesale-warn">
+                                <i class="fas fa-circle-info"></i>
+                                موجودی فعلی {{ toPersianNumbers($stock, false) }} عدد است؛
+                                برای سفارش عمده با پشتیبانی تماس بگیرید.
+                            </p>
+                        @endif
+                    </div>
                 @endif
                 @if($stock > 0)
                     {{-- انتخاب تعداد در همین صفحه؛ قبلا برای خرید چند عدد باید در سبد
@@ -309,7 +354,7 @@
             @if($contactPrice)
                 <span class="mobile-actionbar__price" style="font-size:.85rem; color:var(--accent, #ef394e);">{{ contactPriceLabel() }}</span>
             @else
-                <span class="mobile-actionbar__price">{{ toPersianNumbers($model->price) }} <small>تومان</small></span>
+                <span class="mobile-actionbar__price"><span class="js-bar-price">{{ toPersianNumbers($model->price) }}</span> <small>تومان</small></span>
             @endif
         </div>
         <button type="button" class="mobile-actionbar__btn add-cart-btn" data-id="{{ $model->id }}" data-qty-from="buy-qty">
@@ -342,12 +387,34 @@ $(function () {
         return String(n).replace(/\d/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; });
     }
 
+    // جعبه‌ی عمده: با رسیدن تعداد به آستانه، قیمتِ نمایش‌داده‌شده همان‌جا عوض
+    // می‌شود تا کاربر پیش از رفتن به سبد ببیند چه چیزی نصیبش می‌شود
+    var $ws = $('#dk-wholesale');
+    var wsMin = $ws.length ? parseInt($ws.data('min-qty'), 10) : 0;
+    var wsPrice = $ws.length ? parseInt($ws.data('price'), 10) : 0;
+    var retail = $ws.length ? parseInt($ws.data('retail'), 10) : 0;
+
+    // جداکننده‌ی هزارگان همان کاماست تا با خروجی toPersianNumbers یکی باشد
+    function money(n) {
+        return toFa(String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','));
+    }
+
+    function syncPrice(value) {
+        if (!$ws.length) return;
+        var isWholesale = value >= wsMin;
+        $ws.toggleClass('is-active', isWholesale);
+        $('#dk-price-mode').prop('hidden', !isWholesale);
+        $('#dk-unit-price').text(money(isWholesale ? wsPrice : retail));
+        $('.mobile-actionbar__price .js-bar-price').text(money(isWholesale ? wsPrice : retail));
+    }
+
     function setQty(value) {
         value = Math.min(Math.max(value, 1), max);
         $qty.val(value);
         $('.js-qty-view').text(toFa(value));
         $('.js-qty-plus').prop('disabled', value >= max).css('opacity', value >= max ? .45 : 1);
         $('.js-qty-minus').prop('disabled', value <= 1).css('opacity', value <= 1 ? .45 : 1);
+        syncPrice(value);
     }
 
     $(document).on('click', '.js-qty-plus', function () { setQty((parseInt($qty.val(), 10) || 1) + 1); });

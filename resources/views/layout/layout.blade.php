@@ -799,7 +799,10 @@ function loadCart() {
                             <span class="number">${item.quantity} عدد</span>
                         </div>
                         <div class="col-6 d-flex justify-content-end">
-                            <p class="cart-product-price">${item.contact_price ? 'تماس بگیرید' : item.price.toLocaleString() + ' تومان'}</p>
+                            {{-- ردیف استعلامی در کشوی سبد هم باید با یک لمس به شماره‌گیر وصل شود --}}
+                            <p class="cart-product-price">${item.contact_price
+                                ? '<a href="tel:{{ shopContactPhone() }}" rel="nofollow" class="nx-contact-call is-contact-price"><i class="fas fa-phone-alt"></i><span>تماس بگیرید</span></a>'
+                                : item.price.toLocaleString() + ' تومان'}</p>
                         </div>
                     </div>
                 `;
@@ -844,31 +847,10 @@ loadCart();
     var bar = document.getElementById('mobileAppbar');
     if (!bar) return;
 
-    /* پنهان‌شدن هنگام اسکرول به پایین، نمایش هنگام اسکرول به بالا */
-    var lastY = window.pageYOffset || 0;
-    var ticking = false;
-
-    function onScroll() {
-        var y = window.pageYOffset || 0;
-        if (Math.abs(y - lastY) > 8) {
-            var nearBottom = (y + window.innerHeight) >= (document.body.scrollHeight - 60);
-            bar.classList.toggle('is-hidden', y > lastY && y > 220 && !nearBottom);
-            lastY = y;
-        }
-        ticking = false;
-    }
-
-    window.addEventListener('scroll', function () {
-        if (!ticking) {
-            ticking = true;
-            window.requestAnimationFrame(onScroll);
-        }
-    }, { passive: true });
-
-    /* هنگام باز شدن هر شیت، نوار دوباره دیده شود */
-    document.addEventListener('show.bs.offcanvas', function () {
-        bar.classList.remove('is-hidden');
-    });
+    /* نوار پایین همیشه دیده می‌شود. قبلا با اسکرول به پایین پنهان می‌شد؛
+       نتیجه این بود که دقیقا وقتی کاربر در حال مرور محصولات بود، سبد خرید و
+       جستجو از دسترسش خارج می‌شدند و برای رسیدن به آن‌ها باید به بالا
+       اسکرول می‌کرد. */
 
     /* نشان‌دادن/پنهان‌کردن شمارنده سبد خرید بر اساس مقدار آن */
     var badge = document.getElementById('appbar-cart-count');

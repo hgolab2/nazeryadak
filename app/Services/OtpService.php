@@ -90,8 +90,9 @@ class OtpService
 
         $result = ['ok' => true, 'wait' => self::RESEND_WAIT, 'message' => null];
 
-        // بدون درگاه پیامک، ورود در محیط توسعه غیرممکن می‌شد.
-        if (app()->isLocal() && config('app.debug')) {
+        // فقط با SMS_SHOW_CODE=true و آن هم روی لوکال؛ برای وقتی که درگاه
+        // پیامک در دسترس نیست و باید فلوی ورود تست شود.
+        if (config('sms.show_code') && app()->isLocal()) {
             Log::info("OTP for {$mobile} ({$purpose}): {$code}");
             $result['code'] = $code;
         }

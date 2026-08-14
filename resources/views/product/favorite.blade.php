@@ -47,8 +47,8 @@
                                     </div>
                                     @if($product->isContactPrice())
                                         {{-- قطعات بدنه و شاسی قیمت اعلامی ندارند --}}
-                                        <div class="nx-item-price" style="font-size:12px; color:var(--accent, #ef394e);">
-                                            <i class="fas fa-phone-alt me-1"></i>{{ contactPriceLabel() }}
+                                        <div class="nx-item-price" style="font-size:12px;">
+                                            <x-contact-price-link class="nx-contact-call is-contact-price" />
                                         </div>
                                     @elseif($product->price)
                                         <div class="nx-item-price">

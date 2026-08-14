@@ -4592,6 +4592,51 @@ footer{
     white-space: nowrap;
 }
 
+/* همان دعوت به تماس، حالا کلیک‌شدنی: روی موبایل مستقیم شماره‌گیر را باز
+   می‌کند. ارتفاع حداقلی دارد تا با انگشت هم به‌راحتی زده شود. */
+.nx-contact-call {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 30px;
+    max-width: 100%;
+    padding: 3px 10px;
+    border: 1px solid rgba(239, 57, 78, .35);
+    border-radius: 999px;
+    background: rgba(239, 57, 78, .07);
+    color: var(--accent, #ef394e);
+    font-weight: 700;
+    line-height: 1.6;
+    text-decoration: none;
+    transition: background .15s ease, border-color .15s ease;
+}
+
+.nx-contact-call:hover,
+.nx-contact-call:focus {
+    background: rgba(239, 57, 78, .14);
+    border-color: var(--accent, #ef394e);
+    color: var(--accent, #ef394e);
+    text-decoration: none;
+}
+
+.nx-contact-call > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nx-contact-call i {
+    font-size: .8em;
+}
+
+/* شماره‌ی تماس همیشه با ارقام فارسی و چپ‌به‌راست، کنار برچسب */
+.nx-contact-call-num {
+    direction: ltr;
+    unicode-bidi: isolate;
+    font-size: .92em;
+    opacity: .9;
+}
+
 .custom-product-slider .add-cart-btn {
     margin: 0;
     padding: 10px 5px;

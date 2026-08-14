@@ -92,6 +92,49 @@
             </div>
         </div>
 
+        <h6 class="border-bottom pb-2 mb-3 mt-3">فروش عمده</h6>
+        @php
+            // مقدار خودکار برای محصول موجود؛ در حالت ثبت هنوز قیمتی نداریم
+            $wsAutoQty   = !empty($model) ? $model->wholesaleMinQty() : null;
+            $wsAutoPrice = !empty($model) ? $model->wholesalePrice() : null;
+        @endphp
+        <div class="row">
+            <div class="col-sm-3 mb-3">
+                <label>وضعیت عمده‌فروشی</label>
+                <select name="wholesale_enabled" class="form-control">
+                    <option value="1" {{ ($model->wholesale_enabled ?? 1)==1?'selected':'' }}>فعال</option>
+                    <option value="0" {{ ($model->wholesale_enabled ?? 1)==0?'selected':'' }}>غیرفعال</option>
+                </select>
+            </div>
+            <div class="col-sm-3 mb-3">
+                <label>تعداد برای قیمت عمده</label>
+                <input type="number" name="wholesale_min_qty" min="1" class="form-control"
+                       placeholder="{{ $wsAutoQty ? 'خودکار: ' . $wsAutoQty : 'خودکار' }}"
+                       value="{{ $model->wholesale_min_qty ?? '' }}">
+                <small class="text-muted">
+                    خالی بگذارید تا خودکار حساب شود: {{ shippingAmountWords(wholesaleTargetAmount()) }} تقسیم بر قیمت،
+                    و حداقل {{ toPersianNumbers(\App\Models\Product::WHOLESALE_FLOOR_QTY, false) }} عدد.
+                </small>
+            </div>
+            <div class="col-sm-3 mb-3">
+                <label>قیمت عمده (تومان)</label>
+                <input type="number" name="wholesale_price" min="0" class="form-control"
+                       placeholder="{{ $wsAutoPrice ? 'خودکار: ' . number_format($wsAutoPrice) : 'خودکار' }}"
+                       value="{{ $model->wholesale_price ?? '' }}">
+                <small class="text-muted">خالی بگذارید تا ۱۰٪ بالاتر از قیمت فایل اکسل حساب شود.</small>
+            </div>
+            @if(!empty($model) && $model->hasWholesale())
+            <div class="col-sm-3 mb-3">
+                <label>پیش‌نمایش</label>
+                <p class="form-control-plaintext mb-0" style="font-size:.85rem;">
+                    از <b>{{ $model->wholesaleMinQty() }}</b> عدد،
+                    هر عدد <b>{{ number_format($model->wholesalePrice()) }}</b> تومان
+                    (<span class="text-success">{{ $model->wholesaleDiscountPercent() }}٪ کمتر</span>)
+                </p>
+            </div>
+            @endif
+        </div>
+
         <h6 class="border-bottom pb-2 mb-3 mt-3">وضعیت و توضیحات</h6>
         <div class="row">
             <div class="col-sm-3 mb-3">

@@ -73,13 +73,29 @@ class HomeController extends Controller
                 ->take(12)
                 ->get();
         }
+        /*
+        | علاقه‌مندی‌های کاربر واردشده، بالای صفحه‌ی اصلی.
+        |
+        | قطعه‌ای که کاربر نشان کرده معمولا همان چیزی است که برای خریدش برگشته؛
+        | تا حالا برای دیدنش باید از منو به «علاقه‌مندی‌ها» می‌رفت.
+        */
+        $favoriteProducts = collect();
+        if ($customer = Auth::guard('customer')->user()) {
+            $favoriteProducts = $customer->favoriteProducts()
+                ->with(['images', 'categories'])
+                ->where('products.is_active', 1)
+                ->orderByDesc('product_favorites.created_at')
+                ->take(12)
+                ->get();
+        }
+
         $advertisements = $this->getAdvertisement('farsi');
         $carCategories = \App\Models\EshopCategory::withCount('products')
             ->where('is_featured', 1)
             ->orderByDesc('products_count')
             ->take(10)
             ->get();
-        return View('index' , compact('articles','products','specialProducts','specialHasDiscount','advertisements','carCategories'));
+        return View('index' , compact('articles','products','specialProducts','specialHasDiscount','favoriteProducts','advertisements','carCategories'));
 	}
 
     public function getAdvertisement($lang)

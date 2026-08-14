@@ -64,7 +64,7 @@
 
         <div class="product-price-row">
             @if($contactPrice)
-                <span class="product-price is-contact-price"><i class="fas fa-phone-alt me-1"></i>{{ contactPriceLabel() }}</span>
+                <x-contact-price-link class="product-price is-contact-price" />
             @else
                 @if($product->compareAtPrice())
                     <del class="product-old-price">{{ toPersianNumbers($product->compareAtPrice()) }}</del>

@@ -136,6 +136,19 @@ function getShippingRules()
 }
 
 /**
+ * مبلغی که خرید عمده باید به آن برسد (تومان).
+ *
+ * همان آستانه‌ی ارسال رایگان کشوری است و عمدا کلید جداگانه‌ای ندارد: تعداد
+ * عمده‌ی هر محصول طوری حساب می‌شود که فاکتور به این مبلغ برسد، پس هر خرید
+ * عمده‌ای ارسال رایگان هم دارد. با تغییر این عدد در تنظیمات، هر دو با هم
+ * جابه‌جا می‌شوند و حالتی پیش نمی‌آید که «عمده» باشد ولی پست رایگان نباشد.
+ */
+function wholesaleTargetAmount(): int
+{
+    return (int) getShippingRules()['national_free_threshold'];
+}
+
+/**
  * آیا پرداخت آنلاین (درگاه زرین‌پال) فعال است؟
  *
  * از همان جدول shipping_settings خوانده می‌شود تا مدیر بتواند هر وقت خواست
@@ -460,9 +473,26 @@ function getShippingInfo($order)
     }
 
     $orderTotal = 0;
+    // ارزش سفارش با قیمت تکی؛ مبنای ارسال رایگان همین است نه مبلغ پرداختی.
+    //
+    // تعداد عمده‌ی هر قطعه طوری حساب شده که ارزش سفارش به آستانه برسد، ولی
+    // خود قیمت عمده حدود ۸٪ پایین‌تر است. اگر مبنا را مبلغ پرداختی بگیریم،
+    // دقیقا همان سفارش عمده‌ای که رویش «ارسال رایگان» نوشته‌ایم، ۸٪ زیر
+    // آستانه می‌افتد و هزینه‌ی ارسال می‌گیرد.
+    $grossTotal = 0;
     if ($order) {
+        // بدون این، به ازای هر قلم سفارش یک کوئری محصول اجرا می‌شود
+        $order->loadMissing('items.product');
+
         foreach ($order->items as $item) {
             $orderTotal += $item->unit_price * $item->quantity;
+
+            // قطعه‌ی استعلامی مبلغ صفر دارد و نباید با قیمت فهرستش سفارش را
+            // به آستانه‌ی ارسال رایگان برساند؛ مبلغش هنوز تعیین نشده است.
+            $product   = $item->product;
+            $listPrice = $product && ! $product->isContactPrice() ? (int) $product->price : (int) $item->unit_price;
+
+            $grossTotal += max($listPrice, (int) $item->unit_price) * $item->quantity;
         }
     }
 
@@ -473,13 +503,13 @@ function getShippingInfo($order)
     $isLocal = ((int) $address->province_id) === $localProvinceId;
 
     if ($isLocal) {
-        if ($orderTotal >= $localFreeThreshold) {
+        if ($grossTotal >= $localFreeThreshold) {
             return ['cost' => 0, 'type' => 'free', 'label' => 'ارسال رایگان (' . $localProvinceName . ')'];
         }
         return ['cost' => $localShippingCost, 'type' => 'local', 'label' => number_format($localShippingCost) . ' تومان (پیک در ' . $localProvinceName . ')'];
     }
 
-    if ($orderTotal >= $nationalFreeThreshold) {
+    if ($grossTotal >= $nationalFreeThreshold) {
         return ['cost' => 0, 'type' => 'free', 'label' => 'ارسال رایگان'];
     }
 
