@@ -138,7 +138,8 @@ class OrderNotifier
 
         return strtr($template, [
             '{order}'  => $this->orderNumber($order),
-            '{amount}' => number_format((int) $order->final_price),
+            // مبلغ قابل پرداخت (اقلام − تخفیف + ارسال)، نه جمع خام اقلام
+            '{amount}' => number_format((int) $order->total_price),
             '{name}'   => $customer?->fullName() ?: '',
             '{shop}'   => seo_site_name(),
             '{phone}'  => shopContactPhoneDisplay(),

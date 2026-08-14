@@ -24,6 +24,9 @@
         <span class="badge bg-danger" style="margin-right:6px;">{{ $pendingReceipts }}</span>
     @endif
 </a>
+<a href="/admin/discount/list" class="admin-menu-item {{ ($menu ?? '') == 'discount/list' ? 'active' : '' }}">
+    <i class="fas fa-tags"></i> کدهای تخفیف
+</a>
 <a href="/admin/customer/list" class="admin-menu-item {{ ($menu ?? '') == 'customer/list' ? 'active' : '' }}">
     <i class="fas fa-users"></i> مشتریان
 </a>

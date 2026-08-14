@@ -476,10 +476,20 @@ class Product extends Model
     public function wholesaleMinQty(): int
     {
         $manual = (int) $this->wholesale_min_qty;
-        if ($manual > 0) {
-            return $manual;
-        }
 
+        return $manual > 0 ? $manual : $this->autoWholesaleMinQty();
+    }
+
+    /**
+     * تعداد آستانه‌ی محاسبه‌شده، مستقل از عددی که شاید در ستون ثبت شده باشد.
+     *
+     * فرمانِ wholesale:fill برای پرکردن ستون‌ها به همین نیاز دارد؛ اگر
+     * wholesaleMinQty() را صدا می‌زد، بار دوم عددِ خودش را می‌خواند و
+     * دیگر نمی‌شد مقدارها را دوباره حساب کرد.
+     *
+     */
+    public function autoWholesaleMinQty(): int
+    {
         $price = (int) $this->price;
         if ($price <= 0) {
             return self::WHOLESALE_FLOOR_QTY;
@@ -498,10 +508,13 @@ class Product extends Model
     public function wholesalePrice(): int
     {
         $manual = (int) $this->wholesale_price;
-        if ($manual > 0) {
-            return $manual;
-        }
 
+        return $manual > 0 ? $manual : $this->autoWholesalePrice();
+    }
+
+    /** قیمت عمده‌ی محاسبه‌شده، مستقل از مقدار ثبت‌شده در ستون. */
+    public function autoWholesalePrice(): int
+    {
         $base = (int) ($this->compare_at_price ?: $this->price);
         if ($base <= 0) {
             return 0;
@@ -546,6 +559,26 @@ class Product extends Model
         }
 
         return max(0, ((int) $this->price - $this->wholesalePrice()) * $qty);
+    }
+
+    /**
+     * آیا خریدِ عمده‌ی این محصول به مبلغ ارسال رایگان کشوری می‌رسد؟
+     *
+     * با مقدار خودکار همیشه می‌رسد (تعداد از روی همان مبلغ حساب شده)، ولی
+     * وقتی مدیر تعداد کمتری دستی ثبت کند دیگر لزوما نمی‌رسد؛ پس وعده‌ی
+     * «ارسال رایگان» فقط وقتی نمایش داده می‌شود که واقعا برقرار باشد.
+     *
+     * مبنا همان چیزی است که getShippingInfo() حساب می‌کند: ارزش سفارش با
+     * قیمت تکی، نه مبلغ پرداختی. اگر اینجا قیمت عمده را مبنا بگیریم، پیام
+     * صفحه با تصمیم واقعیِ سبد یکی درنمی‌آید.
+     */
+    public function wholesaleReachesFreeShipping(): bool
+    {
+        if (! $this->hasWholesale()) {
+            return false;
+        }
+
+        return $this->wholesaleMinQty() * (int) $this->price >= wholesaleTargetAmount();
     }
 
     /**

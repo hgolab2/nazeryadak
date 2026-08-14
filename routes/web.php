@@ -7,6 +7,7 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\OrderTrackingController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\DiscountController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\Auth\CustomerAuthController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
@@ -23,6 +24,7 @@ use App\Http\Controllers\Admin\ArticleAdminController;
 use App\Http\Controllers\Admin\SettingAdminController;
 use App\Http\Controllers\Admin\SeoAdminController;
 use App\Http\Controllers\Admin\PaymentAdminController;
+use App\Http\Controllers\Admin\DiscountAdminController;
 
 use App\Http\Controllers\SitemapController;
 use App\Http\Middleware\ShareDataInFrontend;
@@ -175,6 +177,10 @@ Route::group(['namespace' => 'Frontend', 'middleware' => [ShareDataInFrontend::c
     // نمایش صفحه پرداخت
     Route::get('/order/payment/{id}', [CheckoutController::class, 'payment'])->name('order.payment');
 
+    // کد تخفیف روی سفارشِ در حال خرید (فقط pending/failed)
+    Route::post('/order/discount/apply', [DiscountController::class, 'apply'])->name('order.discount.apply');
+    Route::post('/order/discount/remove', [DiscountController::class, 'remove'])->name('order.discount.remove');
+
     // ثبت نهایی سفارش
     Route::post('/order/confirm', [CheckoutController::class, 'confirmOrder'])->name('order.confirm');
 
@@ -280,6 +286,15 @@ Route::group(['namespace' => 'Frontend', 'middleware' => [ShareDataInFrontend::c
         Route::delete('/admin/order/{id}', [OrderAdminController::class, 'destroy']);
 
         /* Payment — رسیدهای پرداخت و تأیید/رد آن‌ها */
+        /* کدهای تخفیف */
+        Route::get('/admin/discount/list', [DiscountAdminController::class, 'index']);
+        Route::get('/admin/discount/create', [DiscountAdminController::class, 'create']);
+        Route::get('/admin/discount/edit/{id}', [DiscountAdminController::class, 'edit']);
+        Route::post('/admin/discount/store', [DiscountAdminController::class, 'store']);
+        Route::put('/admin/discount/update/{id}', [DiscountAdminController::class, 'update']);
+        Route::post('/admin/discount/{id}/toggle', [DiscountAdminController::class, 'toggle']);
+        Route::delete('/admin/discount/{id}', [DiscountAdminController::class, 'destroy']);
+
         Route::get('/admin/payment/list', [PaymentAdminController::class, 'index']);
         Route::post('/admin/payment/{id}/approve', [PaymentAdminController::class, 'approve']);
         Route::post('/admin/payment/{id}/reject', [PaymentAdminController::class, 'reject']);

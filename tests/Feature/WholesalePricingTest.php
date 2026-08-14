@@ -152,6 +152,37 @@ class WholesalePricingTest extends TestCase
         }
     }
 
+    /**
+     * وقتی مدیر (یا فرمان wholesale:fill با سقف) تعدادی کمتر از مقدار خودکار
+     * ثبت کند، سفارش دیگر به مبلغ ارسال رایگان نمی‌رسد و صفحه‌ی محصول نباید
+     * وعده‌اش را بدهد.
+     */
+    public function test_manual_quantity_below_the_auto_one_loses_free_shipping(): void
+    {
+        $auto = $this->product(['price' => 1000000]);
+        $this->assertTrue($auto->wholesaleReachesFreeShipping());
+
+        $capped = $this->product(['price' => 1000000, 'wholesale_min_qty' => 6]);
+        $this->assertFalse($capped->wholesaleReachesFreeShipping());
+    }
+
+    /** مقدار خودکار باید مستقل از عددِ ثبت‌شده در ستون قابل محاسبه بماند. */
+    public function test_auto_values_ignore_the_stored_ones(): void
+    {
+        $product = $this->product([
+            'price' => 1200000,
+            'wholesale_min_qty' => 3,
+            'wholesale_price'   => 800000,
+        ]);
+
+        $this->assertSame(3, $product->wholesaleMinQty());
+        $this->assertSame(800000, $product->wholesalePrice());
+        $this->assertSame(1100000, $product->autoWholesalePrice());
+
+        // ۲۰٬۰۰۰٬۰۰۰ ÷ ۱٬۲۰۰٬۰۰۰ = ۱۶.۶ → ۱۷
+        $this->assertSame(17, $product->autoWholesaleMinQty());
+    }
+
     public function test_disabled_flag_turns_wholesale_off(): void
     {
         $product = $this->product(['wholesale_enabled' => false]);

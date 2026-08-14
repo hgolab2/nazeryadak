@@ -119,10 +119,15 @@
                     </td>
                     <td class="text-center fw-bold">
                         {{ number_format((int) $payment->amount) }}
-                        @if($order && (int) $payment->amount !== (int) $order->final_price)
-                            {{-- مبلغ اعلامی مشتری با مبلغ سفارش نمی‌خواند؛ باید به چشم مدیر بیاید --}}
+                        @if($order && (int) $payment->amount !== (int) $order->total_price)
+                            {{-- مبلغ اعلامی مشتری با مبلغ سفارش نمی‌خواند؛ باید به چشم مدیر بیاید.
+                                 مقایسه با total_price است چون همان مبلغی است که
+                                 بعد از تخفیف و با هزینه‌ی ارسال باید واریز شود. --}}
                             <div class="text-danger" style="font-size:0.72rem;">
-                                مبلغ سفارش: {{ number_format((int) $order->final_price) }}
+                                مبلغ سفارش: {{ number_format((int) $order->total_price) }}
+                                @if($order->hasDiscount())
+                                    <span class="d-block">(با {{ number_format((int) $order->discount_amount) }} تومان تخفیف {{ $order->discount_code }})</span>
+                                @endif
                             </div>
                         @endif
                     </td>

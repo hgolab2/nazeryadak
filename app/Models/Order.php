@@ -13,10 +13,18 @@ class Order extends Model
         'shipping_price',
         'total_price',
         'final_price',
+        'discount_code_id',
+        'discount_code',
+        'discount_amount',
         'status',
     ];
 
     /* Relations */
+
+    public function discountCode()
+    {
+        return $this->belongsTo(DiscountCode::class, 'discount_code_id');
+    }
 
     public function items()
     {
@@ -76,6 +84,86 @@ class Order extends Model
         $this->loadMissing('items.product.categories');
 
         return $this->items->contains(fn ($item) => (bool) $item->product?->isContactPrice());
+    }
+
+    /* ------------------------------------------------------- کد تخفیف */
+
+    /**
+     * جمع اقلام فاکتور، پیش از تخفیف و بدون هزینه‌ی ارسال.
+     *
+     * final_price در این پروژه همین معنی را دارد (نه «مبلغ نهایی»)؛ نامش
+     * قدیمی است و چون در کل پروژه و پنل جا افتاده عوض نشده، ولی هر جا
+     * منظور «مبنای تخفیف» است این متد خوانده می‌شود تا ابهام نماند.
+     */
+    public function itemsSubtotal(): int
+    {
+        return (int) $this->final_price;
+    }
+
+    /** آیا روی این سفارش تخفیفی نشسته است؟ */
+    public function hasDiscount(): bool
+    {
+        return (int) $this->discount_amount > 0;
+    }
+
+    /** مبلغ اقلام پس از کسر تخفیف، بدون هزینه‌ی ارسال. */
+    public function payableItemsTotal(): int
+    {
+        return max(0, $this->itemsSubtotal() - (int) $this->discount_amount);
+    }
+
+    /**
+     * total_price را از روی اقلام، تخفیف و ارسال از نو می‌نویسد.
+     *
+     * تنها جایی که مبلغ قابل پرداخت ساخته می‌شود همین است؛ هر جای دیگری
+     * که «final_price + shipping_price» نوشته شود، تخفیف را جا می‌اندازد.
+     */
+    public function recalculateTotals(): void
+    {
+        $this->total_price = $this->payableItemsTotal() + (int) $this->shipping_price;
+    }
+
+    /**
+     * تخفیف را با وضعیت فعلی سفارش هماهنگ می‌کند.
+     *
+     * لازم است چون سبد بین دو بازدید عوض می‌شود: کاربر کدِ «بالای ۵۰۰ هزار
+     * تومان» را می‌گیرد، بعد نصف سبد را حذف می‌کند و برمی‌گردد. اگر مبلغ
+     * دوباره حساب نشود، تخفیفِ فاکتور قبلی روی فاکتور کوچک‌تر می‌ماند. کد
+     * منقضی‌شده یا غیرفعال‌شده هم همین‌جا برداشته می‌شود.
+     *
+     * جمع‌ها را هم به‌روز می‌کند ولی ذخیره نمی‌کند؛ ذخیره با فراخواننده است.
+     *
+     * @return string|null دلیل برداشته‌شدن کد، برای اطلاع به مشتری
+     */
+    public function syncDiscount(): ?string
+    {
+        if (! $this->discount_code_id) {
+            $this->discount_code   = null;
+            $this->discount_amount = 0;
+            $this->recalculateTotals();
+
+            return null;
+        }
+
+        $code   = $this->discountCode()->first();
+        $reason = $code
+            ? $code->reasonUnusableFor($this, $this->customer_id)
+            : 'کد تخفیف این سفارش دیگر در دسترس نیست.';
+
+        if ($reason) {
+            $this->discount_code_id = null;
+            $this->discount_code    = null;
+            $this->discount_amount  = 0;
+            $this->recalculateTotals();
+
+            return $reason;
+        }
+
+        $this->discount_code   = $code->code;
+        $this->discount_amount = $code->discountFor($this->itemsSubtotal());
+        $this->recalculateTotals();
+
+        return null;
     }
 
     /**

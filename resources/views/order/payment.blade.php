@@ -138,6 +138,12 @@
                         <span class="text-muted">مبلغ محصولات</span>
                         <span>{{ number_format($order->final_price) }} تومان</span>
                     </div>
+                    {{-- تخفیف از مبلغ محصولات کم می‌شود، نه از هزینه‌ی ارسال --}}
+                    <div id="discountRow" class="d-flex justify-content-between py-2 font-13 {{ $order->hasDiscount() ? '' : 'd-none' }}"
+                         style="color:var(--success, #17a566);">
+                        <span><i class="fas fa-tag me-1"></i> تخفیف</span>
+                        <span id="discountAmount" class="fw-bold">−{{ number_format((int) $order->discount_amount) }} تومان</span>
+                    </div>
                     <div class="d-flex justify-content-between py-2 font-13 border-bottom">
                         <span class="text-muted"><i class="fas fa-truck me-1"></i> هزینه ارسال</span>
                         {{-- همان برچسبی که در مرحله‌ی قبل نشان داده شد؛ قبلا اینجا
@@ -160,9 +166,12 @@
                         کرایه‌ی تیپاکس در این فاکتور محاسبه نشده و هنگام تحویل مرسوله از گیرنده دریافت می‌شود.
                     </p>
                     @endif
+                    <div class="pt-3">
+                        @include('order.discount-box', ['order' => $order])
+                    </div>
                     <div class="d-flex justify-content-between py-3">
                         <span class="fw-bold">{{ $canPayOnline ? 'مبلغ قابل پرداخت' : 'جمع پیش‌فاکتور' }}</span>
-                        <span class="fw-bold" style="font-size:1.1rem; color:var(--primary);">{{ number_format($order->total_price) }} <small class="font-12 fw-normal">تومان</small></span>
+                        <span class="fw-bold" style="font-size:1.1rem; color:var(--primary);" id="finalPrice">{{ number_format($order->total_price) }} <small class="font-12 fw-normal">تومان</small></span>
                     </div>
                     @if($canPayOnline)
                     <a href="/payment/zarinpal/{{ $order->id }}" class="btn add-cart-btn2 text-center d-block font-13 fw-bold hide-on-mobile-buy" style="background:linear-gradient(135deg, var(--success), #43a047);">
@@ -195,7 +204,7 @@
 <div class="mobile-actionbar" role="region" aria-label="{{ $canPayOnline ? 'پرداخت سفارش' : 'ثبت نهایی سفارش' }}">
     <div class="mobile-actionbar__info">
         <span class="mobile-actionbar__label">{{ $canPayOnline ? 'مبلغ قابل پرداخت' : 'جمع پیش‌فاکتور' }}</span>
-        <span class="mobile-actionbar__price">{{ number_format($order->total_price) }} <small>تومان</small></span>
+        <span class="mobile-actionbar__price" id="finalPriceMobile">{{ number_format($order->total_price) }} <small>تومان</small></span>
     </div>
     @if($canPayOnline)
     <a href="/payment/zarinpal/{{ $order->id }}" class="mobile-actionbar__btn is-pay">
@@ -210,4 +219,15 @@
     </form>
     @endif
 </div>
+@endsection
+@section('js')
+@include('order.discount-script')
+@if(!empty($discountNotice))
+<script>
+// کد تخفیفی که روی سفارش نشسته بود بین دو مرحله از اعتبار افتاد
+$(function () {
+    toast.fire({ icon: 'warning', title: @json($discountNotice) });
+});
+</script>
+@endif
 @endsection

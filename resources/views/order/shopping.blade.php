@@ -112,6 +112,12 @@
                         مبلغ قطعات <b>بدنه و شاسی</b> در این جمع نیامده و توسط کارشناس تلفنی اعلام می‌شود.
                     </div>
                     @endif
+                    {{-- تخفیف از مبلغ محصولات کم می‌شود، نه از هزینه‌ی ارسال --}}
+                    <div id="discountRow" class="d-flex justify-content-between py-2 font-13 {{ $order->hasDiscount() ? '' : 'd-none' }}"
+                         style="color:var(--success, #17a566);">
+                        <span><i class="fas fa-tag me-1"></i> تخفیف</span>
+                        <span id="discountAmount" class="fw-bold">−{{ number_format((int) $order->discount_amount) }} تومان</span>
+                    </div>
                     <div class="d-flex justify-content-between py-2 font-13 border-bottom">
                         <span class="text-muted"><i class="fas fa-truck me-1"></i> هزینه ارسال</span>
                         <span id="shippingCost">
@@ -129,6 +135,9 @@
                                 {{ number_format($order->shipping_price) }} تومان
                             @endif
                         </span>
+                    </div>
+                    <div class="pt-3">
+                        @include('order.discount-box', ['order' => $order])
                     </div>
                     <div class="d-flex justify-content-between py-3">
                         <span class="fw-bold" style="font-size:.95rem;">{{ $amountLabel }}</span>
@@ -180,12 +189,33 @@ function recalcShipping() {
             } else {
                 $('#shippingCost').text(res.shipping_label);
             }
+            // سرور موقع محاسبه‌ی ارسال، اعتبار کد تخفیف را هم دوباره سنجیده
+            // است؛ ردیف و کادر تخفیف با همان پاسخ به‌روز می‌شوند
+            if (res.discount_amount > 0) {
+                $('#discountAmount').text('−' + new Intl.NumberFormat().format(res.discount_amount) + ' تومان');
+                $('#discountRow').removeClass('d-none');
+            } else {
+                $('#discountRow').addClass('d-none');
+            }
+            if (res.discount_html) {
+                $('#discountBox').replaceWith(res.discount_html);
+            }
+            if (res.discount_notice) {
+                toast.fire({ icon: 'warning', title: res.discount_notice });
+            }
             var priceHtml = new Intl.NumberFormat().format(res.total_price);
             $('#finalPrice').html(priceHtml + ' <small class="font-12 fw-normal">تومان</small>');
             $('#finalPriceMobile').html(priceHtml + ' <small>تومان</small>');
         }
     });
 }
+
+@if(!empty($discountNotice))
+// کد تخفیفی که از بازدید قبلی روی سفارش مانده بود، دیگر معتبر نیست
+$(function () {
+    toast.fire({ icon: 'warning', title: @json($discountNotice) });
+});
+@endif
 $('.shipping-method-radio').on('change', recalcShipping);
 $('#saveAddressBtn').click(function () {
     let btn = $(this);
@@ -224,4 +254,5 @@ $('#saveAddressBtn').click(function () {
     });
 });
 </script>
+@include('order.discount-script')
 @endsection

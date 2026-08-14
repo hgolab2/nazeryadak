@@ -248,7 +248,9 @@
                 <span>تعداد اقلام: {{ toPersianNumbers($itemCount, false) }}</span>
                 <span>وضعیت: {{ $order->status() }}</span>
                 @if($unpaid)
-                    <span class="lbl-cod">پرداخت درب منزل: {{ toPersianNumbers(number_format((int) $order->final_price)) }} تومان</span>
+                    {{-- مبلغی که پیک از مشتری می‌گیرد: بعد از تخفیف و با
+                         هزینه‌ی ارسال، نه جمع خام اقلام --}}
+                    <span class="lbl-cod">پرداخت درب منزل: {{ toPersianNumbers(number_format((int) $order->total_price)) }} تومان</span>
                 @else
                     <span class="lbl-cod">پرداخت‌شده</span>
                 @endif

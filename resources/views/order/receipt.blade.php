@@ -45,7 +45,9 @@
                 <section class="nx-card">
                     <div class="nx-card-head">
                         <h2><i class="fas fa-money-check-dollar"></i> پرداخت سفارش {{ toPersianNumbers($order->id, false) }}</h2>
-                        <span class="nx-order-date">{{ toPersianNumbers(number_format($order->final_price)) }} تومان</span>
+                        {{-- مبلغی که باید واریز شود، یعنی بعد از کسر تخفیف و با
+                             هزینه‌ی ارسال؛ نه جمع خام اقلام --}}
+                        <span class="nx-order-date">{{ toPersianNumbers(number_format($order->total_price)) }} تومان</span>
                     </div>
 
                     <div class="nx-panel-body" style="font-size:12.5px; line-height:2; color:var(--nx-muted,#81858b);">
@@ -143,7 +145,7 @@
                                 <div>
                                     <label for="amount">مبلغ پرداختی (تومان) *</label>
                                     <input id="amount" type="text" name="amount" inputmode="numeric" required
-                                           value="{{ old('amount', (int) $order->final_price) }}">
+                                           value="{{ old('amount', (int) $order->total_price) }}">
                                 </div>
                                 <div>
                                     <label for="reference">شماره پیگیری / رهگیری</label>

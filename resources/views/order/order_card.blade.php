@@ -12,10 +12,18 @@
     </header>
 
     <div class="nx-order-body">
+        {{-- برچسب‌ها پیش از این جابه‌جا بودند: final_price جمع اقلام است و
+             total_price مبلغ پرداختی (اقلام − تخفیف + ارسال) --}}
         <div class="nx-order-cell">
             <span>مبلغ کالاها</span>
-            <b>{{ toPersianNumbers(number_format($order->total_price)) }} <small>تومان</small></b>
+            <b>{{ toPersianNumbers(number_format($order->final_price)) }} <small>تومان</small></b>
         </div>
+        @if($order->hasDiscount())
+        <div class="nx-order-cell">
+            <span>تخفیف</span>
+            <b style="color:#17a566;">−{{ toPersianNumbers(number_format((int) $order->discount_amount)) }} <small>تومان</small></b>
+        </div>
+        @endif
         <div class="nx-order-cell">
             <span>هزینه ارسال</span>
             <b>
@@ -28,7 +36,7 @@
         </div>
         <div class="nx-order-cell">
             <span>مبلغ پرداختی</span>
-            <b>{{ toPersianNumbers(number_format($order->final_price)) }} <small>تومان</small></b>
+            <b>{{ toPersianNumbers(number_format($order->total_price)) }} <small>تومان</small></b>
         </div>
         <div class="nx-order-cell">
             <span>تعداد اقلام</span>

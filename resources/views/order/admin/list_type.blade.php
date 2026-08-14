@@ -87,8 +87,14 @@
                 </td>
 
                 <td class="text-center">
-                {{(int)$order->final_price}}
-
+                {{ number_format((int) $order->total_price) }}
+                @if($order->hasDiscount())
+                    {{-- مدیر باید بفهمد این مبلغ چرا از جمع اقلام کمتر است --}}
+                    <div class="text-success" style="font-size:0.72rem;">
+                        <i class="fas fa-tag"></i> {{ $order->discount_code }}
+                        (−{{ number_format((int) $order->discount_amount) }})
+                    </div>
+                @endif
                 </td>
 
 

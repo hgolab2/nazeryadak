@@ -106,6 +106,19 @@
                        value="{{ old('final_price', $model->final_price ?? 0) }}">
             </div>
 
+            @if(!empty($model) && $model->hasDiscount())
+            {{-- تخفیف فقط برای اطلاع مدیر است و از اینجا ویرایش نمی‌شود؛ عوض
+                 کردنش یعنی دست بردن در فاکتوری که مشتری قبلا دیده است. --}}
+            <div class="col-12 mb-3">
+                <div class="alert alert-success mb-0 py-2">
+                    <i class="fas fa-tag me-1"></i>
+                    کد تخفیف <bdi class="fw-bold">{{ $model->discount_code }}</bdi> روی این سفارش اعمال شده است:
+                    <b>{{ number_format((int) $model->discount_amount) }}</b> تومان.
+                    مبلغ‌های بالا شامل همین کسر هستند.
+                </div>
+            </div>
+            @endif
+
         </div>
     </section>
 

@@ -62,11 +62,13 @@ class CheckoutController extends Controller
 
         $shippingInfo = getShippingInfo($order);
         $shippingPrice = $shippingInfo['cost'];
-        $order->update([
-            'final_price'    => $total,
-            'shipping_price' => $shippingPrice,
-            'total_price'    => $total + $shippingPrice,
-        ]);
+
+        // سبد از بازدید قبلی عوض شده باشد، تخفیف هم باید دوباره حساب شود؛
+        // syncDiscount خودش total_price را با کسر تخفیف می‌نویسد.
+        $order->final_price    = $total;
+        $order->shipping_price = $shippingPrice;
+        $discountNotice        = $order->syncDiscount();
+        $order->save();
 
         $provinces = Province::orderBy('name')->get();
         $address = CustomerAddress::where('customer_id', $user->id)->first();
@@ -77,6 +79,7 @@ class CheckoutController extends Controller
             'address'        => $address,
             'shipping_price' => $shippingPrice,
             'shipping_info'  => $shippingInfo,
+            'discountNotice' => $discountNotice,
         ]);
     }
 
@@ -133,7 +136,11 @@ class CheckoutController extends Controller
             return redirect('/order/shopping')->with('error', 'لطفا ابتدا آدرس تحویل را ثبت کنید.');
         }
 
-        $order->update(['address_id' => $address->id]);
+        $order->address_id = $address->id;
+        // کد ممکن است بین مرحله‌ی قبل و اینجا منقضی یا غیرفعال شده باشد
+        $discountNotice = $order->syncDiscount();
+        $order->save();
+
         $address->load('province');
         $shippingInfo = getShippingInfo($order);
 
@@ -147,7 +154,8 @@ class CheckoutController extends Controller
         $canPayOnline = $onlinePayment && ! $hasContactPriceItems;
 
         return view('order.payment', compact(
-            'order', 'address', 'shippingInfo', 'onlinePayment', 'hasContactPriceItems', 'canPayOnline'
+            'order', 'address', 'shippingInfo', 'onlinePayment', 'hasContactPriceItems', 'canPayOnline',
+            'discountNotice'
         ));
     }
 
@@ -184,10 +192,14 @@ class CheckoutController extends Controller
             return redirect('/cart')->with('error', 'سفارش شما قلمی ندارد.');
         }
 
-        $order->update([
-            'address_id' => $address->id,
-            'status'     => 'awaiting_call',
-        ]);
+        // آخرین فرصت برای اعتبارسنجی تخفیف؛ بعد از این سفارش ثبت است و
+        // مبلغش سند می‌شود. اگر کد همین‌جا از دست برود، کاربر باید بداند
+        // چرا مبلغ فاکتورش با چیزی که دید فرق دارد.
+        $discountNotice = $order->syncDiscount();
+
+        $order->address_id = $address->id;
+        $order->status     = 'awaiting_call';
+        $order->save();
 
         session()->forget('cart');
 
@@ -211,7 +223,9 @@ class CheckoutController extends Controller
             }
         }
 
-        return redirect('/order/invoice/' . $order->id);
+        $redirect = redirect('/order/invoice/' . $order->id);
+
+        return $discountNotice ? $redirect->with('error', $discountNotice) : $redirect;
     }
 
     /**
@@ -279,17 +293,22 @@ class CheckoutController extends Controller
         $shippingInfo = getShippingInfo($order);
         $shippingCost = $shippingInfo['cost'];
 
-        $order->update([
-            'shipping_price' => $shippingCost,
-            'total_price'    => $order->final_price + $shippingCost,
-        ]);
+        $order->shipping_price = $shippingCost;
+        $discountNotice        = $order->syncDiscount();
+        $order->save();
 
         return response()->json([
-            'status'         => 'success',
-            'shipping_price' => $shippingCost,
-            'shipping_label' => $shippingInfo['label'],
-            'shipping_type'  => $shippingInfo['type'],
-            'total_price'    => $order->final_price + $shippingCost,
+            'status'          => 'success',
+            'shipping_price'  => $shippingCost,
+            'shipping_label'  => $shippingInfo['label'],
+            'shipping_type'   => $shippingInfo['type'],
+            'discount_amount' => (int) $order->discount_amount,
+            // اگر کد همین‌جا از اعتبار افتاده باشد، کادر تخفیف هم باید از
+            // حالت «اعمال شد» بیرون بیاید؛ وگرنه دکمه‌ی حذفِ کدی می‌ماند که
+            // دیگر روی سفارش نیست
+            'discount_html'   => view('order.discount-box', ['order' => $order])->render(),
+            'discount_notice' => $discountNotice,
+            'total_price'     => (int) $order->total_price,
         ]);
     }
 

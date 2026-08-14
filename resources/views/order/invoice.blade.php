@@ -29,6 +29,14 @@
 
 <main>
     <div class="container">
+        @if(session('error'))
+        {{-- مثلا کد تخفیفی که درست هنگام ثبت نهایی از اعتبار افتاد؛ بدون این
+             پیام، مشتری فقط می‌دید مبلغ فاکتور با صفحه‌ی قبل فرق دارد --}}
+        <div class="alert alert-warning font-13 d-flex align-items-center gap-2 no-print" role="alert">
+            <i class="fas fa-exclamation-circle"></i> {{ session('error') }}
+        </div>
+        @endif
+
         {{-- پیام اصلی: سفارش ثبت شد و کارشناس تماس می‌گیرد --}}
         <div class="cart-content p-4 mb-3 text-center" style="border-top:4px solid var(--success);">
             <div style="width:78px; height:78px; background:#e8f5e9; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 15px;">
@@ -166,6 +174,18 @@
                         <span class="text-muted">مبلغ قطعات</span>
                         <span>{{ toPersianNumbers(number_format($itemsSum)) }} تومان</span>
                     </div>
+
+                    @if($order->hasDiscount())
+                    <div class="d-flex justify-content-between py-2 font-13" style="color:var(--success, #17a566);">
+                        <span>
+                            <i class="fas fa-tag me-1"></i> تخفیف
+                            @if($order->discount_code)
+                                <small class="text-muted">(<bdi>{{ $order->discount_code }}</bdi>)</small>
+                            @endif
+                        </span>
+                        <span class="fw-bold">−{{ toPersianNumbers(number_format((int) $order->discount_amount)) }} تومان</span>
+                    </div>
+                    @endif
 
                     <div class="d-flex justify-content-between py-2 font-13 border-bottom">
                         <span class="text-muted"><i class="fas fa-truck me-1"></i> هزینه ارسال</span>

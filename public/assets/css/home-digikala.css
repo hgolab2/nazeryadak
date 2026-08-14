@@ -1980,30 +1980,37 @@ body {
     font-weight: 900;
 }
 
-.dk-wholesale-line {
-    margin: 0 0 6px;
+/* سطر اصلی: تعداد آستانه و قیمت واحد، همان چیزی که برای تصمیم لازم است */
+.dk-wholesale-main {
+    margin: 0;
     color: #3f4064;
-    font-size: 12.5px;
-    line-height: 2;
+    font-size: 13px;
+    line-height: 1.9;
 }
 
-.dk-wholesale-line:last-child {
-    margin-bottom: 0;
-}
-
-.dk-wholesale-line b {
+.dk-wholesale-main b {
     color: #0f8a5f;
     font-weight: 900;
 }
 
-.dk-wholesale-saving i,
-.dk-wholesale-ship i {
-    margin-left: 4px;
-    color: #17a566;
+.dk-wholesale-ship {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #0f8a5f;
+    font-size: 10.5px;
+    font-weight: 800;
 }
 
 .dk-wholesale-warn {
+    margin: 8px 0 0;
     color: #8a6100;
+    font-size: 12px;
+}
+
+.dk-wholesale-warn i {
+    margin-left: 4px;
+    color: #f0b429;
 }
 
 .dk-wholesale-warn i {
@@ -2023,8 +2030,8 @@ body {
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
-    margin-top: 10px;
-    padding-top: 10px;
+    margin-top: 8px;
+    padding-top: 8px;
     border-top: 1px dashed #cfe9dd;
 }
 

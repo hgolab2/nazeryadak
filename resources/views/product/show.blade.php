@@ -154,8 +154,9 @@
                     </div>
                 @endif
 
-                {{-- فروش عمده: تعداد آستانه و قیمت واحدش پیش از خرید و به‌صورت
-                     عدد دقیق نشان داده می‌شود، نه در قالب یک شعار کلی --}}
+                {{-- فروش عمده در سه سطر کوتاه: تعداد و قیمت، فاصله تا آستانه،
+                     دکمه. مشتری این صفحه سر کار است و متن بلند را نمی‌خواند،
+                     پس فقط عددهایی می‌ماند که برای تصمیم لازم است --}}
                 @if(!$contactPrice && $model->hasWholesale())
                     @php
                         $wsQty   = $model->wholesaleMinQty();
@@ -169,42 +170,32 @@
                             <i class="fas fa-boxes-stacked"></i>
                             <b>خرید عمده</b>
                             <span class="dk-wholesale-off">{{ toPersianNumbers($model->wholesaleDiscountPercent(), false) }}٪ ارزان‌تر</span>
+                            {{-- فقط وقتی تعداد آستانه واقعا فاکتور را به مبلغ ارسال رایگان
+                                 می‌رساند؛ با تعداد دستیِ کمتر، این وعده درست نیست --}}
+                            @if($model->wholesaleReachesFreeShipping())
+                                <span class="dk-wholesale-ship"><i class="fas fa-truck-fast"></i> ارسال رایگان</span>
+                            @endif
                         </div>
-                        <p class="dk-wholesale-line">
-                            با خرید <b>{{ toPersianNumbers($wsQty, false) }} عدد</b> یا بیشتر،
-                            قیمت هر عدد <b>{{ toPersianNumbers($wsPrice) }} تومان</b> می‌شود
-                            (به‌جای {{ toPersianNumbers((int) $model->price) }} تومان).
-                        </p>
-                        <p class="dk-wholesale-line dk-wholesale-saving">
-                            <i class="fas fa-piggy-bank"></i>
-                            صرفه‌جویی شما در این تعداد:
-                            <b>{{ toPersianNumbers($model->wholesaleSaving($wsQty)) }} تومان</b>
-                        </p>
-                        <p class="dk-wholesale-line dk-wholesale-ship">
-                            <i class="fas fa-truck-fast"></i>
-                            چون مبلغ سفارش به {{ shippingAmountWords(wholesaleTargetAmount()) }} می‌رسد،
-                            <b>ارسال رایگان</b> است.
+                        <p class="dk-wholesale-main">
+                            از <b>{{ toPersianNumbers($wsQty, false) }} عدد</b>:
+                            هر عدد <b>{{ toPersianNumbers($wsPrice) }}</b> تومان
                         </p>
                         @if($stock >= $wsQty)
-                            {{-- وضعیت زنده‌ی تعدادِ انتخاب‌شده نسبت به آستانه؛ بدون این، کاربر
-                                 باید خودش عددها را کم و زیاد کند تا بفهمد کِی قیمت عوض می‌شود --}}
+                            {{-- فاصله تا آستانه با تعدادِ انتخاب‌شده جلو می‌رود، وگرنه
+                                 کاربر باید خودش عددها را کم و زیاد کند --}}
                             <div class="dk-wholesale-progress">
                                 <span class="dk-wholesale-remain" id="dk-ws-remain">
                                     <i class="fas fa-arrow-up-long"></i>
-                                    <span class="js-ws-remain-text">
-                                        {{ toPersianNumbers($wsQty - 1, false) }} عدد دیگر تا قیمت عمده
-                                    </span>
+                                    <span class="js-ws-remain-text">{{ toPersianNumbers($wsQty - 1, false) }} عدد دیگر</span>
                                 </span>
                                 <button type="button" class="dk-wholesale-jump js-ws-jump" data-qty="{{ $wsQty }}">
                                     انتخاب {{ toPersianNumbers($wsQty, false) }} عدد
                                 </button>
                             </div>
-                        @endif
-                        @if($stock > 0 && $stock < $wsQty)
-                            <p class="dk-wholesale-line dk-wholesale-warn">
+                        @elseif($stock > 0)
+                            <p class="dk-wholesale-warn">
                                 <i class="fas fa-circle-info"></i>
-                                موجودی فعلی {{ toPersianNumbers($stock, false) }} عدد است؛
-                                برای سفارش عمده با پشتیبانی تماس بگیرید.
+                                موجودی {{ toPersianNumbers($stock, false) }} عدد — برای عمده تماس بگیرید
                             </p>
                         @endif
                     </div>
@@ -428,8 +419,8 @@ $(function () {
             $remain.toggleClass('is-done', isWholesale);
             $remain.find('i').attr('class', isWholesale ? 'fas fa-circle-check' : 'fas fa-arrow-up-long');
             $remain.find('.js-ws-remain-text').text(isWholesale
-                ? 'قیمت عمده روی این تعداد اعمال شد'
-                : toFa(wsMin - value) + ' عدد دیگر تا قیمت عمده');
+                ? 'قیمت عمده اعمال شد'
+                : toFa(wsMin - value) + ' عدد دیگر');
             $('.js-ws-jump').prop('hidden', isWholesale);
         }
     }
