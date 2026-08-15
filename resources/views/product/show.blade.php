@@ -132,6 +132,28 @@
                     تنها {{ toPersianNumbers($stock, false) }} عدد در انبار باقی مانده است
                 </p>
                 @endif
+
+                {{-- واحد شمارش از فایل لیست قیمت. برای قطعه‌ای که واحدش
+                     «دست ۴ عددي» یا «گالن ۴ليتري» است، کاربر باید بداند
+                     با یک بار خرید دقیقا چه چیزی تحویل می‌گیرد. --}}
+                @if($model->unitLabel())
+                    <div class="dk-unit-row">
+                        <span class="dk-unit-chip">
+                            <i class="fas fa-ruler-combined"></i>
+                            واحد فروش: {{ toPersianNumbers($model->unitLabel(), false) }}
+                        </span>
+                    </div>
+                @endif
+
+                @if($model->packQty() > 1)
+                    <p class="dk-pack-note">
+                        <i class="fas fa-box-open"></i>
+                        این قطعه بسته‌ای عرضه می‌شود؛ با هر بار خرید
+                        <b>{{ toPersianNumbers($model->packQty(), false) }} عدد</b>
+                        تحویل می‌گیرید.
+                    </p>
+                @endif
+
                 @if($contactPrice)
                     {{-- قطعات بدنه و شاسی: قیمت روی سایت اعلام نمی‌شود --}}
                     <div class="dk-detail-price is-contact-price" style="font-size:1.05rem;">
@@ -237,17 +259,33 @@
             <div class="dk-detail-tabs-body">@if($model->description)<div class="product-description-html">{!! $model->description !!}</div>@else<p>{{ $fa('%D8%AA%D9%88%D8%B6%DB%8C%D8%AD%D8%A7%D8%AA%DB%8C%20%D8%A8%D8%B1%D8%A7%DB%8C%20%D8%A7%DB%8C%D9%86%20%D9%85%D8%AD%D8%B5%D9%88%D9%84%20%D8%AB%D8%A8%D8%AA%20%D9%86%D8%B4%D8%AF%D9%87%20%D8%A7%D8%B3%D8%AA.') }}</p>@endif</div>
         </section>
 
+        {{-- نمودار تاریخچه‌ی قیمت؛ کنترلر وقتی کمتر از دو نقطه باشد آرایه‌ی
+             خالی می‌دهد و این بخش اصلا رندر نمی‌شود. --}}
+        @if(!empty($priceHistory))
+            @include('product._price_chart', ['priceHistory' => $priceHistory])
+        @endif
+
         {{-- نظرات کاربران.
              دو کارکرد همزمان: محتوای یکتا برای صفحه‌ای که اغلب فقط مشخصات
              فنی دارد، و منبع aggregateRating که ستاره‌ی نتیجه‌ی گوگل را
              فعال می‌کند. --}}
+        @php
+            /* خلاصه از روی همان نظرهای تأییدشده‌ی لودشده حساب می‌شود؛ کوئری اضافه ندارد. */
+            $ratingSummary = $model->ratingSummary();
+            $reviewCriteria = \App\Models\ProductReview::CRITERIA;
+            $criteriaEnabled = \App\Models\ProductReview::supportsCriteria();
+            /* رنگ نوار از روی خودِ امتیاز: سبز برای ۴ به بالا، نارنجی برای
+               متوسط و قرمز برای ضعیف. خریدار با یک نگاه می‌فهمد ایراد کجاست
+               بدون اینکه عددها را با هم مقایسه کند. */
+            $scoreTone = fn ($score) => $score >= 4 ? 'is-good' : ($score >= 3 ? 'is-mid' : 'is-bad');
+        @endphp
         <section class="nx-card" id="reviews">
             <div class="nx-card-head">
                 <h2><i class="fas fa-star"></i> نظرات کاربران درباره {{ $model->title }}</h2>
-                @if($model->rating_count)
+                @if($ratingSummary['count'])
                     <span class="dk-rating-summary">
-                        <b>{{ toPersianNumbers(number_format((float) $model->rating_avg, 1)) }}</b>
-                        از ۵ — {{ toPersianNumbers($model->rating_count) }} نظر
+                        <b>{{ toPersianNumbers(number_format($ratingSummary['avg'], 1)) }}</b>
+                        از ۵ — {{ toPersianNumbers($ratingSummary['count']) }} نظر
                     </span>
                 @endif
             </div>
@@ -255,6 +293,48 @@
             <div class="dk-reviews">
                 @if(session('review_notice'))
                     <div class="dk-review-notice">{{ session('review_notice') }}</div>
+                @endif
+
+                {{-- جمع‌بندی امتیازها: میانگین کلی، توزیع ستاره‌ها و امتیاز هر
+                     معیار. یک عدد کلی نمی‌گوید ایراد از کیفیت بوده یا از قیمت؛
+                     تفکیک معیارها همان چیزی است که خریدار برای تصمیم لازم دارد. --}}
+                @if($ratingSummary['count'])
+                    <div class="dk-rating-panel">
+                        <div class="dk-rating-score">
+                            <b>{{ toPersianNumbers(number_format($ratingSummary['avg'], 1)) }}</b>
+                            <span>از ۵</span>
+                            <span class="dk-review-stars" aria-label="میانگین {{ $ratingSummary['avg'] }} از ۵">
+                                @for($i = 1; $i <= 5; $i++)<i class="fa{{ $i <= round($ratingSummary['avg']) ? 's' : 'r' }} fa-star"></i>@endfor
+                            </span>
+                            <small>از {{ toPersianNumbers($ratingSummary['count']) }} نظر ثبت‌شده</small>
+                        </div>
+
+                        <div class="dk-rating-bars">
+                            @foreach($ratingSummary['distribution'] as $star => $row)
+                                <div class="dk-rating-bar-row">
+                                    <span class="dk-rating-bar-star">{{ toPersianNumbers($star, false) }} <i class="fas fa-star"></i></span>
+                                    <span class="dk-rating-bar"><i style="width:{{ $row['percent'] }}%"></i></span>
+                                    <span class="dk-rating-bar-count">{{ toPersianNumbers($row['count'], false) }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        @php $scoredCriteria = array_filter($ratingSummary['criteria'], fn ($c) => $c['count'] > 0); @endphp
+                        @if($scoredCriteria)
+                            <div class="dk-rating-criteria">
+                                <h3>امتیاز به تفکیک</h3>
+                                @foreach($scoredCriteria as $criterion)
+                                    <div class="dk-crit-row">
+                                        <span class="dk-crit-label">{{ $criterion['label'] }}</span>
+                                        <span class="dk-crit-bar {{ $scoreTone($criterion['avg']) }}">
+                                            <i style="width:{{ $criterion['avg'] / 5 * 100 }}%"></i>
+                                        </span>
+                                        <span class="dk-crit-value">{{ toPersianNumbers(number_format($criterion['avg'], 1)) }}</span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
                 @endif
 
                 @if($model->approvedReviews->count())
@@ -268,6 +348,17 @@
                                 </span>
                             </div>
                             @if($review->title)<div class="dk-review-title">{{ $review->title }}</div>@endif
+                            @php $reviewScores = $review->criteriaScores(); @endphp
+                            @if($reviewScores)
+                                <div class="dk-review-crits">
+                                    @foreach($reviewScores as $label => $score)
+                                        <span class="dk-review-crit {{ $scoreTone($score) }}">
+                                            {{ $label }}
+                                            <b>{{ toPersianNumbers($score, false) }}<i class="fas fa-star"></i></b>
+                                        </span>
+                                    @endforeach
+                                </div>
+                            @endif
                             <p class="dk-review-body">{{ $review->comment }}</p>
                         </article>
                     @endforeach
@@ -286,12 +377,33 @@
                     @endif
 
                     <div class="dk-review-stars-input">
-                        <span>امتیاز شما:</span>
-                        @for($i = 5; $i >= 1; $i--)
-                            <input type="radio" name="rating" id="rating-{{ $i }}" value="{{ $i }}" {{ (int) old('rating') === $i ? 'checked' : '' }} required>
-                            <label for="rating-{{ $i }}" title="{{ $i }} ستاره"><i class="fas fa-star"></i></label>
-                        @endfor
+                        <span>امتیاز کلی:</span>
+                        <span class="dk-stars-pick">
+                            @for($i = 5; $i >= 1; $i--)
+                                <input type="radio" name="rating" id="rating-{{ $i }}" value="{{ $i }}" {{ (int) old('rating') === $i ? 'checked' : '' }} required>
+                                <label for="rating-{{ $i }}" title="{{ $i }} ستاره"><i class="fas fa-star"></i></label>
+                            @endfor
+                        </span>
                     </div>
+
+                    {{-- امتیاز معیارها اختیاری است؛ اجباری‌کردنش فقط باعث می‌شود
+                         کاربر فرم را نیمه‌کاره رها کند. --}}
+                    @if($criteriaEnabled)
+                        <div class="dk-crit-input">
+                            <span class="dk-crit-input-title">امتیاز به تفکیک <small>(اختیاری)</small></span>
+                            @foreach($reviewCriteria as $key => $label)
+                                <div class="dk-crit-input-row">
+                                    <span class="dk-crit-input-label">{{ $label }}</span>
+                                    <span class="dk-stars-pick">
+                                        @for($i = 5; $i >= 1; $i--)
+                                            <input type="radio" name="criteria[{{ $key }}]" id="crit-{{ $key }}-{{ $i }}" value="{{ $i }}" {{ (int) old('criteria.' . $key) === $i ? 'checked' : '' }}>
+                                            <label for="crit-{{ $key }}-{{ $i }}" title="{{ $i }} ستاره"><i class="fas fa-star"></i></label>
+                                        @endfor
+                                    </span>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
 
                     <div class="dk-review-fields">
                         <input type="text" name="name" placeholder="نام شما" value="{{ old('name', auth('customer')->user()->name ?? '') }}" maxlength="100">
@@ -337,13 +449,58 @@
 .dk-review-form textarea,.dk-review-fields input{width:100%;border:1px solid #e3e8ef;border-radius:8px;padding:10px 12px;font-size:.85rem;font-family:inherit;margin-bottom:10px}
 .dk-review-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media(max-width:600px){.dk-review-fields{grid-template-columns:1fr}}
-/* ستاره‌ها با direction:rtl از راست پر می‌شوند؛ انتخاب ۴ باید ۴ ستاره‌ی
-   اول را هم روشن کند، به همین دلیل از سلکتور برادرِ بعدی استفاده شده. */
-.dk-review-stars-input{display:flex;align-items:center;gap:4px;margin-bottom:12px;font-size:.85rem}
-.dk-review-stars-input input{position:absolute;opacity:0;width:0;height:0}
-.dk-review-stars-input label{color:#d7dde5;cursor:pointer;font-size:1.25rem;order:1}
-.dk-review-stars-input input:checked ~ label{color:#f5a623}
-.dk-review-stars-input span{margin-left:8px}
+
+/* جمع‌بندی امتیازها: میانگین، توزیع ستاره‌ها و تفکیک معیارها.
+   سه ستون در دسکتاپ، روی هم در موبایل. */
+.dk-rating-panel{display:grid;grid-template-columns:minmax(120px,150px) minmax(180px,1fr) minmax(220px,1.2fr);gap:20px;align-items:start;background:#fafbfc;border:1px solid #eef2f7;border-radius:10px;padding:16px;margin-bottom:16px}
+@media(max-width:900px){.dk-rating-panel{grid-template-columns:1fr;gap:14px}}
+.dk-rating-score{text-align:center}
+.dk-rating-score b{display:block;font-size:2rem;line-height:1.2;color:#f5a623}
+.dk-rating-score>span{font-size:.75rem;color:#888}
+.dk-rating-score .dk-review-stars{display:block;margin:4px 0;font-size:.9rem}
+.dk-rating-score small{display:block;font-size:.72rem;color:#888}
+.dk-rating-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:.75rem;color:#666}
+.dk-rating-bar-star{white-space:nowrap;min-width:34px}
+.dk-rating-bar-star i{color:#f5a623;font-size:.65rem}
+.dk-rating-bar{flex:1;height:7px;background:#e9edf2;border-radius:99px;overflow:hidden}
+.dk-rating-bar i{display:block;height:100%;background:#f5a623;border-radius:99px}
+.dk-rating-bar-count{min-width:18px;text-align:left;direction:ltr}
+.dk-rating-criteria h3{font-size:.82rem;font-weight:700;margin:0 0 8px;color:#444}
+.dk-crit-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:.78rem}
+.dk-crit-label{flex:0 0 40%;color:#555}
+.dk-crit-bar{flex:1;height:7px;background:#e9edf2;border-radius:99px;overflow:hidden}
+.dk-crit-bar i{display:block;height:100%;border-radius:99px;background:#8a94a6}
+.dk-crit-value{min-width:24px;text-align:left;direction:ltr;font-weight:700;color:#444}
+/* رنگ نوار از روی امتیاز؛ نقطه‌ضعف محصول باید بدون خواندن عددها دیده شود */
+.dk-crit-bar.is-good i{background:#2eae6f}
+.dk-crit-bar.is-mid i{background:#f5a623}
+.dk-crit-bar.is-bad i{background:#e04b4b}
+/* ریزامتیازهای یک نظر */
+.dk-review-crits{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 8px}
+.dk-review-crit{display:inline-flex;align-items:center;gap:5px;border-radius:99px;padding:3px 10px;font-size:11px;background:#f1f3f6;color:#555}
+.dk-review-crit b{display:inline-flex;align-items:center;gap:2px;font-size:11px}
+.dk-review-crit b i{font-size:9px}
+.dk-review-crit.is-good{background:#e8f7ee;color:#176b3a}
+.dk-review-crit.is-mid{background:#fff6e5;color:#8a5a00}
+.dk-review-crit.is-bad{background:#fdecec;color:#9c2b2b}
+/* ورودی امتیاز معیارها در فرم */
+.dk-crit-input{border:1px solid #eef2f7;border-radius:10px;padding:12px 14px;margin-bottom:12px}
+.dk-crit-input-title{display:block;font-size:.82rem;font-weight:700;margin-bottom:8px}
+.dk-crit-input-title small{font-weight:400;color:#888;font-size:.72rem}
+.dk-crit-input-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 0}
+.dk-crit-input-label{font-size:.8rem;color:#555}
+.dk-crit-input .dk-stars-pick label{font-size:1.05rem}
+/* انتخاب ستاره، بدون جاوااسکریپت.
+   ستاره‌ها در DOM از ۵ به ۱ می‌آیند تا «input:checked ~ label» بتواند
+   ستاره‌های کوچک‌تر را هم روشن کند (سلکتورِ برادرِ قبلی وجود ندارد). با
+   row-reverse همان ترتیب برعکس دیده می‌شود: ستاره‌ی ۱ می‌چسبد به لبه‌ی راست
+   و پر شدن از راست شروع می‌شود — همان‌طور که ستاره‌های نمایشیِ بالای صفحه. */
+.dk-review-stars-input{display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:.85rem}
+.dk-stars-pick{display:flex;flex-direction:row-reverse;align-items:center;gap:4px}
+.dk-stars-pick input{position:absolute;opacity:0;width:0;height:0}
+.dk-stars-pick label{color:#d7dde5;cursor:pointer;font-size:1.25rem}
+.dk-stars-pick input:checked ~ label{color:#f5a623}
+.dk-stars-pick label:hover,.dk-stars-pick label:hover ~ label{color:#f7c46b}
 </style>
 
 {{-- نوار خرید چسبان موبایل: قیمت و دکمه‌ی خرید همیشه در دسترس شست کاربر است

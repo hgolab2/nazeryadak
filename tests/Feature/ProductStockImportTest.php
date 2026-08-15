@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Product;
 use App\Services\ProductStockImportService;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
@@ -34,9 +35,20 @@ class ProductStockImportTest extends TestCase
             $table->integer('discount_percent')->default(0);
             $table->boolean('wholesale_enabled')->default(true);
             $table->integer('stock')->default(0);
+            $table->string('unit', 50)->nullable();
+            $table->unsignedInteger('pack_qty')->nullable();
             $table->string('car_model')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
+        });
+
+        // ایمپورت هر تغییر قیمت را اینجا ثبت می‌کند
+        Schema::create('product_price_history', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('product_id');
+            $table->bigInteger('price');
+            $table->string('source', 20)->default('import');
+            $table->timestamp('created_at')->nullable();
         });
 
         Schema::create('eshop_categories', function (Blueprint $table) {
@@ -98,9 +110,9 @@ class ProductStockImportTest extends TestCase
 
         $product = Product::where('sku', '1001')->first();
 
-        // ۱۰٬۰۰۰٬۰۰۰ ریال = ۱٬۰۰۰٬۰۰۰ تومان × ۱.۲
-        $this->assertSame(1200000, $product->price);
-        $this->assertSame(1440000, $product->regular_price);
+        // ۱۰٬۰۰۰٬۰۰۰ ریال = ۱٬۰۰۰٬۰۰۰ تومان × ۱.۳
+        $this->assertSame(1300000, $product->price);
+        $this->assertSame(1560000, $product->regular_price);
     }
 
     public function test_missing_prices_stay_zero(): void
@@ -128,6 +140,103 @@ class ProductStockImportTest extends TestCase
         $importer->import($path);
         $importer->import($path);
 
-        $this->assertSame(240000, Product::where('sku', '1003')->first()->price);
+        // ۲٬۰۰۰٬۰۰۰ ریال = ۲۰۰٬۰۰۰ تومان × ۱.۳
+        $this->assertSame(260000, Product::where('sku', '1003')->first()->price);
+    }
+
+    /**
+     * واحد شمارش ستون سومِ فایل است و تا امروز دور ریخته می‌شد.
+     */
+    public function test_unit_of_measure_is_stored(): void
+    {
+        $path = $this->excel([
+            ['1004', 'شمع', 'عدد', 'پژو ۲۰۶', '10', '100,000', '100,000'],
+            ['1005', 'لنت عقب', 'دست 4 عددي', 'سمند', '4', '200,000', '200,000'],
+            ['1006', 'روغن موتور', 'گالن 4ليتري', 'دنا', '2', '300,000', '300,000'],
+        ]);
+
+        app(ProductStockImportService::class)->import($path);
+
+        $this->assertSame('عدد', Product::where('sku', '1004')->first()->unit);
+        $this->assertSame('دست 4 عددي', Product::where('sku', '1005')->first()->unit);
+        $this->assertSame('گالن 4ليتري', Product::where('sku', '1006')->first()->unit);
+    }
+
+    /**
+     * تعداد در بسته از متنِ واحد درمی‌آید. برای واحد حجمی باید null بماند:
+     * «گالن ۴ليتري» یعنی چهار لیتر، نه چهار عدد.
+     */
+    public function test_pack_quantity_is_derived_from_the_unit_text(): void
+    {
+        $path = $this->excel([
+            ['1004', 'شمع', 'عدد', 'پژو ۲۰۶', '10', '100,000', '100,000'],
+            ['1005', 'لنت عقب', 'دست 4 عددي', 'سمند', '4', '200,000', '200,000'],
+            ['1006', 'روغن موتور', 'گالن 4ليتري', 'دنا', '2', '300,000', '300,000'],
+        ]);
+
+        app(ProductStockImportService::class)->import($path);
+
+        $this->assertSame(1, Product::where('sku', '1004')->first()->pack_qty);
+        $this->assertSame(4, Product::where('sku', '1005')->first()->pack_qty);
+        $this->assertNull(Product::where('sku', '1006')->first()->pack_qty);
+    }
+
+    /** هر ایمپورت باید قیمت روز را در تاریخچه ثبت کند. */
+    public function test_import_records_a_price_history_point(): void
+    {
+        $path = $this->excel([
+            ['1007', 'دیسک ترمز', 'عدد', 'سمند', '5', '1,000,000', '1,000,000'],
+        ]);
+
+        app(ProductStockImportService::class)->import($path);
+
+        $product = Product::where('sku', '1007')->first();
+        $points  = DB::table('product_price_history')->where('product_id', $product->id)->get();
+
+        $this->assertCount(1, $points);
+        $this->assertSame(130000, (int) $points->first()->price);
+        $this->assertSame('import', $points->first()->source);
+    }
+
+    /**
+     * ایمپورت روی هزاران محصول اجرا می‌شود و اکثرشان قیمتشان عوض نشده؛
+     * بدون این بررسی، نمودار پر از نقطه‌ی تکراری می‌شد.
+     */
+    public function test_unchanged_price_does_not_add_a_second_point(): void
+    {
+        $path = $this->excel([
+            ['1008', 'واترپمپ', 'عدد', 'دنا', '5', '1,000,000', '1,000,000'],
+        ]);
+
+        $importer = app(ProductStockImportService::class);
+        $importer->import($path);
+        $importer->import($path);
+
+        $product = Product::where('sku', '1008')->first();
+
+        $this->assertSame(1, DB::table('product_price_history')->where('product_id', $product->id)->count());
+    }
+
+    /** ولی تغییر واقعی قیمت باید نقطه‌ی تازه بسازد. */
+    public function test_changed_price_adds_a_new_point(): void
+    {
+        $importer = app(ProductStockImportService::class);
+
+        $importer->import($this->excel([
+            ['1009', 'رادیاتور', 'عدد', 'تارا', '5', '1,000,000', '1,000,000'],
+        ]));
+        $importer->import($this->excel([
+            ['1009', 'رادیاتور', 'عدد', 'تارا', '5', '1,000,000', '2,000,000'],
+        ]));
+
+        $product = Product::where('sku', '1009')->first();
+        $prices  = DB::table('product_price_history')
+            ->where('product_id', $product->id)
+            ->orderBy('id')
+            ->pluck('price')
+            ->map(fn ($p) => (int) $p)
+            ->all();
+
+        $this->assertSame([130000, 260000], $prices);
     }
 }

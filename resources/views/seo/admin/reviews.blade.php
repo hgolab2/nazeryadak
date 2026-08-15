@@ -7,6 +7,7 @@
 <style>
 .review-stars{color:#f5a623;font-size:.8rem}
 .review-comment{max-width:520px;font-size:.85rem;line-height:1.9}
+.review-crit{display:inline-block;background:#f1f3f6;color:#555;border-radius:99px;padding:1px 8px;font-size:11px;margin:3px 0 0 3px;white-space:nowrap}
 </style>
 
 <nav class="mb-3 pt-md-3" aria-label="Breadcrumb">
@@ -57,8 +58,16 @@
                         {{ $review->name }}
                         @if($review->is_buyer)<span class="badge bg-success">خریدار</span>@endif
                     </td>
-                    <td class="text-nowrap review-stars">
-                        @for($i = 1; $i <= 5; $i++)<i class="fa{{ $i <= $review->rating ? 's' : 'r' }} fa-star"></i>@endfor
+                    <td>
+                        <span class="text-nowrap review-stars">
+                            @for($i = 1; $i <= 5; $i++)<i class="fa{{ $i <= $review->rating ? 's' : 'r' }} fa-star"></i>@endfor
+                        </span>
+                        {{-- ریزامتیازها: وقتی امتیاز کلی با متن نظر نمی‌خواند،
+                             معمولا این‌ها نشان می‌دهند کاربر دقیقا از چه چیزی
+                             ناراضی بوده — پیش از تأیید به کار مدیر می‌آید. --}}
+                        @foreach($review->criteriaScores() as $label => $score)
+                            <span class="review-crit">{{ $label }}: {{ $score }}</span>
+                        @endforeach
                     </td>
                     <td class="review-comment">
                         @if($review->title)<b>{{ $review->title }}</b><br>@endif

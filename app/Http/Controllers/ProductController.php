@@ -10,6 +10,7 @@ use App\Support\CarModels;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Schema;
 use App\Services\IsacoImageService;
 
 class ProductController extends Controller
@@ -322,7 +323,55 @@ class ProductController extends Controller
             return redirect($model->url(), 301);
         }
         $products = $this->getProduct(8);
-        return view('product.show' , compact('model','products'));
+        $priceHistory = $this->priceHistoryPoints($model);
+
+        return view('product.show' , compact('model','products','priceHistory'));
+    }
+
+    /**
+     * نقطه‌های نمودار تاریخچه‌ی قیمت.
+     *
+     * فقط برای قطعه‌ای که قیمتش روی سایت اعلام می‌شود؛ قطعه‌ی استعلامی قیمت
+     * نمایش‌دادنی ندارد و نمودارش هم معنا ندارد.
+     *
+     * با یک نقطه چیزی برای نشان‌دادن نیست (خطی که از جایی به جایی نمی‌رود)،
+     * پس زیر دو نقطه خالی برمی‌گردد و بخش نمودار اصلا رندر نمی‌شود.
+     *
+     * @return array<int,array{price:int,date:string}>
+     */
+    private function priceHistoryPoints(Product $model): array
+    {
+        if ($model->isContactPrice()) {
+            return [];
+        }
+
+        // روی محیطی که هنوز مایگریشن نخورده، صفحه‌ی محصول نباید ۵۰۰ بدهد.
+        if (! Schema::hasTable('product_price_history')) {
+            return [];
+        }
+
+        // آخرین ۲۴ تغییر کافی است؛ با نقطه‌های بیشتر نمودار در عرض موبایل
+        // به هم می‌چسبد و خواندنی نیست.
+        //
+        // reorder() لازم است: رابطه‌ی priceHistory خودش ترتیب صعودی دارد و
+        // orderByDesc به آن «اضافه» می‌شد نه جایگزینش. نتیجه این بود که
+        // limit قدیمی‌ترین ۲۴ نقطه را برمی‌داشت و نمودار هم برعکس رسم می‌شد.
+        $rows = $model->priceHistory()
+            ->reorder('created_at', 'desc')
+            ->orderByDesc('id')
+            ->limit(24)
+            ->get()
+            ->reverse()
+            ->values();
+
+        if ($rows->count() < 2) {
+            return [];
+        }
+
+        return $rows->map(fn ($row) => [
+            'price' => (int) $row->price,
+            'date'  => toPersianDate($row->created_at, false, true, 'Y/m/d'),
+        ])->all();
     }
 
     /**
@@ -343,10 +392,14 @@ class ProductController extends Controller
         $customer = Auth::guard('customer')->user();
 
         $validator = Validator::make($request->all(), [
-            'name'    => $customer ? 'nullable|string|max:100' : 'required|string|max:100',
-            'rating'  => 'required|integer|min:1|max:5',
-            'title'   => 'nullable|string|max:255',
-            'comment' => 'required|string|min:10|max:2000',
+            'name'       => $customer ? 'nullable|string|max:100' : 'required|string|max:100',
+            'rating'     => 'required|integer|min:1|max:5',
+            'title'      => 'nullable|string|max:255',
+            'comment'    => 'required|string|min:10|max:2000',
+            // امتیاز معیارها اختیاری است؛ کسی که فقط ستاره‌ی کلی می‌دهد هم
+            // باید بتواند نظرش را ثبت کند.
+            'criteria'   => 'nullable|array',
+            'criteria.*' => 'nullable|integer|min:1|max:5',
         ], [
             'name.required'    => 'نام خود را وارد کنید.',
             'rating.required'  => 'امتیاز خود را انتخاب کنید.',
@@ -354,6 +407,8 @@ class ProductController extends Controller
             'rating.max'       => 'امتیاز باید بین ۱ تا ۵ ستاره باشد.',
             'comment.required' => 'متن نظر را بنویسید.',
             'comment.min'      => 'متن نظر باید حداقل ۱۰ کاراکتر باشد.',
+            'criteria.*.min'   => 'امتیاز هر معیار باید بین ۱ تا ۵ ستاره باشد.',
+            'criteria.*.max'   => 'امتیاز هر معیار باید بین ۱ تا ۵ ستاره باشد.',
         ]);
 
         if ($validator->fails()) {
@@ -372,7 +427,7 @@ class ProductController extends Controller
             return back()->with('review_notice', 'نظر قبلی شما هنوز در انتظار تأیید است.')->withFragment('reviews');
         }
 
-        ProductReview::create([
+        $attributes = [
             'product_id'  => $product->id,
             'customer_id' => $customer->id ?? null,
             'name'        => trim((string) $request->input('name')) ?: ($customer->name ?? 'کاربر ناظر یدک'),
@@ -382,7 +437,15 @@ class ProductController extends Controller
             'status'      => ProductReview::STATUS_PENDING,
             'is_buyer'    => (bool) $customer,
             'ip'          => $request->ip(),
-        ]);
+        ];
+
+        // روی محیطی که مایگریشن criteria هنوز اجرا نشده، ستون وجود ندارد و
+        // درج با این کلید خطای SQL می‌دهد؛ نظر باید بدون ریزامتیاز ثبت شود.
+        if (ProductReview::supportsCriteria()) {
+            $attributes['criteria'] = ProductReview::sanitizeCriteria($request->input('criteria'));
+        }
+
+        ProductReview::create($attributes);
 
         return back()->with('review_notice', 'نظر شما ثبت شد و پس از تأیید نمایش داده می‌شود.')->withFragment('reviews');
     }

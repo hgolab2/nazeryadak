@@ -7,6 +7,7 @@ use App\Models\Product;
 use DOMDocument;
 use DOMXPath;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class ProductStockImportService
@@ -43,6 +44,7 @@ class ProductStockImportService
         $updated = 0;
         $keptProductIds = [];
         $duplicateIdsToDelete = [];
+        $newPrices = [];
 
         foreach ($rowsData as $sku => $row) {
             $matches = $existing->get($sku, collect());
@@ -55,6 +57,8 @@ class ProductStockImportService
                 'price'         => $this->sitePrice($row['sale_price']),
                 'regular_price' => $this->sitePrice($row['avg_price']),
                 'stock'         => $row['stock'],
+                'unit'          => $row['unit'],
+                'pack_qty'      => $row['pack_qty'],
                 'is_active'     => $row['stock'] > 0 ? 1 : 0,
                 'car_model'     => $row['car_model'],
                 'updated_at'    => $now,
@@ -84,7 +88,13 @@ class ProductStockImportService
             }
 
             $keptProductIds[$sku] = (int) $product->id;
+
+            // قیمت بعد از اعمال تخفیف خوانده می‌شود، چون تاریخچه باید همان
+            // عددی را نگه دارد که روی صفحه به کاربر نشان داده می‌شد.
+            $newPrices[(int) $product->id] = (int) $product->price;
         }
+
+        $pricePoints = $this->recordPriceHistory($newPrices, $now);
 
         $idsToDelete = $duplicateIdsToDelete;
         $idsToDelete = array_values(array_unique(array_filter($idsToDelete)));
@@ -92,6 +102,9 @@ class ProductStockImportService
         foreach (array_chunk($idsToDelete, 500) as $chunk) {
             DB::table('product_in_category')->whereIn('product_id', $chunk)->delete();
             DB::table('product_favorites')->whereIn('product_id', $chunk)->delete();
+            if (Schema::hasTable('product_price_history')) {
+                DB::table('product_price_history')->whereIn('product_id', $chunk)->delete();
+            }
             Product::whereIn('id', $chunk)->delete();
         }
 
@@ -129,6 +142,7 @@ class ProductStockImportService
             'updated' => $updated,
             'deleted' => count($idsToDelete),
             'deactivated' => $deactivated,
+            'price_points' => $pricePoints,
             'skipped' => $skipped,
             'total' => count($rowsData),
             'categories' => count($catMap),
@@ -159,9 +173,13 @@ class ProductStockImportService
                 continue;
             }
 
+            $unit = trim($cells->item(2)->textContent);
+
             $rowsData[$sku] = [
                 'sku'        => $sku,
                 'title'      => $title,
+                'unit'       => $unit !== '' ? mb_substr($unit, 0, 50) : null,
+                'pack_qty'   => Product::parsePackQty($unit),
                 'car_model'  => trim($cells->item(3)->textContent),
                 'stock'      => (int) trim($cells->item(4)->textContent),
                 'avg_price'  => (int) floatval(str_replace(',', '', trim($cells->item(5)->textContent))),
@@ -170,6 +188,70 @@ class ProductStockImportService
         }
 
         return $rowsData;
+    }
+
+    /**
+     * افزودن نقطه‌ی تازه به تاریخچه‌ی قیمت، فقط برای محصولاتی که قیمتشان
+     * نسبت به آخرین نقطه فرق کرده است.
+     *
+     * دسته‌ای کار می‌کند و نه تک‌تک: ایمپورت روی چند هزار محصول اجرا می‌شود و
+     * صداکردن Product::recordPriceHistory() در حلقه، دو کوئری به‌ازای هر
+     * محصول می‌شد. اینجا یک کوئری برای خواندن آخرین قیمت‌ها و چند insert
+     * دسته‌ای کافی است.
+     *
+     * @param  array<int,int>  $newPrices  product_id => قیمت تومانی تازه
+     * @return int تعداد نقطه‌های ثبت‌شده
+     */
+    private function recordPriceHistory(array $newPrices, $now): int
+    {
+        $newPrices = array_filter($newPrices, fn ($price) => $price > 0);
+        if (! $newPrices) {
+            return 0;
+        }
+
+        // اگر مایگریشن روی این محیط اجرا نشده باشد، ایمپورت نباید بشکند؛
+        // فقط تاریخچه ثبت نمی‌شود.
+        if (! Schema::hasTable('product_price_history')) {
+            return 0;
+        }
+
+        $productIds = array_keys($newPrices);
+        $lastPrices = [];
+
+        foreach (array_chunk($productIds, 1000) as $chunk) {
+            $latest = DB::table('product_price_history')
+                ->select('product_id', DB::raw('MAX(id) AS max_id'))
+                ->whereIn('product_id', $chunk)
+                ->groupBy('product_id');
+
+            $rows = DB::table('product_price_history as h')
+                ->joinSub($latest, 'l', fn ($join) => $join->on('h.id', '=', 'l.max_id'))
+                ->pluck('h.price', 'h.product_id');
+
+            foreach ($rows as $productId => $price) {
+                $lastPrices[(int) $productId] = (int) $price;
+            }
+        }
+
+        $insert = [];
+        foreach ($newPrices as $productId => $price) {
+            if (($lastPrices[$productId] ?? null) === $price) {
+                continue;
+            }
+
+            $insert[] = [
+                'product_id' => $productId,
+                'price'      => $price,
+                'source'     => 'import',
+                'created_at' => $now,
+            ];
+        }
+
+        foreach (array_chunk($insert, 1000) as $chunk) {
+            DB::table('product_price_history')->insert($chunk);
+        }
+
+        return count($insert);
     }
 
     /** قیمت ریالیِ اکسل → قیمت تومانیِ سایت، با ضریب خرده‌فروشی. */

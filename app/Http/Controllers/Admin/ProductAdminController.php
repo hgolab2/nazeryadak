@@ -192,6 +192,7 @@ class ProductAdminController extends Controller
         $product = Product::create($data);
         $product->applyDiscountPercent($discountPercent);
         $product->save();
+        $product->recordPriceHistory('admin');
         if (!empty($data['file_path'])) {
             DB::table('product_images')->insert([
                 'product_id' => $product->id,
@@ -256,6 +257,7 @@ class ProductAdminController extends Controller
         $product->update($data);
         $product->applyDiscountPercent($discountPercent);
         $product->save();
+        $product->recordPriceHistory('admin');
         $this->syncCategory($product->id, $data['category_id'] ?? null);
 
         return redirect('/admin/product/list')->with('success', 'محصول با موفقیت ویرایش شد.');

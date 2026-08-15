@@ -101,8 +101,8 @@ class WholesalePricingTest extends TestCase
 
     public function test_wholesale_price_is_ten_percent_over_the_excel_price(): void
     {
-        // قیمت سایت = قیمت اکسل × ۱.۲ → اکسل ۱٬۰۰۰٬۰۰۰ / قیمت عمده ۱٬۱۰۰٬۰۰۰
-        $product = $this->product(['price' => 1200000]);
+        // قیمت سایت = قیمت اکسل × ۱.۳ → اکسل ۱٬۰۰۰٬۰۰۰ / قیمت عمده ۱٬۱۰۰٬۰۰۰
+        $product = $this->product(['price' => 1300000]);
 
         $this->assertSame(1100000, $product->wholesalePrice());
     }
@@ -170,7 +170,7 @@ class WholesalePricingTest extends TestCase
     public function test_auto_values_ignore_the_stored_ones(): void
     {
         $product = $this->product([
-            'price' => 1200000,
+            'price' => 1300000,
             'wholesale_min_qty' => 3,
             'wholesale_price'   => 800000,
         ]);
@@ -179,8 +179,8 @@ class WholesalePricingTest extends TestCase
         $this->assertSame(800000, $product->wholesalePrice());
         $this->assertSame(1100000, $product->autoWholesalePrice());
 
-        // ۲۰٬۰۰۰٬۰۰۰ ÷ ۱٬۲۰۰٬۰۰۰ = ۱۶.۶ → ۱۷
-        $this->assertSame(17, $product->autoWholesaleMinQty());
+        // ۲۰٬۰۰۰٬۰۰۰ ÷ ۱٬۳۰۰٬۰۰۰ = ۱۵.۳ → ۱۶
+        $this->assertSame(16, $product->autoWholesaleMinQty());
     }
 
     public function test_disabled_flag_turns_wholesale_off(): void

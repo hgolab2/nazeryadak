@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class Product extends Model
@@ -18,7 +19,7 @@ class Product extends Model
      * ضریب قیمت خرده‌فروشی روی قیمت فایل اکسل (همان ضریبی که
      * ProductStockImportService هنگام ایمپورت اعمال می‌کند).
      */
-    public const RETAIL_MARKUP = 1.2;
+    public const RETAIL_MARKUP = 1.3;
 
     /** ضریب قیمت عمده روی قیمت فایل اکسل؛ ۱۰٪ بالاتر از قیمت خرید. */
     public const WHOLESALE_MARKUP = 1.1;
@@ -28,6 +29,9 @@ class Product extends Model
 
     /** کش درون‌درخواستی نتیجه‌ی isContactPrice برای محصولاتی که رابطه‌شان لود نشده. */
     private static array $contactPriceCache = [];
+
+    /** خروجی ratingSummary؛ در یک صفحه چند بار خوانده می‌شود (خلاصه، نوارها، اسکیما). */
+    private ?array $ratingSummary = null;
 
     protected $table = 'products';
 
@@ -56,6 +60,8 @@ class Product extends Model
         'isaco_code',
         'isaco_url',
         'stock',
+        'unit',
+        'pack_qty',
         'car_model',
         // سئوی دستی؛ خالی بودنشان یعنی مقدار خودکار صفحه‌ی محصول استفاده شود
         'seo_title',
@@ -74,6 +80,7 @@ class Product extends Model
         'is_special_offer' => 'boolean',
         'wholesale_enabled' => 'boolean',
         'weight'        => 'integer',
+        'pack_qty'      => 'integer',
         'is_active'     => 'boolean',
         'robots_index'  => 'boolean',
         'robots_follow' => 'boolean',
@@ -228,9 +235,70 @@ class Product extends Model
             ->orderByDesc('id');
     }
 
+    /**
+     * خلاصه‌ی امتیازها: میانگین، توزیع ستاره‌ها و میانگین هر معیار.
+     *
+     * وقتی approvedReviews همراه محصول لود شده باشد (صفحه‌ی محصول) از همان
+     * مجموعه حساب می‌شود و کوئری تازه‌ای نمی‌خورد.
+     *
+     * @return array{count:int, avg:float, distribution:array<int,array{count:int,percent:float}>, criteria:array<string,array{key:string,label:string,avg:float,count:int}>}
+     */
+    public function ratingSummary(): array
+    {
+        return $this->ratingSummary ??= ProductReview::summarize(
+            $this->relationLoaded('approvedReviews')
+                ? $this->approvedReviews
+                : $this->approvedReviews()->get()
+        );
+    }
+
     public function category()
     {
         return $this->categories();
+    }
+
+    /** تاریخچه‌ی قیمت، از قدیم به جدید — همان ترتیبی که نمودار لازم دارد. */
+    public function priceHistory()
+    {
+        return $this->hasMany(ProductPriceHistory::class)->orderBy('created_at')->orderBy('id');
+    }
+
+    /**
+     * ثبت قیمت فعلی در تاریخچه، فقط وقتی واقعا عوض شده باشد.
+     *
+     * ایمپورت روی هزاران محصول اجرا می‌شود و اکثرشان بین دو فایل قیمتشان
+     * تغییری نکرده؛ بدون این مقایسه، جدول تاریخچه پر از ردیف تکراری می‌شد و
+     * نمودار یک خط صاف با صدها نقطه‌ی روی هم می‌شد.
+     */
+    public function recordPriceHistory(string $source = 'import', $now = null): bool
+    {
+        $price = (int) $this->price;
+        if ($price <= 0) {
+            return false;
+        }
+
+        // روی محیطی که هنوز مایگریشن نخورده، ذخیره‌ی محصول نباید بشکند.
+        if (! Schema::hasTable('product_price_history')) {
+            return false;
+        }
+
+        $last = ProductPriceHistory::where('product_id', $this->id)
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->value('price');
+
+        if ($last !== null && (int) $last === $price) {
+            return false;
+        }
+
+        ProductPriceHistory::create([
+            'product_id' => $this->id,
+            'price'      => $price,
+            'source'     => $source,
+            'created_at' => $now ?: now(),
+        ]);
+
+        return true;
     }
 
     public function url()
@@ -453,6 +521,65 @@ class Product extends Model
         return $compare > 0 && $compare > (int) $this->price ? $compare : null;
     }
 
+    /* ==================== واحد شمارش و بسته‌بندی ==================== */
+
+    /** واحد شمارشِ فایل اکسل، تمیزشده؛ برای نمایش در صفحه‌ی محصول. */
+    public function unitLabel(): ?string
+    {
+        $unit = trim((string) $this->unit);
+
+        return $unit !== '' ? $unit : null;
+    }
+
+    /**
+     * تعداد قطعه در هر بسته.
+     *
+     * وقتی بیشتر از یک باشد در صفحه‌ی محصول هشدار داده می‌شود، چون کاربری که
+     * «دست ۴ عددي» می‌خرد باید بداند چهار عدد تحویل می‌گیرد نه یکی.
+     */
+    public function packQty(): ?int
+    {
+        $qty = (int) $this->pack_qty;
+
+        return $qty > 0 ? $qty : null;
+    }
+
+    /**
+     * استخراج تعداد در بسته از روی متنِ واحد شمارش.
+     *
+     * فایل stkstock ستون جداگانه‌ای برای «تعداد در بسته» ندارد و تنها جایی که
+     * این عدد پیدا می‌شود خودِ متن واحد است: «دست 4 عددي» یعنی چهارتایی.
+     *
+     * عمدا محافظه‌کار است: واحدهای حجمی و وزنی («گالن 4ليتري»، «رول 300 متري»،
+     * «كيلوگرم») null برمی‌گردانند. عددِ داخلشان مقدار است نه تعداد قطعه، و
+     * اگر ۴ را از «گالن ۴ليتري» برمی‌داشتیم به کاربر می‌گفتیم چهار گالن
+     * تحویل می‌گیرد که دروغ است.
+     */
+    public static function parsePackQty(?string $unit): ?int
+    {
+        $unit = self::normalizeTerm($unit);
+        if ($unit === '') {
+            return null;
+        }
+
+        if ($unit === 'عدد') {
+            return 1;
+        }
+
+        if ($unit === 'جفت') {
+            return 2;
+        }
+
+        // «دست» به‌تنهایی تعدادش معلوم نیست؛ فقط شکلِ «دست N عددي» شمردنی است.
+        if (preg_match('/^دست\s+(\d+)\s+عددی$/u', $unit, $m)) {
+            $qty = (int) $m[1];
+
+            return $qty > 0 ? $qty : null;
+        }
+
+        return null;
+    }
+
     /* ==================== فروش عمده ==================== */
 
     /**
@@ -501,7 +628,7 @@ class Product extends Model
     /**
      * قیمت هر واحد در خرید عمده: ۱۰٪ بالاتر از قیمت فایل اکسل.
      *
-     * قیمت فروش سایت همان قیمت اکسل با ضریب ۱.۲ است، پس قیمت عمده از روی
+     * قیمت فروش سایت همان قیمت اکسل با ضریب ۱.۳ است، پس قیمت عمده از روی
      * قیمتِ پیش از تخفیف بازسازی می‌شود؛ اگر مبنا را قیمتِ تخفیف‌خورده
      * بگیریم، تخفیف دوبار اعمال می‌شود.
      */

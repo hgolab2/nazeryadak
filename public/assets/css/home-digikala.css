@@ -2490,3 +2490,178 @@ body {
         white-space: nowrap;
     }
 }
+
+
+/* ==========================================================================
+   نمودار تاریخچه‌ی قیمت و واحد شمارش (صفحه‌ی محصول)
+   ========================================================================== */
+
+.nx-price-chart .nx-pc-body {
+    padding: 16px 18px 18px;
+}
+
+/* سه عدد کلیدی بالای نمودار: کمترین، بیشترین و قیمت فعلی */
+.nx-pc-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.nx-pc-stat {
+    padding: 9px 12px;
+    border: 1px solid var(--nx-line);
+    border-radius: 10px;
+    text-align: center;
+}
+
+.nx-pc-stat span {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--nx-muted);
+    font-size: 11.5px;
+}
+
+.nx-pc-stat b {
+    color: var(--nx-ink);
+    font-size: 14px;
+    font-weight: 900;
+}
+
+.nx-pc-stat b.is-low  { color: #0f8a5f; }
+.nx-pc-stat b.is-high { color: var(--nx-red); }
+
+/* نشانگر گران/ارزان‌شدن، کنار عنوان کارت */
+.nx-pc-change {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.nx-pc-change.is-up   { background: #fdecef; color: var(--nx-red); }
+.nx-pc-change.is-down { background: #e9f8f1; color: #0f8a5f; }
+.nx-pc-change.is-flat { background: var(--nx-soft); color: var(--nx-muted); }
+
+.nx-pc-canvas svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+}
+
+.nx-pc-grid {
+    stroke: var(--nx-line);
+    stroke-width: 1;
+    stroke-dasharray: 4 4;
+}
+
+.nx-pc-line {
+    fill: none;
+    stroke: var(--nx-red);
+    stroke-width: 2.5;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+}
+
+.nx-pc-stop-top    { stop-color: #ef4056; stop-opacity: .22; }
+.nx-pc-stop-bottom { stop-color: #ef4056; stop-opacity: 0; }
+
+.nx-pc-dot {
+    fill: #fff;
+    stroke: var(--nx-red);
+    stroke-width: 2.5;
+    transition: r .12s ease;
+}
+
+/* هدفِ لمس/هاور، بزرگ‌تر از نقطه‌ی دیده‌شده تا روی موبایل هم بگیرد */
+.nx-pc-hit {
+    fill: transparent;
+    cursor: pointer;
+}
+
+.nx-pc-point:hover .nx-pc-dot {
+    r: 5.5;
+}
+
+.nx-pc-ylabel,
+.nx-pc-xlabel {
+    fill: var(--nx-muted);
+    font-size: 11px;
+    font-family: inherit;
+}
+
+.nx-pc-ylabel { text-anchor: start; }
+
+.nx-pc-note {
+    margin: 12px 0 0;
+    color: var(--nx-muted);
+    font-size: 11.5px;
+    line-height: 1.9;
+}
+
+/* ---------- واحد شمارش و تعداد در بسته ---------- */
+
+.dk-unit-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 0;
+    font-size: 13px;
+}
+
+.dk-unit-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 11px;
+    border: 1px solid var(--nx-line);
+    border-radius: 999px;
+    color: var(--nx-text);
+    font-weight: 700;
+}
+
+.dk-unit-chip i {
+    color: var(--nx-muted);
+    font-size: 12px;
+}
+
+/* بسته‌ی چندتایی هشدار است نه تزئین: کاربر باید بداند یک خرید، چند عدد است */
+.dk-pack-note {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 10px 0;
+    padding: 9px 12px;
+    border-radius: 10px;
+    background: #fff8e6;
+    color: #8a6100;
+    font-size: 12.5px;
+    font-weight: 700;
+    line-height: 1.8;
+}
+
+.dk-pack-note i {
+    flex-shrink: 0;
+    font-size: 14px;
+}
+
+@media (max-width: 575px) {
+    .nx-pc-stats {
+        grid-template-columns: 1fr;
+        gap: 7px;
+    }
+
+    .nx-pc-stat {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        text-align: right;
+    }
+
+    .nx-pc-stat span { margin-bottom: 0; }
+}
