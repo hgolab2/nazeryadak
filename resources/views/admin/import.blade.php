@@ -87,6 +87,7 @@
                     <tr><td><i class="fas fa-money-bill me-1" style="color:var(--admin-primary);"></i> قیمت فروش</td><td>قیمت نمایشی</td></tr>
                     <tr><td><i class="fas fa-calculator me-1" style="color:var(--admin-primary);"></i> قیمت میانگین</td><td>قیمت قبل تخفیف</td></tr>
                 </table>
+                <p class="mb-0 text-muted"><i class="fas fa-exchange-alt me-1" style="color:var(--admin-primary);"></i> قیمت‌های فایل به <strong>ریال</strong> خوانده می‌شوند و هنگام بارگذاری به <strong>تومان</strong> تبدیل می‌شوند.</p>
             </div>
         </div>
 

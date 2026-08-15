@@ -18,6 +18,13 @@ class ProductStockImportService
      */
     private const PRICE_MARKUP = Product::RETAIL_MARKUP;
 
+    /**
+     * قیمت‌های فایل اکسل به ریال هستند ولی قیمت محصولات در کل سایت تومان است
+     * (همان قراردادی که getShippingRules() برای تنظیمات ارسال دارد). بدون این
+     * تبدیل، هر قیمتِ ایمپورت‌شده ده برابر واقعی روی سایت نمایش داده می‌شد.
+     */
+    private const RIAL_TO_TOMAN = 10;
+
     public function import(string $path, ?string $fileName = null, ?int $userId = null, bool $deactivateMissing = false): array
     {
         $skipped = 0;
@@ -45,8 +52,8 @@ class ProductStockImportService
                 'sku'           => $sku,
                 'title'         => $row['title'],
                 'slug'          => Str::slug($sku),
-                'price'         => $this->markedUpPrice($row['sale_price']),
-                'regular_price' => $this->markedUpPrice($row['avg_price']),
+                'price'         => $this->sitePrice($row['sale_price']),
+                'regular_price' => $this->sitePrice($row['avg_price']),
                 'stock'         => $row['stock'],
                 'is_active'     => $row['stock'] > 0 ? 1 : 0,
                 'car_model'     => $row['car_model'],
@@ -165,9 +172,12 @@ class ProductStockImportService
         return $rowsData;
     }
 
-    private function markedUpPrice(int $price): int
+    /** قیمت ریالیِ اکسل → قیمت تومانیِ سایت، با ضریب خرده‌فروشی. */
+    private function sitePrice(int $rialPrice): int
     {
-        return $price > 0 ? (int) round($price * self::PRICE_MARKUP) : 0;
+        return $rialPrice > 0
+            ? (int) round($rialPrice / self::RIAL_TO_TOMAN * self::PRICE_MARKUP)
+            : 0;
     }
 
     private function ensureCarCategories(array $carModelNames): array
