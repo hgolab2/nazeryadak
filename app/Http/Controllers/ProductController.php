@@ -377,9 +377,9 @@ class ProductController extends Controller
     /**
      * ثبت نظر و امتیاز روی محصول.
      *
-     * نظر مستقیم منتشر نمی‌شود؛ تا تأیید مدیر در وضعیت pending می‌ماند.
-     * محتوای اسپم روی صفحه‌ی محصول، دقیقا همان صفحه‌ای را خراب می‌کند که
-     * قرار بود با نظر کاربران تقویت شود.
+     * نظر بی‌درنگ منتشر می‌شود و بدون انتظارِ تأیید روی صفحه‌ی محصول
+     * می‌نشیند. مدیر همچنان می‌تواند از پنل نظر را رد کند تا از سایت
+     * برداشته شود.
      */
     public function storeReview(Request $request, $id)
     {
@@ -415,16 +415,17 @@ class ProductController extends Controller
             return back()->withErrors($validator)->withInput()->withFragment('reviews');
         }
 
-        // یک نظرِ در انتظار تأیید از هر کاربر برای هر محصول کافی است
+        // یک نظر از هر کاربر برای هر محصول کافی است. نظرِ ردشده به حساب
+        // نمی‌آید تا کسی که نظرش برداشته شده بتواند دوباره بنویسد.
         $duplicate = ProductReview::where('product_id', $product->id)
-            ->where('status', ProductReview::STATUS_PENDING)
+            ->where('status', '!=', ProductReview::STATUS_REJECTED)
             ->where(fn ($q) => $customer
                 ? $q->where('customer_id', $customer->id)
                 : $q->where('ip', $request->ip()))
             ->exists();
 
         if ($duplicate) {
-            return back()->with('review_notice', 'نظر قبلی شما هنوز در انتظار تأیید است.')->withFragment('reviews');
+            return back()->with('review_notice', 'شما قبلا برای این محصول نظر ثبت کرده‌اید.')->withFragment('reviews');
         }
 
         $attributes = [
@@ -434,7 +435,7 @@ class ProductController extends Controller
             'rating'      => (int) $request->input('rating'),
             'title'       => trim((string) $request->input('title')) ?: null,
             'comment'     => trim((string) $request->input('comment')),
-            'status'      => ProductReview::STATUS_PENDING,
+            'status'      => ProductReview::STATUS_APPROVED,
             'is_buyer'    => (bool) $customer,
             'ip'          => $request->ip(),
         ];
@@ -447,7 +448,7 @@ class ProductController extends Controller
 
         ProductReview::create($attributes);
 
-        return back()->with('review_notice', 'نظر شما ثبت شد و پس از تأیید نمایش داده می‌شود.')->withFragment('reviews');
+        return back()->with('review_notice', 'نظر شما ثبت شد و روی صفحه‌ی محصول نمایش داده می‌شود.')->withFragment('reviews');
     }
 
     public function favorite(Request $request)

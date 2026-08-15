@@ -909,9 +909,14 @@ body {
     flex-direction: column !important;
     width: 100% !important;
     min-width: 0 !important;
-    height: 352px !important;
+    /* ارتفاع ثابت نیست: با اضافه‌شدن برچسب عمده، مجموع خط‌ها از ۳۵۲ رد می‌شد و
+       دکمه‌ی «افزودن به سبد» نصفه زیر لبه‌ی کارت می‌ماند. با min-height کارتِ
+       بلندتر جا باز می‌کند و بقیه‌ی کارت‌های همان ردیف با stretch هم‌قد می‌شوند.
+       height/max-height باید صریح خنثی شوند؛ style.css همان دو مقدار را با
+       important روی .dk-product-card می‌گذارد. */
+    height: auto !important;
     min-height: 352px !important;
-    max-height: 352px !important;
+    max-height: none !important;
     margin: 0 !important;
     padding: 0 !important;
     border: 0 !important;
@@ -1848,10 +1853,24 @@ body {
 
 /* ---------- جعبه خرید ---------- */
 
-.nx-detail .dk-buy-box {
+/* ستون سمت چپ = جعبه‌ی خرید + نمودار قیمت. sticky روی خودِ ستون است نه روی
+   جعبه‌ی خرید؛ اگر جعبه به‌تنهایی sticky می‌ماند، هنگام اسکرول روی نمودارِ
+   زیرش می‌افتاد. برای ستون بلندتر از پنجره، اسکرول داخلی باز می‌شود تا
+   انتهای نمودار هم در دسترس بماند. */
+.nx-detail .dk-buy-col {
     position: sticky;
     top: 14px;
     align-self: start;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+    max-height: calc(100vh - 28px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+}
+
+.nx-detail .dk-buy-box {
     min-width: 0;
     padding: 16px !important;
     border: 1px solid var(--nx-line) !important;
@@ -2297,8 +2316,10 @@ body {
         padding-bottom: 8px;
     }
 
-    .nx-detail .dk-buy-box {
+    .nx-detail .dk-buy-col {
         position: static;
+        max-height: none;
+        overflow: visible;
     }
 }
 
@@ -2461,9 +2482,9 @@ body {
     }
 
     .nx-home .nx-rail .dk-product-card {
-        height: 336px !important;
+        height: auto !important;
         min-height: 336px !important;
-        max-height: 336px !important;
+        max-height: none !important;
     }
 
     .nx-home .nx-rail .dk-product-thumb {
@@ -2601,6 +2622,84 @@ body {
     color: var(--nx-muted);
     font-size: 11.5px;
     line-height: 1.9;
+}
+
+/* ---------- نسخه‌ی فشرده‌ی نمودار در ستون خرید ---------- */
+
+/* در ستون خرید، کارتِ نمودار با gap ستون فاصله می‌گیرد نه با margin کارت */
+.nx-price-chart.is-compact {
+    margin-bottom: 0;
+    border: 1px solid var(--nx-line);
+}
+
+.nx-price-chart.is-compact .nx-card-head {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 44px;
+    padding: 8px 12px;
+    gap: 6px 10px;
+}
+
+.nx-price-chart.is-compact .nx-card-head h2 {
+    font-size: 13px;
+}
+
+.nx-price-chart.is-compact .nx-pc-change {
+    padding: 3px 8px;
+    font-size: 11px;
+}
+
+.nx-price-chart.is-compact .nx-pc-body {
+    padding: 10px 12px 12px;
+}
+
+/* در ستون باریک، سه عدد کنار هم جا نمی‌شود؛ سطری می‌شوند مثل حالت موبایل */
+.nx-price-chart.is-compact .nx-pc-stats {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.nx-price-chart.is-compact .nx-pc-stat {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    text-align: right;
+}
+
+.nx-price-chart.is-compact .nx-pc-stat span {
+    margin-bottom: 0;
+}
+
+.nx-price-chart.is-compact .nx-pc-stat b {
+    font-size: 13px;
+}
+
+/* وقتی ستون در تبلت/موبایل تمام‌عرض می‌شود، بومِ ۳۲۰ واحدی کش می‌آید و
+   متن‌های داخل SVG بی‌قواره بزرگ می‌شوند */
+.nx-price-chart.is-compact .nx-pc-canvas {
+    max-width: 420px;
+    margin-inline: auto;
+}
+
+/* متن در بوم کوچک‌تر باید عدد بزرگ‌تری باشد تا روی صفحه هم‌اندازه بماند */
+.nx-price-chart.is-compact .nx-pc-ylabel,
+.nx-price-chart.is-compact .nx-pc-xlabel {
+    font-size: 13px;
+}
+
+.nx-price-chart.is-compact .nx-pc-line {
+    stroke-width: 2;
+}
+
+.nx-price-chart.is-compact .nx-pc-dot {
+    r: 3;
+    stroke-width: 2;
+}
+
+.nx-price-chart.is-compact .nx-pc-point:hover .nx-pc-dot {
+    r: 4.5;
 }
 
 /* ---------- واحد شمارش و تعداد در بسته ---------- */

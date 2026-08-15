@@ -115,7 +115,8 @@ class ProductReviewCriteriaTest extends TestCase
         $review = ProductReview::first();
 
         $this->assertNotNull($review);
-        $this->assertSame(ProductReview::STATUS_PENDING, $review->status);
+        // نظر بدون انتظارِ تأیید منتشر می‌شود
+        $this->assertSame(ProductReview::STATUS_APPROVED, $review->status);
         $this->assertSame(['quality' => 5, 'value' => 3], $review->criteria);
     }
 

@@ -114,6 +114,8 @@
                 <div class="dk-assurance"><span><i class="fas fa-shield-alt"></i>{{ $fa('%D8%B6%D9%85%D8%A7%D9%86%D8%AA%20%D8%A7%D8%B5%D8%A7%D9%84%D8%AA') }}</span><span><i class="fas fa-truck"></i>{{ $fa('%D8%A7%D8%B1%D8%B3%D8%A7%D9%84%20%D8%B3%D8%B1%D8%A7%D8%B3%D8%B1%20%DA%A9%D8%B4%D9%88%D8%B1') }}</span></div>
             </div>
 
+            {{-- ستون سمت چپ: جعبه‌ی خرید و زیر آن نمودار فشرده‌ی قیمت --}}
+            <div class="dk-buy-col">
             <aside class="add-cart-box dk-buy-box">
                 <div class="product-seller-row"><span><i class="fas fa-store"></i>{{ $fa('%D9%81%D8%B1%D9%88%D8%B4%D9%86%D8%AF%D9%87') }}</span><b>{{ $fa('%D9%86%D8%A7%D8%B8%D8%B1%20%DB%8C%D8%AF%DA%A9') }}</b></div>
                 {{-- وضعیت واقعی از روی موجودی خوانده می‌شود؛ قبلا همیشه «موجود» بود و
@@ -252,18 +254,19 @@
                     </p>
                 @endif
             </aside>
+
+            {{-- نمودار تاریخچه‌ی قیمت؛ کنترلر وقتی کمتر از دو نقطه باشد آرایه‌ی
+                 خالی می‌دهد و این بخش اصلا رندر نمی‌شود. --}}
+            @if(!empty($priceHistory))
+                @include('product._price_chart', ['priceHistory' => $priceHistory, 'compact' => true])
+            @endif
+            </div>
         </section>
 
         <section class="nx-card dk-detail-tabs">
             <div class="nx-card-head"><h2><i class="fas fa-align-right"></i> {{ $fa('%D8%AA%D9%88%D8%B6%DB%8C%D8%AD%D8%A7%D8%AA%20%D9%85%D8%AD%D8%B5%D9%88%D9%84') }}</h2></div>
             <div class="dk-detail-tabs-body">@if($model->description)<div class="product-description-html">{!! $model->description !!}</div>@else<p>{{ $fa('%D8%AA%D9%88%D8%B6%DB%8C%D8%AD%D8%A7%D8%AA%DB%8C%20%D8%A8%D8%B1%D8%A7%DB%8C%20%D8%A7%DB%8C%D9%86%20%D9%85%D8%AD%D8%B5%D9%88%D9%84%20%D8%AB%D8%A8%D8%AA%20%D9%86%D8%B4%D8%AF%D9%87%20%D8%A7%D8%B3%D8%AA.') }}</p>@endif</div>
         </section>
-
-        {{-- نمودار تاریخچه‌ی قیمت؛ کنترلر وقتی کمتر از دو نقطه باشد آرایه‌ی
-             خالی می‌دهد و این بخش اصلا رندر نمی‌شود. --}}
-        @if(!empty($priceHistory))
-            @include('product._price_chart', ['priceHistory' => $priceHistory])
-        @endif
 
         {{-- نظرات کاربران.
              دو کارکرد همزمان: محتوای یکتا برای صفحه‌ای که اغلب فقط مشخصات
@@ -411,7 +414,7 @@
                     </div>
                     <textarea name="comment" rows="4" placeholder="تجربه‌ی خود از این قطعه را بنویسید؛ کیفیت، تناسب با خودرو و نصب." maxlength="2000" required>{{ old('comment') }}</textarea>
                     <button type="submit" class="btn btn-info">ثبت نظر</button>
-                    <small>نظر شما پس از تأیید مدیر نمایش داده می‌شود.</small>
+                    <small>نظر شما بلافاصله روی صفحه‌ی محصول نمایش داده می‌شود.</small>
                 </form>
             </div>
         </section>

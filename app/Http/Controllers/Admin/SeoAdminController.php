@@ -385,7 +385,9 @@ class SeoAdminController extends Controller
             return $response;
         }
 
-        $status = $request->input('status', ProductReview::STATUS_PENDING);
+        // نظر تازه بی‌درنگ منتشر می‌شود، پس صف «در انتظار تأیید» عملا خالی است؛
+        // کارِ مدیر برداشتنِ نظرِ نامناسب از میان نظرهای منتشرشده است.
+        $status = $request->input('status', ProductReview::STATUS_APPROVED);
         $query = ProductReview::with('product');
 
         if (isset(ProductReview::STATUSES[$status])) {

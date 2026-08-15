@@ -7,6 +7,11 @@
      همان چیدمانی که کاربر ایرانی از نمودار قیمت انتظار دارد. --}}
 
 @php
+    // حالت فشرده برای ستون کناری صفحه‌ی محصول: بوم کوچک‌تر و برچسب کمتر.
+    // اندازه‌ی متن‌ها با viewBox مقیاس می‌خورد، پس در بوم کوچک باید عددِ
+    // بزرگ‌تری بنشیند تا روی صفحه هم‌اندازه‌ی حالت عادی دیده شود (در CSS).
+    $compact = $compact ?? false;
+
     $points = $priceHistory;
     $count  = count($points);
     $prices = array_column($points, 'price');
@@ -18,8 +23,13 @@
 
     // مختصات بوم. با viewBox، نمودار در هر عرضی مقیاس می‌خورد و برای موبایل
     // به CSS جداگانه نیاز ندارد.
-    $w = 720; $h = 250;
-    $padTop = 16; $padBottom = 38; $padRight = 92; $padLeft = 14;
+    if ($compact) {
+        $w = 320; $h = 180;
+        $padTop = 12; $padBottom = 30; $padRight = 62; $padLeft = 10;
+    } else {
+        $w = 720; $h = 250;
+        $padTop = 16; $padBottom = 38; $padRight = 92; $padLeft = 14;
+    }
     $chartW = $w - $padLeft - $padRight;
     $chartH = $h - $padTop - $padBottom;
     $baseline = $padTop + $chartH;
@@ -59,12 +69,12 @@
 
     // برچسب تاریخ فقط برای اول، آخر و وسط؛ بیشتر از این روی هم می‌افتد.
     $labelIndexes = [0, $count - 1];
-    if ($count >= 5) {
+    if ($count >= 5 && !$compact) {
         $labelIndexes[] = intdiv($count - 1, 2);
     }
 @endphp
 
-<section class="nx-card nx-price-chart" id="price-history">
+<section class="nx-card nx-price-chart{{ $compact ? ' is-compact' : '' }}" id="price-history">
     <div class="nx-card-head">
         <h2><i class="fas fa-chart-line"></i> تاریخچه قیمت</h2>
         @if($changePercent != 0)
@@ -116,7 +126,7 @@
                     @endphp
                     <line class="nx-pc-grid" x1="{{ $padLeft }}" y1="{{ $gy }}"
                           x2="{{ $padLeft + $chartW }}" y2="{{ $gy }}"/>
-                    <text class="nx-pc-ylabel" x="{{ $padLeft + $chartW + 10 }}" y="{{ $gy + 4 }}">
+                    <text class="nx-pc-ylabel" x="{{ $padLeft + $chartW + ($compact ? 8 : 10) }}" y="{{ $gy + ($compact ? 5 : 4) }}">
                         {{ $shortToman($value) }}
                     </text>
                 @endforeach
@@ -139,16 +149,19 @@
                         // می‌شود وگرنه نصف متن بیرون می‌افتد.
                         $anchor = $i === 0 ? 'start' : ($i === $count - 1 ? 'end' : 'middle');
                     @endphp
-                    <text class="nx-pc-xlabel" x="{{ $xy[$i]['x'] }}" y="{{ $baseline + 24 }}"
+                    <text class="nx-pc-xlabel" x="{{ $xy[$i]['x'] }}" y="{{ $baseline + ($compact ? 20 : 24) }}"
                           text-anchor="{{ $anchor }}">{{ $xy[$i]['date'] }}</text>
                 @endforeach
             </svg>
         </div>
 
-        <p class="nx-pc-note">
-            <i class="fas fa-circle-info"></i>
-            قیمت‌ها به تومان است و با هر به‌روزرسانی لیست قیمت ثبت می‌شود.
-            برای دیدن قیمت هر نقطه، نشانگر را روی آن نگه دارید.
-        </p>
+        {{-- در ستون باریک، این توضیح سه‌خطی جای نمودار را می‌گیرد --}}
+        @unless($compact)
+            <p class="nx-pc-note">
+                <i class="fas fa-circle-info"></i>
+                قیمت‌ها به تومان است و با هر به‌روزرسانی لیست قیمت ثبت می‌شود.
+                برای دیدن قیمت هر نقطه، نشانگر را روی آن نگه دارید.
+            </p>
+        @endunless
     </div>
 </section>
