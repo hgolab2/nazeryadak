@@ -242,6 +242,43 @@ function asset_v(string $path): string
 }
 
 /**
+ * آیا باندل این گروه ساخته شده و از همه‌ی فایل‌های منبعش تازه‌تر است؟
+ *
+ * اگر کسی یک فایل را ویرایش کند و `php artisan assets:bundle` را فراموش
+ * کند، باندلِ کهنه سرو می‌شود و تغییرش را نمی‌بیند. با این بررسی، قالب
+ * خودکار به تگ‌های جداگانه برمی‌گردد؛ کندتر ولی همیشه درست.
+ *
+ * نتیجه در حافظه‌ی همان درخواست کش می‌شود چون هر بار به تعداد فایل‌ها
+ * stat لازم دارد.
+ */
+function asset_bundle_is_fresh(string $group): bool
+{
+    static $fresh = [];
+
+    if (array_key_exists($group, $fresh)) {
+        return $fresh[$group];
+    }
+
+    $bundle = public_path(ltrim((string) config("assets.{$group}.bundle"), '/'));
+
+    if (! is_file($bundle)) {
+        return $fresh[$group] = false;
+    }
+
+    $bundleTime = filemtime($bundle);
+
+    foreach ((array) config("assets.{$group}.sources", []) as $source) {
+        $path = public_path(ltrim($source, '/'));
+
+        if (is_file($path) && filemtime($path) > $bundleTime) {
+            return $fresh[$group] = false;
+        }
+    }
+
+    return $fresh[$group] = true;
+}
+
+/**
  * مشخصات حساب فروشگاه برای کارت‌به‌کارت و واریز بانکی.
  *
  * وقتی پرداخت آنلاین خاموش است، مشتری باید بداند پول را کجا بریزد و بعد

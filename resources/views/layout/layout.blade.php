@@ -37,8 +37,11 @@
 
     {{-- منابع بحرانی زودتر از موعد درخواست می‌شوند؛ مستقیم روی LCP اثر دارد --}}
     <link rel="dns-prefetch" href="//www.googletagmanager.com">
-    <link rel="preload" as="style" href="{{ asset_v('/assets/css/style.css') }}">
-    <link rel="preload" as="font" type="font/woff" href="/assets/font/IRANSans/IRANSansWeb(FaNum).woff" crossorigin>
+    <link rel="preload" as="style" href="{{ asset_v(asset_bundle_is_fresh('css') ? config('assets.css.bundle') : '/assets/css/style.css') }}">
+    {{-- woff2 پیش‌بارگذاری می‌شود چون در @font-face اول آمده؛ اگر اینجا woff
+         بماند، مرورگر یک فونت را دو بار دانلود می‌کند --}}
+    <link rel="preload" as="font" type="font/woff2" href="/assets/font/IRANSans/IRANSansWeb(FaNum).woff2" crossorigin>
+    {{-- آدرس .png می‌ماند ولی .htaccess نسخه‌ی WebP را تحویل می‌دهد --}}
     <link rel="preload" as="image" href="/assets/images/logo.png" fetchpriority="high">
 
     <title>{{ $seoTitle }}</title>
@@ -130,21 +133,7 @@
 
     @yield('head')
 
-    <link rel="stylesheet" href="/assets/css/bootstrap.rtl.css">
-    <link rel="stylesheet" href="/assets/fontawesome/css/all.min.css">
-    <link rel="stylesheet" href="/assets/css/owl.carousel.min.css">
-    <link rel="stylesheet" href="/assets/css/owl.theme.default.min.css">
-    {{-- ?v= از زمان تغییر خود فایل می‌آید؛ بدون آن، هدر immutable در .htaccess
-         نسخه‌ی قدیمی را تا یک سال در مرورگر کاربر نگه می‌داشت --}}
-    <link rel="stylesheet" href="{{ asset_v('/assets/css/style.css') }}">
-    <link rel="stylesheet" href="{{ asset_v('/assets/css/home-digikala.css') }}">
-    <link rel="stylesheet" href="{{ asset_v('/assets/css/mobile-appbar.css') }}">
-    <link rel="stylesheet" href="{{ asset_v('/assets/css/mobile-checkout.css') }}">
-    <link rel="stylesheet" href="{{ asset_v('/assets/css/account.css') }}">
-    <link rel="stylesheet" href="{{ asset_v('/assets/css/search-suggest.css') }}">
-    {{-- صفحه‌های ورود/ثبت‌نام و نوار «ورود به‌عنوان کاربر»؛ بعد از style.css
-         می‌آید تا قواعد عمومی فرم‌ها آن را بازنویسی نکنند --}}
-    <link rel="stylesheet" href="{{ asset_v('/assets/css/auth.css') }}">
+    @include('layout.partials.styles')
 
     @if(!empty($seoAnalytics['gtm']))
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','{{ $seoAnalytics['gtm'] }}');</script>
@@ -657,14 +646,9 @@
         </div>
     </div>
 
-<script src="/assets/js/jquery.min.js"></script>
-<script src="/assets/js/bootstrap.bundle.min.js"></script>
-<script src="/assets/js/owl.carousel.min.js"></script>
-<script src="/assets/js/jquery.simple.timer.js"></script>
-<script src="{{ asset_v('/assets/js/script.js') }}"></script>
+@include('layout.partials.scripts')
 <script src="{{ asset_v('/assets/js/combobox.js') }}" defer></script>
 <script src="{{ asset_v('/assets/js/search-suggest.js') }}" defer></script>
-<script src="/js/sweetalert2.all.js"></script>
 <script>
 const toast = Swal.mixin({
     toast: true,

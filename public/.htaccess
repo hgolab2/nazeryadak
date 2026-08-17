@@ -5,6 +5,22 @@
 
     RewriteEngine On
 
+    # -----------------------------------------------------------------
+    # تحویل خودکار WebP
+    #
+    # اگر مرورگر WebP را بپذیرد و فایل هم‌نام .webp کنار تصویر وجود داشته
+    # باشد، همان سرو می‌شود. آدرس در HTML همان .jpg/.png می‌ماند، پس هیچ
+    # قالبی تغییر نمی‌کند و مرورگرهای قدیمی هم فایل اصلی را می‌گیرند.
+    # فایل‌های .webp با دستور `php artisan images:webp` ساخته می‌شوند.
+    # -----------------------------------------------------------------
+    # آیکون‌های PWA کنار گذاشته می‌شوند: مانیفست نوعشان را image/png اعلام
+    # کرده و اگر بایت‌های WebP برگردد، نصب اپ روی بعضی مرورگرها می‌شکند.
+    RewriteCond %{REQUEST_URI} !^/assets/images/pwa/
+    RewriteCond %{HTTP_ACCEPT} image/webp
+    RewriteCond %{REQUEST_FILENAME} (?i)^(.+)\.(jpe?g|png)$
+    RewriteCond %1.webp -f
+    RewriteRule (?i)^(.+)\.(jpe?g|png)$ $1.webp [T=image/webp,E=WEBP_SERVED:1,L]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
@@ -77,6 +93,12 @@
     # فایل‌های ثابت: کش طولانی و تغییرناپذیر
     <FilesMatch "\.(css|js|jpg|jpeg|png|gif|webp|avif|svg|ico|woff|woff2|ttf|otf|eot)$">
         Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+
+    # یک آدرس .jpg/.png بسته به مرورگر دو خروجی متفاوت دارد؛ بدون این هدر،
+    # کش میانی ممکن است WebP را به مرورگری بدهد که آن را نمی‌فهمد.
+    <FilesMatch "\.(jpe?g|png)$">
+        Header append Vary Accept
     </FilesMatch>
 
     # HTML هرگز کش سخت نشود وگرنه تغییر قیمت‌ها به کاربر نمی‌رسد

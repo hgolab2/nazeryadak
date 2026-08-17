@@ -16,6 +16,7 @@ class ConvertImagesToWebp extends Command
 {
     protected $signature = 'images:webp
         {--dir=* : پوشه‌های هدف نسبت به public (پیش‌فرض: upload و assets/images)}
+        {--file=* : فایل‌های مشخص نسبت به public؛ برای تصاویری که اندازه‌ی هدفشان با بقیه فرق دارد}
         {--quality=82 : کیفیت خروجی WebP بین ۱ تا ۱۰۰}
         {--min-size=20 : فایل‌های کوچک‌تر از این مقدار (کیلوبایت) نادیده گرفته شوند}
         {--max-dim=900 : بزرگ‌ترین ضلع خروجی به پیکسل؛ صفر یعنی بدون تغییر اندازه}
@@ -31,7 +32,14 @@ class ConvertImagesToWebp extends Command
             return self::FAILURE;
         }
 
-        $dirs = $this->option('dir') ?: ['upload', 'assets/images'];
+        $dirs = $this->option('dir');
+        $only = $this->option('file');
+
+        // اگر کاربر فقط --file داده، نباید کل پوشه‌های پیش‌فرض هم پردازش شوند.
+        if (! $dirs && ! $only) {
+            $dirs = ['upload', 'assets/images'];
+        }
+
         $quality = max(1, min(100, (int) $this->option('quality')));
         $minBytes = max(0, (int) $this->option('min-size')) * 1024;
         $maxDim = max(0, (int) $this->option('max-dim'));
@@ -44,89 +52,71 @@ class ConvertImagesToWebp extends Command
         $originalBytes = 0;
         $webpBytes = 0;
 
-        foreach ($dirs as $dir) {
-            $path = public_path(trim($dir, '/\\'));
-            if (! is_dir($path)) {
-                $this->warn("پوشه پیدا نشد: {$dir}");
+        foreach ($this->sources($dirs, $only) as $file) {
+            $ext = strtolower($file->getExtension());
+            if (! in_array($ext, ['jpg', 'jpeg', 'png'], true)) {
                 continue;
             }
 
-            $this->info("در حال پردازش: {$dir}");
+            $source = $file->getPathname();
+            $target = preg_replace('/\.(jpe?g|png)$/i', '.webp', $source);
 
-            $files = new \RecursiveIteratorIterator(
-                new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS)
-            );
+            if ($file->getSize() < $minBytes) {
+                $skipped++;
+                continue;
+            }
 
-            foreach ($files as $file) {
-                if (! $file->isFile()) {
-                    continue;
-                }
+            // نسخه‌ی موجود فقط وقتی بازسازی می‌شود که اصل فایل جدیدتر باشد.
+            if (! $force && is_file($target) && filemtime($target) >= $file->getMTime()) {
+                $skipped++;
+                continue;
+            }
 
-                $ext = strtolower($file->getExtension());
-                if (! in_array($ext, ['jpg', 'jpeg', 'png'], true)) {
-                    continue;
-                }
-
-                $source = $file->getPathname();
-                $target = preg_replace('/\.(jpe?g|png)$/i', '.webp', $source);
-
-                if ($file->getSize() < $minBytes) {
-                    $skipped++;
-                    continue;
-                }
-
-                // نسخه‌ی موجود فقط وقتی بازسازی می‌شود که اصل فایل جدیدتر باشد.
-                if (! $force && is_file($target) && filemtime($target) >= $file->getMTime()) {
-                    $skipped++;
-                    continue;
-                }
-
-                if ($dry) {
-                    $converted++;
-                    $originalBytes += $file->getSize();
-                    continue;
-                }
-
-                $image = $this->load($source, $ext);
-                if (! $image) {
-                    $failed++;
-                    continue;
-                }
-
-                // PNG ممکن است شفافیت داشته باشد؛ بدون این دو خط، پس‌زمینه سیاه می‌شود.
-                imagepalettetotruecolor($image);
-                imagealphablending($image, false);
-                imagesavealpha($image, true);
-
-                // تصاویر منبع ۱۰۲۴ پیکسل‌اند ولی در کارت‌ها حدود ۳۰۰ پیکسل دیده
-                // می‌شوند؛ کوچک‌سازی، بخش عمده‌ی صرفه‌جویی حجم را می‌دهد.
-                $image = $this->downscale($image, $maxDim);
-
-                $ok = @imagewebp($image, $target, $quality);
-                imagedestroy($image);
-
-                if (! $ok || ! is_file($target)) {
-                    $failed++;
-                    continue;
-                }
-
-                $newSize = filesize($target);
-
-                // اگر WebP بزرگ‌تر از اصل درآمد (روی بعضی PNGهای ساده رخ می‌دهد)
-                // نگهش نمی‌داریم تا مرورگر فایل سنگین‌تر دانلود نکند.
-                if ($newSize >= $file->getSize()) {
-                    @unlink($target);
-                    $skipped++;
-                    continue;
-                }
-
-                $originalBytes += $file->getSize();
-                $webpBytes += $newSize;
+            if ($dry) {
                 $converted++;
+                $originalBytes += $file->getSize();
+                continue;
+            }
 
-                if ($converted % 250 === 0) {
-                    $this->line("  {$converted} فایل تبدیل شد...");
-                }
+            $image = $this->load($source, $ext);
+            if (! $image) {
+                $failed++;
+                continue;
+            }
+
+            // PNG ممکن است شفافیت داشته باشد؛ بدون این دو خط، پس‌زمینه سیاه می‌شود.
+            imagepalettetotruecolor($image);
+            imagealphablending($image, false);
+            imagesavealpha($image, true);
+
+            // تصاویر منبع ۱۰۲۴ پیکسل‌اند ولی در کارت‌ها حدود ۳۰۰ پیکسل دیده
+            // می‌شوند؛ کوچک‌سازی، بخش عمده‌ی صرفه‌جویی حجم را می‌دهد.
+            $image = $this->downscale($image, $maxDim);
+
+            $ok = @imagewebp($image, $target, $quality);
+            imagedestroy($image);
+
+            if (! $ok || ! is_file($target)) {
+                $failed++;
+                continue;
+            }
+
+            $newSize = filesize($target);
+
+            // اگر WebP بزرگ‌تر از اصل درآمد (روی بعضی PNGهای ساده رخ می‌دهد)
+            // نگهش نمی‌داریم تا مرورگر فایل سنگین‌تر دانلود نکند.
+            if ($newSize >= $file->getSize()) {
+                @unlink($target);
+                $skipped++;
+                continue;
+            }
+
+            $originalBytes += $file->getSize();
+            $webpBytes += $newSize;
+            $converted++;
+
+            if ($converted % 250 === 0) {
+                $this->line("  {$converted} فایل تبدیل شد...");
             }
         }
 
@@ -143,6 +133,46 @@ class ConvertImagesToWebp extends Command
         ]);
 
         return self::SUCCESS;
+    }
+
+    /**
+     * فهرست فایل‌های ورودی از ترکیب --dir و --file.
+     *
+     * @return \Generator<\SplFileInfo>
+     */
+    private function sources(array $dirs, array $files): \Generator
+    {
+        foreach ($dirs as $dir) {
+            $path = public_path(trim($dir, '/\\'));
+
+            if (! is_dir($path)) {
+                $this->warn("پوشه پیدا نشد: {$dir}");
+                continue;
+            }
+
+            $this->info("در حال پردازش: {$dir}");
+
+            $iterator = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS)
+            );
+
+            foreach ($iterator as $file) {
+                if ($file->isFile()) {
+                    yield $file;
+                }
+            }
+        }
+
+        foreach ($files as $relative) {
+            $path = public_path(ltrim($relative, '/\\'));
+
+            if (! is_file($path)) {
+                $this->warn("فایل پیدا نشد: {$relative}");
+                continue;
+            }
+
+            yield new \SplFileInfo($path);
+        }
     }
 
     /**
