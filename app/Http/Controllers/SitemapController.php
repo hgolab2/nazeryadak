@@ -41,8 +41,15 @@ class SitemapController extends Controller
         return Product::where('is_active', 1)->where('robots_index', 1);
     }
 
+    /**
+     * اعلان XML از اینجا اضافه می‌شود، نه از داخل ویو. اگر `<?xml` در فایل
+     * Blade بماند، سروری که short_open_tag روشن دارد آن را تگ بازِ PHP
+     * می‌خواند و ویو با ParseError می‌افتد.
+     */
     private function xml(string $body)
     {
+        $body = '<' . '?xml version="1.0" encoding="UTF-8"?' . '>' . "\n" . ltrim($body);
+
         return response($body, 200)
             ->header('Content-Type', 'application/xml; charset=UTF-8')
             ->header('X-Robots-Tag', 'noindex');
