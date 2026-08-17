@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Product;
+use App\Services\ProductCategorizer;
 use App\Services\ProductStockImportService;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -215,6 +216,78 @@ class ProductStockImportTest extends TestCase
         $product = Product::where('sku', '1008')->first();
 
         $this->assertSame(1, DB::table('product_price_history')->where('product_id', $product->id)->count());
+    }
+
+    /**
+     * ایمپورت فقط دسته‌ی مدل خودرو را بازمی‌سازد. پیش‌تر تمام ردیف‌های
+     * product_in_category محصول را پاک می‌کرد و مجموعه‌بندی قطعه از بین می‌رفت.
+     */
+    public function test_import_keeps_the_part_grouping_of_existing_products(): void
+    {
+        $importer = app(ProductStockImportService::class);
+        $importer->import($this->excel([
+            ['1010', 'فیلتر روغن', 'عدد', 'سمند', '5', '100,000', '100,000'],
+        ]));
+
+        $product = Product::where('sku', '1010')->first();
+
+        // مجموعه‌بندی دستی مدیر: «شاسی و بدنه» به‌جای چیزی که کلیدواژه می‌گوید
+        DB::table('product_in_category')
+            ->where('product_id', $product->id)
+            ->whereIn('category_id', ProductCategorizer::groupingIds())
+            ->delete();
+        DB::table('product_in_category')->insert([
+            'product_id' => $product->id,
+            'category_id' => 3,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $importer->import($this->excel([
+            ['1010', 'فیلتر روغن', 'عدد', 'سمند', '7', '120,000', '120,000'],
+        ]));
+
+        $groupings = DB::table('product_in_category')
+            ->where('product_id', $product->id)
+            ->whereIn('category_id', ProductCategorizer::groupingIds())
+            ->pluck('category_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        $this->assertSame([3], $groupings);
+    }
+
+    /** و محصول تازه باید همان‌جا مجموعه‌بندی بگیرد، نه اینکه بی‌دسته بماند. */
+    public function test_new_products_get_a_part_grouping(): void
+    {
+        app(ProductStockImportService::class)->import($this->excel([
+            ['1011', 'لنت ترمز جلو', 'دست', 'پژو ۲۰۶', '5', '100,000', '100,000'],
+        ]));
+
+        $product = Product::where('sku', '1011')->first();
+
+        $this->assertSame(6, (int) DB::table('product_in_category')
+            ->where('product_id', $product->id)
+            ->whereIn('category_id', ProductCategorizer::groupingIds())
+            ->value('category_id'));
+    }
+
+    /** دسته‌ی مدل خودرو باید تکراری نشود وقتی همان فایل دوباره ایمپورت می‌شود. */
+    public function test_reimport_does_not_duplicate_category_links(): void
+    {
+        $importer = app(ProductStockImportService::class);
+        $path = $this->excel([
+            ['1012', 'رادیاتور', 'عدد', 'دنا', '5', '100,000', '100,000'],
+        ]);
+
+        $importer->import($path);
+        $importer->import($path);
+
+        $product = Product::where('sku', '1012')->first();
+
+        $this->assertSame(2, DB::table('product_in_category')
+            ->where('product_id', $product->id)
+            ->count());
     }
 
     /** ولی تغییر واقعی قیمت باید نقطه‌ی تازه بسازد. */

@@ -12,6 +12,10 @@ use Illuminate\Support\Str;
 
 class ProductStockImportService
 {
+    public function __construct(private ProductCategorizer $categorizer)
+    {
+    }
+
     /**
      * ضریب قیمت خرده‌فروشی روی قیمت فایل اکسل. در مدل محصول تعریف شده تا
      * محاسبه‌ی قیمت عمده (که از همان قیمت اکسل بازسازی می‌شود) با ایمپورت
@@ -124,7 +128,7 @@ class ProductStockImportService
                 ]);
         }
 
-        $this->syncCarLinks($rowsData, $keptProductIds, $catMap, $now);
+        $this->syncCategories($rowsData, $keptProductIds, $catMap, $now);
 
         if ($fileName !== null && $userId !== null) {
             DB::table('import_logs')->insert([
@@ -266,9 +270,19 @@ class ProductStockImportService
     {
         $catMap = EshopCategory::whereIn('name', $carModelNames)->pluck('id', 'name')->toArray();
         $newCats = [];
+
+        // شناسه‌های ۱ تا ۱۱ رزرو مجموعه‌بندی قطعه‌اند و ردیفی در eshop_categories
+        // ندارند. اگر دسته‌ی خودرویی روی همان بازه بیفتد، از نگاه بقیه‌ی برنامه
+        // مجموعه‌بندی به حساب می‌آید؛ پس شناسه را صریح و بالاتر از بازه می‌دهیم.
+        $nextId = max((int) EshopCategory::max('id'), max(ProductCategorizer::groupingIds())) + 1;
+
         foreach ($carModelNames as $name) {
             if (!isset($catMap[$name])) {
-                $newCats[] = ['name' => $name, 'slug' => Str::slug($name, '-', null)];
+                $newCats[] = [
+                    'id'   => $nextId++,
+                    'name' => $name,
+                    'slug' => Str::slug($name, '-', null),
+                ];
             }
         }
 
@@ -304,31 +318,63 @@ class ProductStockImportService
             ->first();
     }
 
-    private function syncCarLinks(array $rowsData, array $productMap, array $catMap, $now): void
+    /**
+     * بازسازی پیوند محصول با دسته‌ی مدل خودرو، و ساختن مجموعه‌بندی قطعه فقط
+     * برای محصولاتی که هنوز ندارند.
+     *
+     * پاک‌کردن باید به دسته‌های خودرو محدود بماند: تا پیش از این، هر ایمپورت
+     * تمام ردیف‌های product_in_category محصول را حذف می‌کرد و مجموعه‌بندی
+     * قطعه (دسته‌های ۱ تا ۱۱) که دستی یا با products:categorize ساخته شده بود
+     * از بین می‌رفت.
+     */
+    private function syncCategories(array $rowsData, array $productMap, array $catMap, $now): void
     {
+        $groupingIds = ProductCategorizer::groupingIds();
         $productIds = array_values($productMap);
+
         foreach (array_chunk($productIds, 500) as $chunk) {
-            DB::table('product_in_category')->whereIn('product_id', $chunk)->delete();
+            DB::table('product_in_category')
+                ->whereIn('product_id', $chunk)
+                ->whereNotIn('category_id', $groupingIds)
+                ->delete();
+        }
+
+        $hasGrouping = [];
+        foreach (array_chunk($productIds, 1000) as $chunk) {
+            DB::table('product_in_category')
+                ->whereIn('product_id', $chunk)
+                ->whereIn('category_id', $groupingIds)
+                ->pluck('product_id')
+                ->each(function ($id) use (&$hasGrouping) {
+                    $hasGrouping[(int) $id] = true;
+                });
         }
 
         $newLinks = [];
         foreach ($rowsData as $sku => $row) {
-            if ($row['car_model'] === '') {
-                continue;
-            }
-
             $productId = $productMap[$sku] ?? null;
-            $categoryId = $catMap[$row['car_model']] ?? null;
-            if (!$productId || !$categoryId) {
+            if (!$productId) {
                 continue;
             }
 
-            $newLinks[] = [
-                'product_id' => $productId,
-                'category_id' => $categoryId,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ];
+            $categoryId = $row['car_model'] !== '' ? ($catMap[$row['car_model']] ?? null) : null;
+            if ($categoryId) {
+                $newLinks[] = [
+                    'product_id' => $productId,
+                    'category_id' => $categoryId,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+
+            if (! isset($hasGrouping[$productId])) {
+                $newLinks[] = [
+                    'product_id' => $productId,
+                    'category_id' => $this->categorizer->detect($row['title']),
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
         }
 
         foreach (array_chunk($newLinks, 500) as $chunk) {
