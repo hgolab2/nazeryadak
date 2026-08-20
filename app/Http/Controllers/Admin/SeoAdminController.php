@@ -11,6 +11,7 @@ use App\Models\Redirect;
 use App\Models\SeoTerm;
 use App\Models\Setting;
 use App\Support\CarModels;
+use App\Support\SeoContent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -447,7 +448,17 @@ class SeoAdminController extends Controller
             return $response;
         }
 
-        $saved = SeoTerm::all()->keyBy(fn ($term) => $term->type . ':' . $term->slug);
+        // ستون‌های متنی عمدا خوانده نمی‌شوند: ۲۵۰ ردیف با چند کیلوبایت HTML،
+        // این صفحه‌ی فهرست را بی‌دلیل سنگین می‌کند. برای نمایش وضعیت، طولِ
+        // متن کافی است و همان را دیتابیس حساب می‌کند.
+        $saved = SeoTerm::query()
+            // «generated» در MySQL 8 کلمه‌ی رزروشده است و بدون بک‌تیک خطای
+            // نحوی می‌دهد؛ select معمولی خودش شناسه‌ها را نقل‌قول می‌کند.
+            ->select(['id', 'type', 'slug', 'name', 'seo_title', 'seo_description', 'robots_index', 'is_active', 'generated'])
+            ->selectRaw("CHAR_LENGTH(COALESCE(intro, '')) + CHAR_LENGTH(COALESCE(body, '')) as content_length")
+            ->selectRaw("CHAR_LENGTH(COALESCE(faq, '')) as faq_length")
+            ->get()
+            ->keyBy(fn ($term) => $term->type . ':' . $term->slug);
 
         $categories = [];
         foreach (ProductCategory::cases() as $category) {
@@ -462,22 +473,46 @@ class SeoAdminController extends Controller
         $cars = [];
         foreach (CarModels::all() as $slug => $car) {
             $cars[] = [
-                'slug'  => $slug,
-                'name'  => $car['name'],
-                'count' => $car['count'],
-                'url'   => '/car/' . rawurlencode($slug),
-                'term'  => $saved[SeoTerm::TYPE_CAR . ':' . $slug] ?? null,
+                'slug'      => $slug,
+                'name'      => $car['name'],
+                'count'     => $car['count'],
+                'indexable' => $car['count'] >= CarModels::INDEX_MIN_PRODUCTS,
+                'url'       => '/car/' . rawurlencode($slug),
+                'term'      => $saved[SeoTerm::TYPE_CAR . ':' . $slug] ?? null,
             ];
         }
 
         $combos = $saved->filter(fn ($term) => $term->type === SeoTerm::TYPE_CAR_CATEGORY)->values();
 
+        /*
+        | چند ترکیبِ واقعا موجود هست و برای چندتایشان متن نوشته شده؟
+        |
+        | بدون این عدد، «۳ ترکیب متن دارد» بی‌معنی است: معلوم نیست از ۳ تا یا
+        | از ۱۸۰ تا. ترکیب بدون محصول شمرده نمی‌شود چون صفحه‌ی خالی است؛
+        | ترکیبِ یکی‌دو محصولی صفحه دارد ولی noindex می‌ماند، پس جدا شمرده
+        | می‌شود تا مخرجِ «چند تا متن دارد» با آنچه واقعا متن می‌گیرد بخواند.
+        */
+        $comboTotal = 0;
+        $comboIndexable = 0;
+        foreach (CarModels::comboCounts() as $counts) {
+            foreach ($counts as $count) {
+                if ($count > 0) {
+                    $comboTotal++;
+                }
+                if ($count >= SeoContent::COMBO_MIN_INDEXABLE) {
+                    $comboIndexable++;
+                }
+            }
+        }
+
         return view('seo.admin.terms', [
-            'categories'    => $categories,
-            'cars'          => $cars,
-            'combos'        => $combos,
-            'carOptions'    => CarModels::all(),
-            'categoryCases' => ProductCategory::cases(),
+            'categories'     => $categories,
+            'cars'           => $cars,
+            'combos'         => $combos,
+            'comboTotal'     => $comboTotal,
+            'comboIndexable' => $comboIndexable,
+            'carOptions'     => CarModels::all(),
+            'categoryCases'  => ProductCategory::cases(),
         ]);
     }
 
@@ -526,6 +561,9 @@ class SeoAdminController extends Controller
             'seo_title'       => 'nullable|string|max:255',
             'seo_description' => 'nullable|string|max:500',
             'focus_keyword'   => 'nullable|string|max:255',
+            'faq'             => 'nullable|array|max:20',
+            'faq.*.q'         => 'nullable|string|max:255',
+            'faq.*.a'         => 'nullable|string|max:2000',
         ], [
             'slug.required' => 'اسلاگ صفحه مشخص نیست.',
         ]);
@@ -541,6 +579,17 @@ class SeoAdminController extends Controller
             return back()->withErrors(['slug' => 'صفحه‌ی فرود موردنظر وجود ندارد.'])->withInput();
         }
 
+        // ردیف‌های خالی یا نیمه‌پرِ فرم نباید وارد FAQPage schema شوند؛ پرسشی
+        // بدون پاسخ، داده‌ی ساختاریافته‌ی نامعتبر تولید می‌کند.
+        $faqs = [];
+        foreach ((array) $request->input('faq', []) as $row) {
+            $question = trim((string) ($row['q'] ?? ''));
+            $answer   = trim((string) ($row['a'] ?? ''));
+            if ($question !== '' && $answer !== '') {
+                $faqs[] = ['q' => $question, 'a' => $answer];
+            }
+        }
+
         SeoTerm::updateOrCreate(
             ['type' => $type, 'slug' => $slug],
             [
@@ -548,11 +597,15 @@ class SeoAdminController extends Controller
                 'heading'         => trim((string) $request->input('heading')) ?: null,
                 'intro'           => trim((string) $request->input('intro')) ?: null,
                 'body'            => trim((string) $request->input('body')) ?: null,
+                'faq'             => $faqs ? json_encode($faqs, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null,
                 'seo_title'       => trim((string) $request->input('seo_title')) ?: null,
                 'seo_description' => trim((string) $request->input('seo_description')) ?: null,
                 'focus_keyword'   => trim((string) $request->input('focus_keyword')) ?: null,
                 'robots_index'    => $request->boolean('robots_index'),
                 'is_active'       => $request->boolean('is_active'),
+                // ذخیره از پنل یعنی آدم این متن را تایید کرده؛ از این پس
+                // دستور seo:landing بدون --force به آن دست نمی‌زند.
+                'generated'       => false,
             ]
         );
 

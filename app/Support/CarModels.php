@@ -20,11 +20,31 @@ class CarModels
 {
     public const CACHE_KEY = 'seo:car-models';
 
+    public const COMBO_CACHE_KEY = 'seo:car-models:combos';
+
     /**
      * مدلی که فقط یکی دو قطعه دارد، صفحه‌ی فرودِ تقریبا خالی می‌سازد؛
      * صفحه‌ی کم‌محتوا به‌جای کمک، کیفیت کل دامنه را پایین می‌آورد.
      */
     private const MIN_PRODUCTS = 3;
+
+    /**
+     * آستانه‌ی ایندکس‌شدن.
+     *
+     * بین MIN_PRODUCTS و این عدد، صفحه ساخته می‌شود و از داخل سایت در دسترس
+     * است (لینک‌های موجود ۴۰۴ نمی‌گیرند) ولی noindex می‌خورد و به نقشه‌ی سایت
+     * نمی‌رود. با زیاد شدن موجودی، همان صفحه خودبه‌خود ایندکس‌پذیر می‌شود.
+     */
+    public const INDEX_MIN_PRODUCTS = 10;
+
+    /**
+     * مقادیری که در ستون car_model «نام خودرو» نیستند.
+     *
+     * «نامشخص» یعنی وارد‌کننده مدل را نمی‌دانسته؛ ساختن صفحه‌ی فرودِ
+     * «قطعات نامشخص» هم برای کاربر بی‌معنی است و هم یک صفحه‌ی بی‌کیفیت
+     * به ایندکس اضافه می‌کند.
+     */
+    private const EXCLUDED = ['نامشخص', 'نا مشخص', 'متفرقه', 'سایر', '-'];
 
     /** @return array<string, array{name: string, count: int}> کلید = اسلاگ */
     public static function all(): array
@@ -46,7 +66,7 @@ class CarModels
             foreach ($rows as $row) {
                 $name = trim((string) $row->car_model);
                 $slug = seo_slug($name, '');
-                if ($slug === '') {
+                if ($slug === '' || in_array($name, self::EXCLUDED, true)) {
                     continue;
                 }
 
@@ -93,8 +113,74 @@ class CarModels
         return (int) (self::all()[seo_slug((string) $slug, '')]['count'] ?? 0);
     }
 
+    /**
+     * آیا صفحه‌ی این خودرو آن‌قدر محتوا دارد که ارزش ایندکس‌شدن داشته باشد؟
+     *
+     * صفحه‌ی غیرقابل‌ایندکس همچنان کار می‌کند (۴۰۴ نمی‌دهد) اما noindex
+     * می‌گیرد و در نقشه‌ی سایت نمی‌آید.
+     */
+    public static function isIndexable(?string $slug): bool
+    {
+        return self::countFor($slug) >= self::INDEX_MIN_PRODUCTS;
+    }
+
+    /**
+     * تعداد محصول به ازای هر ترکیب «خودرو × دسته‌بندی».
+     *
+     * نقشه‌ی سایت تا پیش از این، برای هر خودروی پرمحصول هر ۱۱ دسته را فهرست
+     * می‌کرد، حتی ترکیب‌هایی که یک محصول هم نداشتند؛ آن آدرس‌ها در صفحه
+     * noindex می‌گیرند و آدرس noindex در نقشه‌ی سایت، خطای Search Console
+     * می‌سازد. با این نقشه، فقط ترکیب‌های واقعاً موجود اعلام می‌شوند.
+     *
+     * @return array<string, array<int, int>> [اسلاگ خودرو => [شناسه‌ی دسته => تعداد]]
+     */
+    public static function comboCounts(): array
+    {
+        return Cache::remember(self::COMBO_CACHE_KEY, now()->addHours(6), function () {
+            try {
+                $rows = \DB::table('product_in_category')
+                    ->join('products', 'products.id', '=', 'product_in_category.product_id')
+                    ->where('products.is_active', 1)
+                    ->whereNotNull('products.car_model')
+                    ->where('products.car_model', '!=', '')
+                    ->whereIn('product_in_category.category_id', array_map(
+                        fn (\App\Enums\ProductCategory $case) => $case->value,
+                        \App\Enums\ProductCategory::cases()
+                    ))
+                    ->groupBy('products.car_model', 'product_in_category.category_id')
+                    ->selectRaw('products.car_model as car_model, product_in_category.category_id as category_id, COUNT(*) as cnt')
+                    ->get();
+            } catch (\Throwable $e) {
+                return [];
+            }
+
+            $known = self::all();
+            $combos = [];
+
+            foreach ($rows as $row) {
+                // چند املای مختلفِ یک خودرو به یک اسلاگ می‌رسند و باید جمع شوند.
+                $slug = seo_slug((string) $row->car_model, '');
+                if ($slug === '' || ! isset($known[$slug])) {
+                    continue;
+                }
+
+                $categoryId = (int) $row->category_id;
+                $combos[$slug][$categoryId] = ($combos[$slug][$categoryId] ?? 0) + (int) $row->cnt;
+            }
+
+            return $combos;
+        });
+    }
+
+    /** تعداد محصول یک ترکیب مشخص. */
+    public static function comboCount(?string $carSlug, int $categoryId): int
+    {
+        return (int) (self::comboCounts()[seo_slug((string) $carSlug, '')][$categoryId] ?? 0);
+    }
+
     public static function forgetCache(): void
     {
         Cache::forget(self::CACHE_KEY);
+        Cache::forget(self::COMBO_CACHE_KEY);
     }
 }

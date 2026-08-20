@@ -36,7 +36,22 @@
     $productSchema = seo_product_schema($model, $galleryImages->all(), $productBreadcrumb);
     $productBreadcrumbSchema = seo_breadcrumb_schema($productBreadcrumb);
     $productBreadcrumbSchema['@id'] = $productUrl . '#breadcrumb';
+
+    // تصویر اصلی گالری همان عنصر LCP این صفحه است؛ بالاتر محاسبه می‌شود تا
+    // بخش preload هم به آن دسترسی داشته باشد.
+    $heroImage = $galleryImages->first()->path;
+    $heroWebp = webp_variant($heroImage);
 @endphp
+
+{{-- عنصر LCP این صفحه عکس کالاست. با preload، مرورگر منتظر نمی‌ماند تا
+     پارسر به تگ <img> برسد. نسخه‌ی webp اگر موجود باشد preload می‌شود تا
+     دقیقا همان چیزی درخواست شود که <picture> بعدا انتخاب می‌کند؛ وگرنه
+     مرورگر دو تصویر دانلود می‌کرد. --}}
+@section('preload')
+    <link rel="preload" as="image" fetchpriority="high"
+          href="{{ $heroWebp ?: $heroImage }}"
+          @if($heroWebp) type="image/webp" @endif>
+@endsection
 @extends('layout.layout', [
     'title' => $productTitle,
     'metaDescription' => $productDescription,
@@ -76,21 +91,23 @@
         <section class="nx-card dk-product-detail">
             <div class="dk-product-gallery">
                 <div class="dk-product-actions">
-                    <button type="button" onclick="addFavorite({{ $model->id }})" class="itemFavorite_{{ $model->id }}"><i class="{{ is_favorite_product($model->id) ? 'fas' : 'far' }} fa-heart"></i></button>
-                    <button type="button" data-bs-toggle="modal" data-bs-target="#share-modal"><i class="fa fa-share-alt"></i></button>
+                    <button type="button" onclick="addFavorite({{ $model->id }})" class="itemFavorite_{{ $model->id }}" aria-label="{{ $fa('%D8%A7%D9%81%D8%B2%D9%88%D8%AF%D9%86%20%D8%A8%D9%87%20%D8%B9%D9%84%D8%A7%D9%82%D9%87%E2%80%8C%D9%85%D9%86%D8%AF%DB%8C%E2%80%8C%D9%87%D8%A7') }}"><i class="{{ is_favorite_product($model->id) ? 'fas' : 'far' }} fa-heart"></i></button>
+                    <button type="button" data-bs-toggle="modal" data-bs-target="#share-modal" aria-label="{{ $fa('%D8%A7%D8%B4%D8%AA%D8%B1%D8%A7%DA%A9%E2%80%8C%DA%AF%D8%B0%D8%A7%D8%B1%DB%8C%20%D9%85%D8%AD%D8%B5%D9%88%D9%84') }}"><i class="fa fa-share-alt"></i></button>
                 </div>
-                @php $heroImage = $galleryImages->first()->path; $heroWebp = webp_variant($heroImage); @endphp
                 <div class="dk-product-main-image">
                     <picture>
                         @if($heroWebp)<source srcset="{{ $heroWebp }}" type="image/webp">@endif
-                        <img src="{{ $heroImage }}" id="product-main-image" @if(!$model->hasImage()) data-fetch="/product/fetch-image/{{$model->id}}" @endif alt="{{ $productTitle }}" title="{{ $model->title }}" width="600" height="600" fetchpriority="high" decoding="async">
+                        {{-- alt نام خود قطعه است، نه عنوان سئوی صفحه: عنوان سئو با «…»
+                             بریده می‌شود و دنباله‌ی «| ناظر یدک» دارد که برای کاربر
+                             صفحه‌خوان هیچ معنایی ندارد --}}
+                        <img src="{{ $heroImage }}" id="product-main-image" @if(!$model->hasImage()) data-fetch="/product/fetch-image/{{$model->id}}" @endif alt="{{ $model->title }}" title="{{ $model->title }}" width="600" height="600" fetchpriority="high" decoding="async">
                     </picture>
                 </div>
                 @if($galleryImages->count() > 1)
                 <div class="dk-product-thumbs">
                     @foreach($galleryImages as $image)
                         @php $thumbWebp = webp_variant($image->path); @endphp
-                        <button type="button" class="product-thumb" data-src="{{ $image->path }}" @if($thumbWebp) data-webp="{{ $thumbWebp }}" @endif>
+                        <button type="button" class="product-thumb" data-src="{{ $image->path }}" @if($thumbWebp) data-webp="{{ $thumbWebp }}" @endif aria-label="{{ $fa('%D9%86%D9%85%D8%A7%DB%8C%D8%B4%20%D8%AA%D8%B5%D9%88%DB%8C%D8%B1') }} {{ $loop->iteration }}">
                             <picture>
                                 @if($thumbWebp)<source srcset="{{ $thumbWebp }}" type="image/webp">@endif
                                 <img src="{{ $image->path }}" alt="{{ $image->alt ?? $model->title }}" width="80" height="80" loading="lazy" decoding="async">

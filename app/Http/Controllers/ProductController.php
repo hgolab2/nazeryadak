@@ -301,6 +301,90 @@ class ProductController extends Controller
         return Product::with('categories')->orderBy('id' , 'desc')->where('is_active' , '1')->where('file_path' ,'!=', '')->paginate($count);
     }
 
+    /**
+     * قطعه‌های مرتبط با همین محصول برای کاروسل پایین صفحه.
+     *
+     * قبلا اینجا getProduct() صدا زده می‌شد که فقط «۸ محصول آخر سایت» را
+     * می‌داد: زیر واشر سرسیلندر سمند، آینه‌ی تارا و سپر پژو پارس می‌نشست.
+     * نه برای کاربر معنا داشت و نه لینک داخلی مرتبطی به گوگل می‌رساند.
+     *
+     * ترتیب اولویت: هم‌خودرو و هم‌دسته > هم‌خودرو > هم‌دسته. اگر باز هم کم
+     * بود، با تازه‌ترین محصول‌ها پر می‌شود تا کاروسل هیچ‌وقت خالی نماند.
+     *
+     * paginate() هم حذف شد: یک COUNT(*) اضافه روی چهار هزار ردیف می‌زد در
+     * حالی که این کاروسل اصلا صفحه‌بندی ندارد.
+     */
+    private function relatedProducts(Product $model, int $count)
+    {
+        $base = fn () => Product::with('categories')
+            ->where('is_active', 1)
+            ->where('file_path', '!=', '')
+            ->where('id', '!=', $model->id);
+
+        $related = collect();
+
+        /*
+        | کلید یکتاسازی عنوان.
+        |
+        | یک قطعه اغلب چند بار با عنوان تقریبا یکسان ثبت شده و فقط نام خودرو
+        | یا کد فنی به تهش چسبیده: «شمع … میلی متر»، «… میلی متر سمند»،
+        | «… میلی متر سمند 1040300817». مقایسه‌ی رشته‌ای دقیق این‌ها را جدا
+        | می‌بیند و کاروسل سه کارت عملا یکسان کنار هم نشان می‌داد. با حذف
+        | رقم‌ها و نشانه‌ها و مقایسه‌ی ابتدای عنوان، هر سه یکی حساب می‌شوند.
+        */
+        $titleKey = function ($title) {
+            $t = preg_replace('/[\d\.\-_،,()\[\]]+/u', ' ', (string) $title);
+            $t = trim(preg_replace('/\s+/u', ' ', $t));
+
+            return mb_substr($t, 0, 40);
+        };
+        $seenTitles = [];
+
+        $categoryId = $model->category_id;
+
+        $tiers = [];
+        if (! empty($model->car_model) && $categoryId) {
+            $tiers[] = fn () => $base()->where('car_model', $model->car_model)->where('category_id', $categoryId);
+        }
+        if (! empty($model->car_model)) {
+            $tiers[] = fn () => $base()->where('car_model', $model->car_model);
+        }
+        if ($categoryId) {
+            $tiers[] = fn () => $base()->where('category_id', $categoryId);
+        }
+        $tiers[] = fn () => $base();
+
+        foreach ($tiers as $tier) {
+            if ($related->count() >= $count) {
+                break;
+            }
+
+            $rows = $tier()
+                ->when($related->isNotEmpty(), fn ($q) => $q->whereNotIn('id', $related->pluck('id')->all()))
+                ->orderByDesc('id')
+                // چند برابر لازم گرفته می‌شود چون بخشی از ردیف‌ها در مرحله‌ی
+                // بعد به‌خاطر هم‌عنوان بودن کنار می‌روند
+                ->limit(($count - $related->count()) * 3)
+                ->get();
+
+            foreach ($rows as $row) {
+                if ($related->count() >= $count) {
+                    break;
+                }
+
+                $key = $titleKey($row->title);
+                if ($key === '' || isset($seenTitles[$key])) {
+                    continue;
+                }
+
+                $seenTitles[$key] = true;
+                $related->push($row);
+            }
+        }
+
+        return $related;
+    }
+
     function show($id, $slug = null)
     {
         if(!$id){
@@ -322,7 +406,7 @@ class ProductController extends Controller
         if ($currentPath !== ltrim($model->url(), '/')) {
             return redirect($model->url(), 301);
         }
-        $products = $this->getProduct(8);
+        $products = $this->relatedProducts($model, 8);
         $priceHistory = $this->priceHistoryPoints($model);
 
         return view('product.show' , compact('model','products','priceHistory'));

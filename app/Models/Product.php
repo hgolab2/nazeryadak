@@ -320,7 +320,27 @@ class Product extends Model
      */
     public function autoSeoTitle(): string
     {
-        return seo_title('خرید ' . $this->title . ($this->isaco_code ? ' کد ' . $this->isaco_code : ''));
+        /*
+        | کد فنی باید سالم بماند.
+        |
+        | قبلا کل رشته به seo_title() داده می‌شد و آن از انتها می‌برید؛ چون کد
+        | فنی آخر رشته بود، دقیقا همان چیزی که عنوان به‌خاطرش کد را اضافه
+        | می‌کرد قربانی می‌شد: «… موتور EF7 & EF7P کد 1…». حالا فقط نام قطعه
+        | کوتاه می‌شود و کد کامل سر جایش می‌ماند.
+        */
+        $code = $this->isaco_code ? ' کد ' . $this->isaco_code : '';
+        $prefix = 'خرید ';
+
+        // همان بودجه‌ای که seo_title() برای متن قائل است، منهای پیشوند و کد
+        $budget = 60 - mb_strlen(seo_site_name()) - 3 - mb_strlen($prefix) - mb_strlen($code);
+
+        $name = trim((string) $this->title);
+        if ($budget > 8 && mb_strlen($name) > $budget) {
+            // «&» و «+» هم حذف می‌شوند وگرنه عنوان به «موتور EF7 &…» ختم می‌شد
+            $name = preg_replace('/[\s،,.\-&+]+$/u', '', mb_substr($name, 0, $budget - 1)) . '…';
+        }
+
+        return seo_title($prefix . $name . $code);
     }
 
     /**

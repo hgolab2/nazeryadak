@@ -234,8 +234,8 @@ function asset_v(string $path): string
     static $versions = [];
 
     if (! array_key_exists($path, $versions)) {
-        $absolute = public_path(ltrim($path, '/'));
-        $versions[$path] = is_file($absolute) ? (string) filemtime($absolute) : null;
+        $absolute = public_file_path($path);
+        $versions[$path] = $absolute ? (string) filemtime($absolute) : null;
     }
 
     return $versions[$path] ? $path . '?v=' . $versions[$path] : $path;
@@ -259,18 +259,18 @@ function asset_bundle_is_fresh(string $group): bool
         return $fresh[$group];
     }
 
-    $bundle = public_path(ltrim((string) config("assets.{$group}.bundle"), '/'));
+    $bundle = public_file_path((string) config("assets.{$group}.bundle"));
 
-    if (! is_file($bundle)) {
+    if (! $bundle) {
         return $fresh[$group] = false;
     }
 
     $bundleTime = filemtime($bundle);
 
     foreach ((array) config("assets.{$group}.sources", []) as $source) {
-        $path = public_path(ltrim($source, '/'));
+        $path = public_file_path($source);
 
-        if (is_file($path) && filemtime($path) > $bundleTime) {
+        if ($path && filemtime($path) > $bundleTime) {
             return $fresh[$group] = false;
         }
     }
@@ -1195,6 +1195,81 @@ function seo_xml_url(string $url): string
 }
 
 /**
+ * ریشه‌های ممکن برای پوشه‌ی عمومی سایت.
+ *
+ * روی هاست اشتراکی، فایل‌های عمومی معمولا در public_html می‌نشینند و کد
+ * لاراول یک پوشه بالاتر. در آن حالت public_path() به مسیری اشاره می‌کند که
+ * وجود خارجی ندارد و هر is_file() روی آن false برمی‌گردد — بی‌سروصدا.
+ * نتیجه‌اش این بود که هم asset_v نسخه نمی‌گذاشت (و کش immutable یک‌ساله
+ * به‌روزرسانی CSS را تا یک سال به کاربر نمی‌رساند) و هم webp_variant هیچ
+ * تصویری را پیدا نمی‌کرد و همه‌ی عکس‌ها با فرمت سنگین سرو می‌شدند.
+ *
+ * @return array<int,string>
+ */
+function public_roots(): array
+{
+    static $roots = null;
+
+    if ($roots !== null) {
+        return $roots;
+    }
+
+    $candidates = [
+        public_path(),
+        base_path('public'),
+        $_SERVER['DOCUMENT_ROOT'] ?? null,
+        isset($_SERVER['SCRIPT_FILENAME']) ? dirname($_SERVER['SCRIPT_FILENAME']) : null,
+    ];
+
+    $roots = [];
+    foreach ($candidates as $candidate) {
+        if (! $candidate) {
+            continue;
+        }
+        $candidate = rtrim(str_replace('\\', '/', $candidate), '/');
+
+        /*
+        | وجود index.php شرط پذیرش است. بدون آن، در اجرای CLI مقدار
+        | SCRIPT_FILENAME به مسیر همان اسکریپت اشاره می‌کند و یک پوشه‌ی
+        | نامربوط وارد فهرست ریشه‌ها می‌شد.
+        */
+        if ($candidate !== ''
+            && ! in_array($candidate, $roots, true)
+            && is_file($candidate . '/index.php')) {
+            $roots[] = $candidate;
+        }
+    }
+
+    return $roots;
+}
+
+/**
+ * مسیر مطلق یک فایل عمومی، یا null اگر زیر هیچ‌کدام از ریشه‌ها نبود.
+ *
+ * نتیجه در حافظه‌ی همین درخواست کش می‌شود تا صفحه‌ی فهرست با ۲۴ محصول
+ * ده‌ها بار is_file() صدا نزند.
+ */
+function public_file_path(string $relative): ?string
+{
+    $relative = ltrim(str_replace('\\', '/', $relative), '/');
+
+    static $cache = [];
+    if (array_key_exists($relative, $cache)) {
+        return $cache[$relative];
+    }
+
+    $found = null;
+    foreach (public_roots() as $root) {
+        if (is_file($root . '/' . $relative)) {
+            $found = $root . '/' . $relative;
+            break;
+        }
+    }
+
+    return $cache[$relative] = $found;
+}
+
+/**
  * مسیر نسخه‌ی WebP یک تصویر، در صورت وجود.
  *
  * دستور «php artisan images:webp» کنار هر jpg/png یک فایل .webp می‌سازد.
@@ -1215,16 +1290,9 @@ function webp_variant(?string $path): ?string
     }
 
     $webpPath = preg_replace('/\.(jpe?g|png)$/i', '.webp', $path);
-    $file = public_path(ltrim(rawurldecode(parse_url($webpPath, PHP_URL_PATH) ?: $webpPath), '/'));
+    $relative = ltrim(rawurldecode(parse_url($webpPath, PHP_URL_PATH) ?: $webpPath), '/');
 
-    // نتیجه در حافظه‌ی همین درخواست کش می‌شود تا صفحه‌ی فهرست با ۲۴ محصول
-    // ده‌ها بار is_file() صدا نزند.
-    static $cache = [];
-    if (! array_key_exists($file, $cache)) {
-        $cache[$file] = is_file($file);
-    }
-
-    return $cache[$file] ? $webpPath : null;
+    return public_file_path($relative) ? $webpPath : null;
 }
 
 function seo_description(string $text, int $limit = 158): string
@@ -1244,7 +1312,14 @@ function seo_description(string $text, int $limit = 158): string
         $cut = mb_substr($cut, 0, $lastSpace);
     }
 
-    return rtrim($cut, ' ،,.-') . '…';
+    /*
+    | نقطه‌گذاری انتهای متن با preg_replace و پرچم /u حذف می‌شود، نه rtrim.
+    | rtrim فهرست کاراکترش را بایت‌به‌بایت می‌بیند: «،» برابر D8 8C است و
+    | حرف «ی» برابر DB 8C، پس روی توضیحاتی که به «ی» ختم می‌شد بایت آخر را
+    | می‌کند و یک UTF-8 شکسته می‌ساخت. نتیجه این بود که json_encode روی
+    | اسکیمای محصول false برمی‌گرداند و تگ ld+json کاملا خالی رندر می‌شد.
+    */
+    return preg_replace('/[\s،,.\-]+$/u', '', $cut) . '…';
 }
 
 /** عنوان استاندارد: حداکثر ۶۰ کاراکتر مفید + نام برند. */
@@ -1266,10 +1341,19 @@ function seo_title(string $text, bool $withBrand = true): string
 
 function seo_json_ld(array $data): string
 {
-    return json_encode(
+    /*
+    | JSON_INVALID_UTF8_SUBSTITUTE تضمین می‌کند یک بایت خرابِ آمده از ایمپورت،
+    | کل اسکیما را از بین نبرد. بدون آن json_encode مقدار false برمی‌گرداند و
+    | Blade آن را رشته‌ی خالی چاپ می‌کند؛ یعنی صفحه بی‌سروصدا Rich Result خود
+    | را از دست می‌دهد بدون اینکه هیچ خطایی جایی ثبت شود.
+    */
+    $json = json_encode(
         seo_array_clean($data),
         JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP
+            | JSON_INVALID_UTF8_SUBSTITUTE
     );
+
+    return $json === false ? '{}' : $json;
 }
 
 /** حذف کلیدهای خالی تا Schema بدون فیلد null/'' تحویل گوگل شود. */

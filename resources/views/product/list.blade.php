@@ -95,18 +95,31 @@
     $shopNext = $model->hasMorePages() ? $model->nextPageUrl() : null;
 
     /* جستجوهای آزاد و ترکیب فیلترها محتوای تکراری تولید می‌کنند؛ فقط
-       دسته‌بندی، مدل خودرو و صفحه‌بندی اجازه‌ی ایندکس دارند. */
-    $shopRobots = seo_robots_tag(
-        !seo_should_noindex()
+       دسته‌بندی، مدل خودرو و صفحه‌بندی اجازه‌ی ایندکس دارند.
+
+       صفحه‌ی فرودِ خودرویی که چند قطعه بیشتر ندارد هم ایندکس نمی‌شود: صفحه
+       ساخته و از داخل سایت در دسترس است (لینک‌های موجود ۴۰۴ نمی‌گیرند)، اما
+       تا وقتی موجودی‌اش کم است وارد ایندکس نمی‌شود. با زیاد شدن قطعات،
+       خودبه‌خود ایندکس‌پذیر می‌شود. */
+    $shopIndexable = !seo_should_noindex()
         && $model->total() > 0
         && (!$shopTerm || $shopTerm->robots_index)
-    );
+        && (!$shopCarSlug || \App\Support\CarModels::isIndexable($shopCarSlug))
+        && (!($shopCarSlug && $shopCategorySlug) || $model->total() >= \App\Support\SeoContent::COMBO_MIN_INDEXABLE);
+
+    $shopRobots = seo_robots_tag($shopIndexable);
 
     /* لینک‌سازی داخلی صفحات فرود:
        - در صفحه‌ی خودرو، دسته‌بندی‌ها لینک می‌شوند (خودرو → دسته×خودرو)
        - در صفحه‌ی دسته یا فروشگاه، پرمحصول‌ترین خودروها لینک می‌شوند
        بدون این لینک‌ها، صفحات ترکیبی فقط در نقشه‌ی سایت وجود دارند و
        هیچ مسیر خزشی از داخل سایت به آن‌ها نمی‌رسد. */
+    /* پرسش‌های متداولِ اختصاصیِ همین صفحه. یک‌بار خوانده می‌شود و هم در HTML
+       و هم در FAQPage schema به کار می‌رود، تا این دو هرگز از هم جدا نیفتند.
+       صفحه‌ی noindex نباید FAQ schema بدهد؛ داده‌ی ساختاریافته روی صفحه‌ای
+       که قرار نیست ایندکس شود فقط سردرگمی می‌سازد. */
+    $shopFaqs = $shopTerm ? $shopTerm->faqList() : [];
+
     $shopCarLinks = [];
     $shopComboLinks = [];
     if ($shopCarSlug && !$shopCategorySlug) {
@@ -135,11 +148,14 @@
     'prevPage' => $shopPrev,
     'nextPage' => $shopNext,
     'ogType' => 'website',
-    'schema' => [
+    'schema' => array_values(array_filter([
         seo_webpage_schema($shopTitle, $shopDescription, $shopCanonical, 'CollectionPage'),
         seo_breadcrumb_schema($shopCrumbs),
         seo_itemlist_schema($shopTitle, $shopItems, $shopCanonical),
-    ],
+        // فقط صفحه‌ی اول و فقط وقتی صفحه ایندکس‌پذیر است؛ FAQ تکراری روی
+        // صفحه‌ی دوم و سوم، همان پرسش‌ها را چند بار به گوگل اعلام می‌کند.
+        $shopFaqs && $shopIndexable && $shopPage === 1 ? seo_faq_schema($shopFaqs) : null,
+    ])),
 ])
 @section('main_content')
 <main class="nx-home nx-shop">
@@ -296,6 +312,23 @@
                 @if($shopTerm && $shopTerm->body)
                     <section class="nx-card nx-seo-intro">{!! $shopTerm->body !!}</section>
                 @endif
+
+                {{-- پرسش‌های متداولِ همین صفحه. متن پاسخ‌ها دقیقا همان چیزی
+                     است که به FAQPage schema رفته؛ گوگل ناهماهنگی بین متن
+                     دیده‌شده و داده‌ی ساختاریافته را جریمه می‌کند. --}}
+                @if($shopFaqs)
+                <section class="nx-card nx-seo-faq">
+                    <div class="nx-card-head"><h2><i class="fas fa-question-circle"></i> پرسش‌های متداول</h2></div>
+                    <div class="nx-faq-body">
+                        @foreach($shopFaqs as $shopFaqIndex => $shopFaq)
+                        <details class="nx-faq-item" {{ $shopFaqIndex === 0 ? 'open' : '' }}>
+                            <summary>{{ $shopFaq['q'] }}</summary>
+                            <div class="nx-faq-answer">{{ $shopFaq['a'] }}</div>
+                        </details>
+                        @endforeach
+                    </div>
+                </section>
+                @endif
             </div>
 
         </div>
@@ -309,6 +342,19 @@
 .nx-seo-links-body{display:flex;flex-wrap:wrap;gap:8px;padding:16px 20px}
 .nx-seo-links-body a{display:inline-block;padding:7px 12px;border:1px solid var(--border,#e3e8ef);border-radius:999px;font-size:.82rem;color:var(--text,#333);text-decoration:none}
 .nx-seo-links-body a:hover{border-color:var(--primary,#37b5b5);color:var(--primary,#37b5b5)}
+.nx-seo-intro ul,.nx-seo-intro ol{margin:0 0 12px;padding-inline-start:20px}
+.nx-seo-intro li{margin-bottom:6px}
+.nx-seo-intro a{color:var(--primary,#37b5b5);text-decoration:none}
+.nx-seo-intro a:hover{text-decoration:underline}
+.nx-seo-faq{margin-bottom:16px}
+.nx-faq-body{padding:8px 20px 16px}
+.nx-faq-item{border-bottom:1px solid var(--border,#e3e8ef)}
+.nx-faq-item:last-child{border-bottom:0}
+.nx-faq-item summary{cursor:pointer;padding:14px 0;font-weight:600;font-size:.9rem;list-style:none}
+.nx-faq-item summary::-webkit-details-marker{display:none}
+.nx-faq-item summary::after{content:'+';float:left;color:var(--primary,#37b5b5);font-weight:700}
+.nx-faq-item[open] summary::after{content:'−'}
+.nx-faq-answer{padding:0 0 14px;line-height:2.1;font-size:.85rem;color:var(--text-gray,#666)}
 </style>
 @endsection
 @section('js')

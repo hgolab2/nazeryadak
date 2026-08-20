@@ -54,7 +54,21 @@ class BundleStyles extends Command
             return self::FAILURE;
         }
 
-        $target = public_path(ltrim($bundle, '/'));
+        /*
+        | ریشه‌ی پوشه‌ی عمومی از public_roots() می‌آید، نه مستقیم از
+        | public_path(): روی هاست اشتراکی که فایل‌های عمومی در public_html
+        | هستند، public_path() به مسیری اشاره می‌کند که وجود ندارد و باندل
+        | جایی ساخته می‌شد که هیچ‌وقت سرو نمی‌شد.
+        */
+        $root = public_roots()[0] ?? public_path();
+        foreach (public_roots() as $candidate) {
+            if (is_file($candidate . '/' . ltrim($sources[0], '/'))) {
+                $root = $candidate;
+                break;
+            }
+        }
+
+        $target = $root . '/' . ltrim($bundle, '/');
 
         if ($this->option('check')) {
             $fresh = asset_bundle_is_fresh($group);
@@ -69,9 +83,9 @@ class BundleStyles extends Command
         $totalBytes = 0;
 
         foreach ($sources as $source) {
-            $path = public_path(ltrim($source, '/'));
+            $path = public_file_path($source);
 
-            if (! is_file($path)) {
+            if (! $path) {
                 $this->warn("رد شد (پیدا نشد): {$source}");
                 continue;
             }

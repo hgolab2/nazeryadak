@@ -38,11 +38,17 @@
     {{-- منابع بحرانی زودتر از موعد درخواست می‌شوند؛ مستقیم روی LCP اثر دارد --}}
     <link rel="dns-prefetch" href="//www.googletagmanager.com">
     <link rel="preload" as="style" href="{{ asset_v(asset_bundle_is_fresh('css') ? config('assets.css.bundle') : '/assets/css/style.css') }}">
-    {{-- woff2 پیش‌بارگذاری می‌شود چون در @font-face اول آمده؛ اگر اینجا woff
-         بماند، مرورگر یک فونت را دو بار دانلود می‌کند --}}
-    <link rel="preload" as="font" type="font/woff2" href="/assets/font/IRANSans/IRANSansWeb(FaNum).woff2" crossorigin>
-    {{-- آدرس .png می‌ماند ولی .htaccess نسخه‌ی WebP را تحویل می‌دهد --}}
-    <link rel="preload" as="image" href="/assets/images/logo.png" fetchpriority="high">
+    {{-- فایل woff2 این فونت هرگز ساخته نشده بود؛ preload کردنش یعنی هر
+         بازدیدکننده یک ۴۰۴ روی مسیر بحرانی رندر می‌گرفت و بعد woff را
+         دانلود می‌کرد. تا وقتی woff2 ساخته شود، همان woff پیش‌بارگذاری
+         می‌شود — دقیقا همان چیزی که @font-face اول صدا می‌زند. --}}
+    <link rel="preload" as="font" type="font/woff" href="/assets/font/IRANSans/IRANSansWeb(FaNum).woff" crossorigin>
+
+    {{-- لوگو دیگر preload نمی‌شود: در صفحه‌ی محصول و فهرست، تصویر LCP عکس
+         کالاست نه لوگو. لوگوی ۱۲۲ کیلوبایتی با اولویت بالا جلوتر از تصویر
+         اصلی صف می‌شد و مستقیم LCP را عقب می‌انداخت. هر صفحه تصویر LCP
+         خودش را از اینجا معرفی می‌کند. --}}
+    @yield('preload')
 
     <title>{{ $seoTitle }}</title>
     <meta name="description" content="{{ $seoDescription }}">
@@ -179,16 +185,21 @@
                     {{-- لوگو --}}
                     <div class="flex-shrink-0">
                         <a href="/" class="site-logo">
-                            <img src="/assets/images/logo.png"
-                                 width="150" height="50" fetchpriority="high" decoding="async"
-                                 alt="ناظر یدک - لوازم یدکی خودرو و محصولات اصلی ایساکو">
+                            {{-- logo-300 نسخه‌ی هم‌اندازه‌ی نمایش است (۳۰۰ پیکسل برای صفحه‌های 2x).
+                                 logo.png اصلی ۷۰۰ پیکسل و ۱۲۲ کیلوبایت بود و فقط در ۱۵۰ پیکسل
+                                 دیده می‌شد؛ همان فایل برای og:image و اسکیما دست‌نخورده مانده. --}}
+                            <x-smart-image src="/assets/images/logo-300.png"
+                                           width="150" height="50" :lazy="false"
+                                           alt="ناظر یدک - لوازم یدکی خودرو و محصولات اصلی ایساکو" />
                         </a>
                     </div>
                     {{-- جستجو: تنها جعبه‌ی جستجوی سایت --}}
                     <div class="flex-grow-1" style="max-width: 560px;">
                         <form method="get" action="/shop">
                             <div class="search-box-header">
-                                <input type="search" name="title" value="{{ request('title') }}" placeholder="نام قطعه، خودرو یا کد فنی را بنویسید..." data-search-suggest>
+                                {{-- placeholder نام دسترس‌پذیر حساب نمی‌شود؛ بدون aria-label
+                                     صفحه‌خوان فقط «جعبه‌ی جستجو» را بی‌نام اعلام می‌کند --}}
+                                <input type="search" name="title" value="{{ request('title') }}" aria-label="جستجو در محصولات" placeholder="نام قطعه، خودرو یا کد فنی را بنویسید..." data-search-suggest>
                                 <button type="submit"><i class="fa fa-search"></i> جستجو</button>
                             </div>
                         </form>
@@ -278,7 +289,7 @@
                     <div class="offcanvas offcanvas-start" tabindex="-1" data-bs-scroll="true" id="mobile-menu">
                         <div class="offcanvas-header" style="background: var(--primary); padding: 15px;">
                             <span class="site-logo site-logo-mobile">
-                                <img src="/assets/images/logo.png" alt="ناظر یدک" width="120" height="40" loading="lazy" decoding="async">
+                                <x-smart-image src="/assets/images/logo-300.png" alt="ناظر یدک" width="120" height="40" />
                             </span>
                             <button type="button" class="btn-close btn-close-white text-reset" data-bs-dismiss="offcanvas"></button>
                         </div>
@@ -328,9 +339,9 @@
                 </div>
                 <div class="col-5 text-center">
                     <a href="/" class="site-logo site-logo-mobile">
-                        <img src="/assets/images/logo.png"
-                             width="130" height="44" fetchpriority="high" decoding="async"
-                             alt="ناظر یدک - لوازم یدکی خودرو و محصولات اصلی ایساکو">
+                        <x-smart-image src="/assets/images/logo-300.png"
+                                       width="130" height="44" :lazy="false"
+                                       alt="ناظر یدک - لوازم یدکی خودرو و محصولات اصلی ایساکو" />
                     </a>
                 </div>
                 <div class="col-2 d-flex align-items-center justify-content-end">
@@ -394,7 +405,7 @@
 
             {{-- جستجوی موبایل: همیشه دیده می‌شود، نه پنهان در منو --}}
             <form method="get" action="/shop" class="mobile-search">
-                <input type="search" name="title" value="{{ request('title') }}" placeholder="نام قطعه، خودرو یا کد فنی..." data-search-suggest>
+                <input type="search" name="title" value="{{ request('title') }}" aria-label="جستجو در محصولات" placeholder="نام قطعه، خودرو یا کد فنی..." data-search-suggest>
                 <button type="submit" aria-label="جستجو"><i class="fa fa-search"></i></button>
             </form>
         </div>
@@ -466,9 +477,9 @@
                     <div class="col-lg-4 col-md-6 footer-box mb-4">
                         <div class="footer-brand">
                             <span class="site-logo" style="margin-bottom:15px;">
-                                <img src="/assets/images/logo.png"
-                                     width="150" height="50" loading="lazy" decoding="async"
-                                     alt="ناظر یدک - لوازم یدکی خودرو و محصولات اصلی ایساکو">
+                                <x-smart-image src="/assets/images/logo-300.png"
+                                               width="150" height="50"
+                                               alt="ناظر یدک - لوازم یدکی خودرو و محصولات اصلی ایساکو" />
                             </span>
                             <div class="footer-about">
                                 nazeryadak یک فروشگاه اینترنتی تخصصی در حوزه فروش لوازم یدکی خودرو با تمرکز ویژه بر قطعات اصلی ایساکو (ISACO) است. ما بستری امن برای خرید آنلاین لوازم یدکی فراهم کرده‌ایم.
@@ -503,8 +514,8 @@
                     <div class="col-lg-3 col-md-6 footer-box mb-4">
                         <p class="footer-title">نماد اعتماد</p>
                         <div class="footer-trust-badges">
-                            <img src="/assets/images/f-1.png" class="footer-detail-pic" alt="نماد اعتماد الکترونیکی ناظر یدک" width="90" height="90" loading="lazy" decoding="async">
-                            <img src="/assets/images/f-2.png" class="footer-detail-pic" alt="نماد ساماندهی وزارت فرهنگ و ارشاد اسلامی" width="90" height="90" loading="lazy" decoding="async">
+                            <x-smart-image src="/assets/images/f-1.png" class="footer-detail-pic" alt="نماد اعتماد الکترونیکی ناظر یدک" width="90" height="90" />
+                            <x-smart-image src="/assets/images/f-2.png" class="footer-detail-pic" alt="نماد ساماندهی وزارت فرهنگ و ارشاد اسلامی" width="90" height="90" />
                         </div>
                         <p class="footer-title mt-4">ما را دنبال کنید</p>
                         <div class="footer-social">
@@ -630,7 +641,7 @@
             <form method="get" action="/shop">
                 <div class="app-sheet__search">
                     <i class="fa fa-search" style="color:#81858b;font-size:14px;"></i>
-                    <input type="search" name="title" value="{{ request('title') }}" placeholder="نام قطعه، خودرو یا کد فنی..." data-appbar-search data-search-suggest>
+                    <input type="search" name="title" value="{{ request('title') }}" aria-label="جستجو در محصولات" placeholder="نام قطعه، خودرو یا کد فنی..." data-appbar-search data-search-suggest>
                     <button type="submit">جستجو</button>
                 </div>
             </form>

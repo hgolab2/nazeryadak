@@ -1,20 +1,21 @@
+/* نسخه‌ی woff2 این فونت ساخته نشده و روی سرور وجود ندارد. تا وقتی اولین
+   منبع در فهرست باشد، هر بازدیدکننده یک درخواست ۴۰۴ روی مسیر بحرانی فونت
+   می‌دهد و تازه بعد از آن به woff برمی‌گردد. پس فعلا از فهرست برداشته شده.
+   بعد از ساختن فایل (مثلا با `fonttools ttLib.woff2 compress`)، خط
+   woff2 را قبل از woff برگردانید؛ حدود ۲۵٪ سبک‌تر است. */
 @font-face {
     font-family:vazir-med;
     /* font-display: swap تا متن بلافاصله با فونت جایگزین دیده شود
        و صفحه در زمان دانلود فونت خالی نماند (بهبود FCP و CLS). */
     font-display: swap;
-    /* woff2 اول می‌آید چون حدود ۲۰٪ از woff سبک‌تر است و همه‌ی مرورگرهای
-       امروزی آن را می‌فهمند؛ بقیه فقط پشتوانه‌ی نسخه‌های قدیمی‌اند. */
-    src: url('/assets/font/IRANSans/IRANSansWeb(FaNum).woff2') format('woff2'),
-         url('/assets/font/IRANSans/IRANSansWeb(FaNum).woff') format('woff'),
+    src: url('/assets/font/IRANSans/IRANSansWeb(FaNum).woff') format('woff'),
          url('/assets/font/IRANSans/IRANSansWeb.ttf') format('truetype');
 }
 
 @font-face {
     font-family:vazir-fa-med;
     font-display: swap;
-    src: url('/assets/font/IRANSans/IRANSansWeb(FaNum).woff2') format('woff2'),
-         url('/assets/font/IRANSans/IRANSansWeb(FaNum).woff') format('woff'),
+    src: url('/assets/font/IRANSans/IRANSansWeb(FaNum).woff') format('woff'),
          url('/assets/font/IRANSans/IRANSansWeb.ttf') format('truetype');
 }
 

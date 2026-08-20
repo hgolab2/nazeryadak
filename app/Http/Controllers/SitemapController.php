@@ -6,6 +6,7 @@ use App\Enums\ProductCategory;
 use App\Models\Article1;
 use App\Models\Product;
 use App\Support\CarModels;
+use App\Support\SeoContent;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -133,7 +134,16 @@ class SitemapController extends Controller
             | قدیمی 301 می‌خورد و فرستادن آدرس ریدایرکت‌شونده در نقشه‌ی
             | سایت، خطای Search Console می‌سازد.
             */
+            $comboCounts = CarModels::comboCounts();
+
             foreach (CarModels::all() as $carSlug => $car) {
+                // خودروی کم‌محصول در صفحه noindex می‌گیرد؛ اعلام آدرس noindex
+                // در نقشه‌ی سایت، در Search Console خطای «ارسال‌شده اما
+                // ایندکس نشده» می‌سازد.
+                if ($car['count'] < CarModels::INDEX_MIN_PRODUCTS) {
+                    continue;
+                }
+
                 $urls[] = [
                     'loc' => seo_url('/car/' . rawurlencode($carSlug)),
                     'priority' => '0.75',
@@ -147,6 +157,15 @@ class SitemapController extends Controller
                 }
 
                 foreach (ProductCategory::cases() as $category) {
+                    /*
+                    | تا پیش از این، برای هر خودروی پرمحصول هر ۱۱ دسته اعلام
+                    | می‌شد، حتی ترکیب‌هایی که یک قطعه هم نداشتند. آن صفحات
+                    | در ویو noindex می‌گیرند و بودجه‌ی خزش را هدر می‌دهند.
+                    */
+                    if (($comboCounts[$carSlug][$category->value] ?? 0) < SeoContent::COMBO_MIN_INDEXABLE) {
+                        continue;
+                    }
+
                     $urls[] = [
                         'loc' => seo_url('/car/' . rawurlencode($carSlug) . '/' . rawurlencode($category->slug())),
                         'priority' => '0.6',

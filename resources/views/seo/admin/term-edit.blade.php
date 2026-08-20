@@ -13,11 +13,23 @@
 </nav>
 
 <div class="d-flex align-items-center justify-content-between mb-3">
-    <h1 class="h4 mb-0">{{ $autoName }}</h1>
+    <h1 class="h4 mb-0">
+        {{ $autoName }}
+        @if($term->exists && $term->generated)
+            <span class="badge bg-info align-middle" style="font-size:11px">متن خودکار</span>
+        @endif
+    </h1>
     <a href="{{ $targetUrl }}" target="_blank" class="btn btn-outline-secondary btn-sm">
         <i class="fas fa-external-link-alt me-1"></i> مشاهده صفحه
     </a>
 </div>
+
+@if($term->exists && $term->generated)
+<div class="alert alert-info py-2 small">
+    این متن را دستور <code dir="ltr">php artisan seo:landing</code> ساخته است. به‌محض ذخیره‌ی این فرم،
+    صفحه «دستی» علامت می‌خورد و اجرای بعدی آن دستور دیگر بازنویسی‌اش نمی‌کند.
+</div>
+@endif
 
 @if($errors->any())<div class="alert alert-danger">@foreach($errors->all() as $e)<div>{{ $e }}</div>@endforeach</div>@endif
 
@@ -47,6 +59,22 @@
                 <label class="form-label">متن تکمیلی (پایین فهرست محصولات)</label>
                 <textarea name="body" rows="6" class="form-control" placeholder="مثلا: پرسش‌های پرتکرار، راهنمای انتخاب قطعه، شرایط ارسال و ضمانت.">{{ old('body', $term->body) }}</textarea>
             </div>
+        </div>
+    </section>
+
+    <section class="card card-body shadow-sm p-4 mb-4">
+        <h6 class="border-bottom pb-2 mb-3">پرسش‌های متداول</h6>
+        <p class="text-muted small">
+            این پرسش‌ها هم پایین صفحه نمایش داده می‌شوند و هم به‌صورت داده‌ی ساختاریافته‌ی FAQPage
+            به گوگل اعلام می‌شوند؛ شانس نمایش پاسخ‌ها به‌صورت نتیجه‌ی غنی در صفحه‌ی جستجو.
+            ردیف بدون پرسش یا بدون پاسخ نادیده گرفته می‌شود.
+        </p>
+
+        <div id="faqRows"></div>
+        <div>
+            <button type="button" class="btn btn-outline-primary btn-sm" id="faqAdd">
+                <i class="fas fa-plus me-1"></i> افزودن پرسش
+            </button>
         </div>
     </section>
 
@@ -109,6 +137,44 @@
 @endif
 
 <script>
+/* --- پرسش‌های متداول --- */
+(function () {
+    var rows = document.getElementById('faqRows');
+    var addBtn = document.getElementById('faqAdd');
+    if (!rows || !addBtn) return;
+
+    var index = 0;
+
+    function addRow(question, answer) {
+        var i = index++;
+        var wrap = document.createElement('div');
+        wrap.className = 'border rounded p-3 mb-2 bg-light';
+        wrap.innerHTML =
+            '<div class="d-flex gap-2 align-items-start">' +
+                '<div class="flex-grow-1">' +
+                    '<input type="text" class="form-control mb-2" name="faq[' + i + '][q]" placeholder="پرسش">' +
+                    '<textarea class="form-control" rows="3" name="faq[' + i + '][a]" placeholder="پاسخ"></textarea>' +
+                '</div>' +
+                '<button type="button" class="btn btn-outline-danger btn-sm" title="حذف"><i class="fas fa-trash"></i></button>' +
+            '</div>';
+
+        wrap.querySelector('input').value = question || '';
+        wrap.querySelector('textarea').value = answer || '';
+        wrap.querySelector('button').addEventListener('click', function () { wrap.remove(); });
+
+        rows.appendChild(wrap);
+    }
+
+    // array_values لازم است: old() آرایه‌ی کلیددار برمی‌گرداند و کلیددار به
+    // object تبدیل می‌شود، که forEach ندارد.
+    ({!! json_encode(array_values(old('faq', $term->faqList()) ?: []), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!}).forEach(function (faq) {
+        addRow(faq.q || '', faq.a || '');
+    });
+
+    addBtn.addEventListener('click', function () { addRow('', ''); });
+})();
+
+/* --- پیش‌نمایش نتیجه‌ی گوگل --- */
 (function () {
     var AUTO = @json($autoName);
 
