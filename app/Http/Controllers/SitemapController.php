@@ -324,6 +324,36 @@ class SitemapController extends Controller
             'Allow: *.jpg$',
             'Allow: *.png$',
             '',
+            '# خزنده‌های موتورهای پاسخ‌گو (ChatGPT، Perplexity، Claude، Gemini).',
+            '# «User-agent: *» از نظر فنی اجازه‌شان را می‌دهد، اما بلاک صریح',
+            '# جلوی تفسیر سخت‌گیرانه‌ی این خزنده‌ها از قواعد عمومی را می‌گیرد.',
+            'User-agent: OAI-SearchBot',
+            'Allow: /',
+            '',
+            'User-agent: ChatGPT-User',
+            'Allow: /',
+            '',
+            'User-agent: GPTBot',
+            'Allow: /',
+            '',
+            'User-agent: PerplexityBot',
+            'Allow: /',
+            '',
+            'User-agent: Perplexity-User',
+            'Allow: /',
+            '',
+            'User-agent: ClaudeBot',
+            'Allow: /',
+            '',
+            'User-agent: Claude-User',
+            'Allow: /',
+            '',
+            'User-agent: Google-Extended',
+            'Allow: /',
+            '',
+            'User-agent: Applebot-Extended',
+            'Allow: /',
+            '',
             '# خزنده‌های تجاری پرمصرف که سود سئویی ندارند',
             'User-agent: AhrefsBot',
             'Crawl-delay: 10',
@@ -338,6 +368,73 @@ class SitemapController extends Controller
         ];
 
         return response(implode("\n", $lines), 200)
+            ->header('Content-Type', 'text/plain; charset=UTF-8');
+    }
+
+    /**
+     * llms.txt — خلاصه‌ی مارک‌داونیِ سایت برای مدل‌های زبانی.
+     *
+     * نقشه‌ی سایت فقط فهرست آدرس است و به مدل نمی‌گوید هر آدرس چیست. این
+     * فایل همان نقش را با متنِ قابل‌فهم بازی می‌کند: چه می‌فروشیم، برای چه
+     * خودروهایی، و پاسخ پرسش‌های تکراری کجاست. مثل بقیه‌ی خروجی‌ها کش
+     * می‌شود چون شمارش قطعات هر خودرو کوئری سنگینی است.
+     */
+    public function llms()
+    {
+        $body = Cache::remember('llms:txt', now()->addMinutes($this->cacheMinutes()), function () {
+            $lines = [
+                '# ' . seo_site_name() . ' (' . seo_config('site_name_en', 'Nazer Yadak') . ')',
+                '',
+                '> ' . seo_config('default_description'),
+                '',
+                'زبان محتوا: فارسی (fa-IR). واحد قیمت: تومان. ارسال: سراسر ایران.',
+                'تماس: ' . seo_config('business.phone') . ' — ' . seo_config('business.email'),
+                '',
+                '## صفحه‌های اصلی',
+                '',
+                '- [خانه](' . seo_url() . '): معرفی فروشگاه و دسته‌های پرفروش',
+                '- [فروشگاه](' . seo_url('/shop') . '): فهرست کامل قطعات با فیلتر دسته و خودرو',
+                '- [مجله](' . seo_url('/blog') . '): راهنمای خرید، تشخیص قطعه‌ی اصل و تعمیر',
+                '- [سوالات متداول](' . seo_url('/faq') . '): پاسخ پرسش‌های رایج خرید و ارسال',
+                '- [راهنمای سفارش](' . seo_url('/how-to-order') . '): مراحل ثبت سفارش',
+                '- [شیوه‌های ارسال](' . seo_url('/shipping') . '): زمان و هزینه‌ی ارسال',
+                '- [روش‌های پرداخت](' . seo_url('/payment-methods') . '): درگاه و پرداخت در محل',
+                '- [پیگیری سفارش](' . seo_url('/order-tracking') . '): رهگیری با کد سفارش',
+                '- [درباره‌ی ما](' . seo_url('/about-us') . '): سابقه و ضمانت اصالت کالا',
+                '- [تماس با ما](' . seo_url('/contact-us') . '): آدرس، تلفن و ساعت کاری',
+                '',
+                '## دسته‌بندی قطعات',
+                '',
+            ];
+
+            foreach (ProductCategory::cases() as $category) {
+                $lines[] = '- [' . $category->label() . '](' . seo_url('/shop/' . rawurlencode($category->slug())) . ')';
+            }
+
+            $lines[] = '';
+            $lines[] = '## قطعات بر اساس خودرو';
+            $lines[] = '';
+
+            foreach (CarModels::all() as $carSlug => $car) {
+                // همان آستانه‌ی نقشه‌ی سایت: خودروی کم‌محصول صفحه‌ی نیمه‌خالی
+                // می‌سازد و ارجاع دادن مدل به آن، پاسخ بی‌ارزش تولید می‌کند.
+                if ($car['count'] < CarModels::INDEX_MIN_PRODUCTS) {
+                    continue;
+                }
+
+                $lines[] = '- [لوازم یدکی ' . $car['name'] . '](' . seo_url('/car/' . rawurlencode($carSlug)) . '): ' . $car['count'] . ' قطعه';
+            }
+
+            $lines[] = '';
+            $lines[] = '## Optional';
+            $lines[] = '';
+            $lines[] = '- [نقشه‌ی سایت](' . seo_url('/sitemap.xml') . '): فهرست کامل آدرس‌های قابل ایندکس';
+            $lines[] = '';
+
+            return implode("\n", $lines);
+        });
+
+        return response($body, 200)
             ->header('Content-Type', 'text/plain; charset=UTF-8');
     }
 }

@@ -53,7 +53,9 @@
         </div>
 
         <div class="d-flex justify-content-center my-4">
-            <ul class="pagination mb-20" aria-label="Pagination" id="pagination"></ul>
+            {{-- لینک واقعی، نه <a pn="2">؛ وگرنه مقالات صفحه‌ی دوم به بعد
+                 هیچ مسیر خزشی از داخل سایت ندارند. --}}
+            @include('layout._pagination', ['paginator' => $model, 'paginationClass' => 'custom-pagination pagination mb-20'])
         </div>
     </div>
 </main>
@@ -61,7 +63,7 @@
 @section('js')
 <script src="/js/paging.js"></script>
 <script>
-    var pagin = 1;
+    var pagin = {{ (int) $model->currentPage() }};
     var str="";
     function createQuery()
     {
@@ -106,8 +108,8 @@
 
     $(document).ready(function() {
         type1 = "";
-        var result = Paging(1 ,20,{{$totalCount}}, "myClass", "myDisableClass");
-        $("#pagination").html(result);
+        /* فهرست صفحه‌ها را سرور با href واقعی رندر کرده است؛ Paging فقط بعد
+           از بارگذاری ایجکسی جایگزینش می‌شود. */
         $("#pagination").on("click", "a", function () {
             pagin=$(this).attr("pn");
             if(pagin>0){

@@ -28,8 +28,13 @@
         ['name' => seo_site_name(), 'url' => seo_url()],
         ['name' => $fa('%D9%81%D8%B1%D9%88%D8%B4%DA%AF%D8%A7%D9%87%20%D9%84%D9%88%D8%A7%D8%B2%D9%85%20%DB%8C%D8%AF%DA%A9%DB%8C'), 'url' => seo_url('/shop')],
     ];
+    /* حلقه‌ی «خودرو» به صفحه‌ی فرود مسیری می‌رود. آدرس «?car_model=» که اینجا
+       بود از سمت کنترلر 301 می‌خورد، و آدرسِ ریدایرکت‌شونده داخل BreadcrumbList
+       در سرچ‌کنسول هشدار می‌سازد. */
+    $productCarUrl = null;
     if (!empty($model->car_model)) {
-        $productBreadcrumb[] = ['name' => $model->car_model, 'url' => seo_url('/shop?car_model=' . rawurlencode($model->car_model))];
+        $productCarUrl = seo_url(car_landing_url($model->car_model));
+        $productBreadcrumb[] = ['name' => $model->car_model, 'url' => $productCarUrl];
     }
     $productBreadcrumb[] = ['name' => $model->title, 'url' => null];
 
@@ -84,6 +89,13 @@
             <a href="/">{{ $fa('%D9%86%D8%A7%D8%B8%D8%B1%20%DB%8C%D8%AF%DA%A9') }}</a>
             <i class="fas fa-chevron-left"></i>
             <a href="/shop">{{ $fa('%D9%81%D8%B1%D9%88%D8%B4%DA%AF%D8%A7%D9%87') }}</a>
+            {{-- حلقه‌ی خودرو در BreadcrumbList هست ولی روی صفحه دیده نمی‌شد؛
+                 گوگل انتظار دارد مسیر ساختاریافته با مسیر دیده‌شده یکی باشد.
+                 ضمنا یک لینک داخلی از هر صفحه‌ی محصول به صفحه‌ی فرود خودرو. --}}
+            @if($productCarUrl)
+                <i class="fas fa-chevron-left"></i>
+                <a href="{{ car_landing_url($model->car_model) }}">{{ $model->car_model }}</a>
+            @endif
             <i class="fas fa-chevron-left"></i>
             <b>{{ $model->title }}</b>
         </nav>

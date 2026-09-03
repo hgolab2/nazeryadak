@@ -188,7 +188,10 @@
                 </div>
                 <div class="nx-cars">
                     @foreach($carCategories as $cat)
-                        <a href="/shop?car_model={{ urlencode($cat->name) }}" class="nx-car">
+                        {{-- مستقیم به صفحه‌ی فرود خودرو؛ «?car_model=» از سمت
+                             کنترلر 301 می‌خورد و لینک‌دادن به آن یعنی هر خزش
+                             یک پرش اضافه. --}}
+                        <a href="{{ car_landing_url($cat->name) }}" class="nx-car">
                             @if($cat->image)
                                 <img src="{{ $cat->image }}" alt="قطعات {{ $cat->name }}" loading="lazy" decoding="async" width="120" height="120">
                             @else

@@ -282,7 +282,9 @@
                         @include('product.list_type', compact('model'))
                     </div>
 
-                    <ul class="custom-pagination nx-pagination" aria-label="Pagination" id="pagination"></ul>
+                    {{-- صفحه‌بندی با لینک واقعی. بدون آن، خزنده از هر صفحه‌ی
+                         دسته‌بندی یا مدل خودرو فقط ۱۲ قطعه‌ی اول را می‌دید. --}}
+                    @include('layout._pagination', ['paginator' => $model])
                 </section>
 
                 {{-- لینک‌های داخلی به صفحات فرود. مسیر خزشِ گوگل از فروشگاه
@@ -360,7 +362,7 @@
 @section('js')
 <script src="/js/paging.js"></script>
 <script>
-    var pagin = 1;
+    var pagin = {{ (int) $model->currentPage() }};
     var str="";
     function createQuery()
     {
@@ -413,8 +415,9 @@
             });
     }
     $(document).ready(function() {
-        var result = Paging(1, 12, {{$totalCount}}, "myClass", "myDisableClass");
-        $("#pagination").html(result);
+        /* صفحه‌بندیِ اولیه را سرور رندر کرده و href واقعی دارد؛ بازنویسی‌اش با
+           Paging() هم آن لینک‌ها را از بین می‌برد و هم صفحه‌ی جاری را همیشه
+           «۱» نشان می‌داد. Paging فقط بعد از فیلتر ایجکسی جایگزین می‌شود. */
         $("#pagination").on("click", "a", function () {
             pagin = $(this).attr("pn");
             if(pagin > 0){

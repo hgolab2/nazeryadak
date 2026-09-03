@@ -38,10 +38,29 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->render(function (Throwable $e, Request $request) {
             try {
+                /*
+                | هشدار فقط برای خطای واقعی سرور.
+                |
+                | تا پیش از این هر استثنایی — از جمله ۴۰۴ — پیش از ارسال پاسخ،
+                | یک درخواست HTTP خروجیِ مسدودکننده می‌زد. خزنده‌ها روزانه
+                | ده‌ها آدرس مرده را امتحان می‌کنند و هر کدام پاسخ ۴۰۴ را تا
+                | پایان آن درخواست (تایم‌اوت پیش‌فرض PHP: ۶۰ ثانیه) نگه
+                | می‌داشت؛ یعنی هم بودجه‌ی خزش می‌سوخت و هم پراسس‌های PHP.
+                | مسیرهای ۴۰۴ همچنان در «مانیتور ۴۰۴» پنل ثبت می‌شوند.
+                */
+                $status = method_exists($e, 'getStatusCode') ? (int) $e->getStatusCode() : 500;
+                if ($status < 500) {
+                    return null;
+                }
 
+                $token   = env('BALE_BOT_TOKEN');
+                $chat_id = env('BALE_CHAT_ID');
+                if (! $token || ! $chat_id) {
+                    return null;
+                }
 
                 try {
-                    $level = method_exists($e, 'getStatusCode') && $e->getStatusCode() < 500 ? 'warning' : 'error';
+                    $level = 'error';
                     $userid = Auth::check() ? Auth::id() : "";
                     $line = $e->getLine() ?? 0;
                     $ip = $request->ip() ?? '';
@@ -56,15 +75,13 @@ return Application::configure(basePath: dirname(__DIR__))
                         "IP: {$ip}\n".
                         "Time: ".now();
 
-                    $token   = env('BALE_BOT_TOKEN');
-                    $chat_id = env('BALE_CHAT_ID');
-
                     $url = "https://tapi.bale.ai/bot{$token}/sendMessage";
 
+                    // تایم‌اوت کوتاه: پاسخ صفحه نباید منتظر سرویس هشدار بماند.
                     file_get_contents($url . "?" . http_build_query([
                         'chat_id' => $chat_id,
                         'text'    => $text
-                    ]));
+                    ]), false, stream_context_create(['http' => ['timeout' => 3, 'ignore_errors' => true]]));
 
                 } catch (\Throwable $telegramError) {
                     // ignore

@@ -1391,6 +1391,34 @@ function seo_slug(?string $text, string $fallback = 'item'): string
 }
 
 /**
+ * آدرس صفحه‌ی فرود یک مدل خودرو، برای لینک‌های داخلی.
+ *
+ * «/shop?car_model=پژو 206» هنوز کار می‌کند ولی ProductController آن را با
+ * 301 به «/car/پژو-206» می‌فرستد. لینک‌دادن به نسخه‌ی ریدایرکت‌شونده از داخل
+ * سایت یعنی هر خزش یک درخواست اضافه و یک پرش، و اعتبار لینک از مسیر
+ * ریدایرکت رد می‌شود به‌جای اینکه مستقیم برسد.
+ *
+ * اگر مدل در فهرست CarModels نباشد (مثلا دسته‌ای که هنوز محصولی ندارد)،
+ * همان فیلتر query string برگردانده می‌شود چون /car/{slug} برایش ۴۰۴ است.
+ */
+function car_landing_url(?string $name, ?string $categorySlug = null): string
+{
+    $name = trim((string) $name);
+    if ($name === '') {
+        return '/shop';
+    }
+
+    $slug = \App\Support\CarModels::slugFor($name);
+
+    if ($slug === '' || \App\Support\CarModels::fromSlug($slug) === null) {
+        return '/shop?car_model=' . rawurlencode($name);
+    }
+
+    return '/car/' . rawurlencode($slug)
+        . ($categorySlug ? '/' . rawurlencode($categorySlug) : '');
+}
+
+/**
  * آدرس کانونیکالِ صفحه‌ی جاری. فقط پارامترهای مجاز (صفحه‌بندی، دسته و مدل
  * خودرو) نگه داشته می‌شوند؛ بقیه‌ی فیلترها و پارامترهای ردیابی حذف می‌شوند
  * تا صفحات فیلترشده محتوای تکراری نسازند.

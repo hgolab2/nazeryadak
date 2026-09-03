@@ -28,7 +28,8 @@ class BlogController extends Controller
             ->where('articleincategory.categoryid' , $categoryid);
         }
         $totalCount = $model->count();
-        $model = $model->paginate(20);
+        // ajaxi فقط پرچم درخواست ایجکسی است و نباید روی لینک صفحه‌بندی بنشیند.
+        $model = $model->paginate(20)->appends($request->except(['page', 'ajaxi']));
         if ($request->ajax() || $request->ajaxi)
         {
             $couter=$totalCount/20;

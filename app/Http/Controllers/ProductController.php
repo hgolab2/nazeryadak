@@ -181,7 +181,15 @@ class ProductController extends Controller
         }
 
         $query->orderBy($orderColumn, $orderDirection);
-        $model = $query->paginate($perPage);
+        /*
+        | فیلترهای فعال باید روی لینک‌های صفحه‌بندی بمانند. بدون این، «صفحه‌ی
+        | ۲»ِ نتیجه‌ی یک جستجو به صفحه‌ی دوم کل فروشگاه می‌رفت و rel=next هدِ
+        | صفحه هم به همان آدرس اشتباه اشاره می‌کرد.
+        |
+        | ajaxi/page کنار گذاشته می‌شوند: اولی فقط پرچم درخواست ایجکسی است و
+        | در robots.txt هم Disallow شده، دومی را خود Paginator می‌سازد.
+        */
+        $model = $query->paginate($perPage)->appends($request->except(['page', 'ajaxi']));
         $totalCount = $model->total();
         if ($request->ajax() || $request->ajaxi) {
             $view = view('product.list_type', compact('model', 'totalCount' ))->render();
@@ -269,9 +277,11 @@ class ProductController extends Controller
                 ->pluck('car_model');
 
             foreach ($carModels as $carModel) {
+                // صفحه‌ی فرود مسیری؛ «?car_model=» همین‌جا 301 می‌خورد و کاربر
+                // بی‌دلیل یک پرش اضافه می‌کرد.
                 $terms[] = [
                     'label' => 'قطعات ' . $carModel,
-                    'url'   => '/shop?car_model=' . urlencode($carModel),
+                    'url'   => car_landing_url($carModel),
                     'icon'  => 'fa-car',
                 ];
             }

@@ -542,8 +542,13 @@
                 <div class="footer-seo-group">
                     <p class="footer-title">خرید بر اساس خودرو</p>
                     <ul class="footer-tag-list">
-                        @foreach(['پژو 206', 'پژو 405', 'پژو پارس', 'سمند', 'دنا', 'رانا', 'تیبا', 'پراید', 'کوییک', 'ساینا', 'شاهین', 'تارا'] as $footerCar)
-                            <li><a href="/shop?car_model={{ rawurlencode($footerCar) }}">قطعات {{ $footerCar }}</a></li>
+                        {{-- فهرست از خود انبار می‌آید (کش ۶ ساعته)، نه از یک
+                             آرایه‌ی دستی. آرایه‌ی قبلی خودروهایی داشت که هیچ
+                             قطعه‌ای از آن‌ها موجود نیست؛ لینک فوتر به صفحه‌ی
+                             خالی، از هر صفحه‌ی سایت تکرار می‌شد. آدرس هم
+                             مسیری است تا 301ِ «?car_model=» وسط راه نیفتد. --}}
+                        @foreach(array_slice(array_filter(\App\Support\CarModels::all(), fn($c) => $c['count'] >= \App\Support\CarModels::INDEX_MIN_PRODUCTS), 0, 12, true) as $footerCarSlug => $footerCarInfo)
+                            <li><a href="/car/{{ rawurlencode($footerCarSlug) }}">قطعات {{ $footerCarInfo['name'] }}</a></li>
                         @endforeach
                     </ul>
                 </div>
