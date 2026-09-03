@@ -25,6 +25,7 @@ use App\Http\Controllers\Admin\SettingAdminController;
 use App\Http\Controllers\Admin\SeoAdminController;
 use App\Http\Controllers\Admin\PaymentAdminController;
 use App\Http\Controllers\Admin\DiscountAdminController;
+use App\Http\Controllers\Admin\SmsAdminController;
 
 use App\Http\Controllers\SitemapController;
 use App\Http\Middleware\ShareDataInFrontend;
@@ -277,13 +278,17 @@ Route::group(['namespace' => 'Frontend', 'middleware' => [ShareDataInFrontend::c
         /* Order */
         Route::get('/admin/order/list', [OrderAdminController::class, 'admin_list']);
         Route::get('/admin/order/create', [OrderAdminController::class, 'admin_create']);
+        // «مشاهده سفارش»؛ لینکش در لیست بود ولی مسیرش نه، و ۴۰۴ می‌داد
+        Route::get('/admin/order/show/{id}', [OrderAdminController::class, 'admin_show']);
         Route::get('/admin/order/edit/{id}', [OrderAdminController::class, 'admin_edit']);
         Route::post('/admin/order/store', [OrderAdminController::class, 'admin_store']);
         Route::put('/admin/order/update/{id}', [OrderAdminController::class, 'admin_update']);
         // برچسب پستی؛ مسیر گروهی قبل از {id} تا «labels» شناسه تلقی نشود
         Route::get('/admin/order/labels', [OrderAdminController::class, 'admin_labels']);
         Route::get('/admin/order/label/{id}', [OrderAdminController::class, 'admin_label']);
-        Route::delete('/admin/order/{id}', [OrderAdminController::class, 'destroy']);
+        // متد کنترلر admin_destroy است؛ ارجاع به destroy وجود نداشت و حذف
+        // سفارش با خطا برمی‌گشت
+        Route::delete('/admin/order/{id}', [OrderAdminController::class, 'admin_destroy']);
 
         /* Payment — رسیدهای پرداخت و تأیید/رد آن‌ها */
         /* کدهای تخفیف */
@@ -355,6 +360,11 @@ Route::group(['namespace' => 'Frontend', 'middleware' => [ShareDataInFrontend::c
         Route::get('/admin/seo/404', [SeoAdminController::class, 'notFound']);
         Route::delete('/admin/seo/404/clear', [SeoAdminController::class, 'notFoundClear']);
         Route::delete('/admin/seo/404/{id}', [SeoAdminController::class, 'notFoundDestroy']);
+
+        /* SMS */
+        Route::get('/admin/sms', [SmsAdminController::class, 'index']);
+        Route::post('/admin/sms/send', [SmsAdminController::class, 'send']);
+        Route::delete('/admin/sms/{id}', [SmsAdminController::class, 'destroy']);
 
     });
 });

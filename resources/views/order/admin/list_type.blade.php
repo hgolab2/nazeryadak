@@ -26,7 +26,7 @@
             <th class="text-center">{{ l('کد سفارش') }}</th>
             <th class="text-center">{{ l('مشتری') }}</th>
             <th class="text-center">{{ l('تعداد اقلام') }}</th>
-            <th class="text-center">{{ l('مبلغ نهایی') }}</th>
+            <th class="text-center">{{ l('مبلغ پرداختی') }}</th>
             <th class="text-center">{{ l('وضعیت') }}</th>
             <th class="text-center">{{ l('تاریخ') }}</th>
         </tr>
@@ -87,22 +87,34 @@
                 </td>
 
                 <td class="text-center">
-                {{ number_format((int) $order->total_price) }}
-                @if($order->hasDiscount())
-                    {{-- مدیر باید بفهمد این مبلغ چرا از جمع اقلام کمتر است --}}
-                    <div class="text-success" style="font-size:0.72rem;">
-                        <i class="fas fa-tag"></i> {{ $order->discount_code }}
-                        (−{{ number_format((int) $order->discount_amount) }})
-                    </div>
-                @endif
+                    <b>{{ number_format((int) $order->total_price) }}</b>
+                    @if($order->hasDiscount())
+                        {{-- مدیر باید بفهمد این مبلغ چرا از جمع اقلام کمتر است --}}
+                        <div class="text-success" style="font-size:0.72rem;">
+                            <i class="fas fa-tag"></i> {{ $order->discount_code }}
+                            (−{{ number_format((int) $order->discount_amount) }})
+                        </div>
+                    @endif
+                    @if((int) $order->shipping_price > 0)
+                        <div class="text-muted" style="font-size:0.72rem;">
+                            {{ l('اقلام') }}: {{ number_format((int) $order->final_price) }}
+                            + {{ l('ارسال') }}: {{ number_format((int) $order->shipping_price) }}
+                        </div>
+                    @endif
                 </td>
 
-
-
                 <td class="text-center">
-                    <span class="badge bg-info">
+                    {{-- همه‌ی وضعیت‌ها یک رنگ بودند و لیست از یک نگاه خوانده نمی‌شد --}}
+                    <span class="badge {{ $order->statusBadgeClass() }}">
                         {{ $order->status() }}
                     </span>
+                    @if($order->pendingReceipt)
+                        {{-- رسید دستیِ تعیین‌تکلیف‌نشده؛ کاری که روی زمین مانده --}}
+                        <a href="/admin/payment/list?status=pending&order_id={{ $order->id }}"
+                           class="badge bg-warning text-dark d-block mt-1 text-decoration-none">
+                            <i class="fa fa-receipt me-1"></i>{{ l('رسید در انتظار بررسی') }}
+                        </a>
+                    @endif
                 </td>
 
                 <td class="text-center">

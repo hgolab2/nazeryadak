@@ -45,15 +45,13 @@
 
             <div class="col-md-6 col-lg-3 col-sm-12 mt-3">
                 <label class="form-label fw-bold">{{ l('وضعیت سفارش') }}</label>
+                {{-- فهرست از مدل می‌آید؛ نسخه‌ی دستیِ قبلی «مرجوع شده» و
+                     «پرداخت ناموفق» را نداشت و آن سفارش‌ها قابل فیلتر نبودند --}}
                 <select name="status" id="status" class="form-control">
                     <option value="">{{ l('همه') }}</option>
-                    <option value="pending">در انتظار پرداخت</option>
-                    <option value="awaiting_call">در انتظار تماس کارشناس</option>
-                    <option value="paid">پرداخت شده</option>
-                    <option value="processing">در حال آماده‌سازی</option>
-                    <option value="shipped">ارسال شده</option>
-                    <option value="delivered">تحویل داده شده</option>
-                    <option value="canceled">لغو شده</option>
+                    @foreach(\App\Models\Order::STATUSES as $key => $label)
+                        <option value="{{ $key }}">{{ $label }}</option>
+                    @endforeach
                 </select>
             </div>
             <div class="col-md-6 col-lg-3 col-sm-12 mt-3">
@@ -165,38 +163,6 @@
         });
     }
 
-    function display(id) {
-        $.get("/admin/order/display/" + id , function (data, status) {
-            if (status == 'success') {
-                CheckSend()
-                toast({
-                    type: 'success',
-                    title: data.result
-                });
-            } else {
-                toast({
-                    type: 'error',
-                    title: '{{l('عملیات با مشکل مواجه شد!')}}'
-                });
-            }
-        });
-    }
-    function first(id) {
-        $.get("/admin/order/first/" + id , function (data, status) {
-            if (status == 'success') {
-                CheckSend()
-                toast({
-                    type: 'success',
-                    title: data.result
-                });
-            } else {
-                toast({
-                    type: 'error',
-                    title: '{{l('عملیات با مشکل مواجه شد!')}}'
-                });
-            }
-        });
-    }
     const toast = swal.mixin({
         toast: true,
         position: 'bottom-left',

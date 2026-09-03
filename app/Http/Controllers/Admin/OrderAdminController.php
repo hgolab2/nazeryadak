@@ -2,15 +2,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Enums\OrderItem;
 use App\Models\Order;
 use App\Models\Customer;
 use App\Models\CustomerAddress;
 use App\Support\Mobile;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rules\Enum;
 use Illuminate\Validation\Rules\Password as PasswordRule;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -23,16 +22,20 @@ class OrderAdminController extends Controller
         if (!Auth::user()) return redirect('/login');
         access(388);
 
-        $query = Order::with(['customer', 'items']);
+        // pendingReceipt هم eager می‌شود تا مدیر در همان لیست ببیند کدام سفارش
+        // رسید بررسی‌نشده دارد
+        $query = Order::with(['customer', 'items', 'pendingReceipt']);
 
-        // فیلترها
+        // فیلترها — کادرهای جستجو با ارقام فارسی هم پر می‌شوند و بدون تبدیل،
+        // جستجو همیشه «موردی یافت نشد» می‌داد
         if ($request->filled('order_id')) {
-            $query->where('id', $request->order_id);
+            $query->where('id', (int) toLatinDigits($request->input('order_id')));
         }
 
         if ($request->filled('phone')) {
-            $query->whereHas('customer', function ($q) use ($request) {
-                $q->where('phone', 'like', "%{$request->phone}%");
+            $phone = toLatinDigits($request->input('phone'));
+            $query->whereHas('customer', function ($q) use ($phone) {
+                $q->where('phone', 'like', "%{$phone}%");
             });
         }
 
@@ -40,13 +43,20 @@ class OrderAdminController extends Controller
             $query->where('status', $request->status);
         }
 
-        $query->orderBy(
-            $request->order ?? 'id',
-            $request->orderby ?? 'desc'
-        );
+        // نام ستون مستقیم از کوئری‌استرینگ به SQL می‌رفت؛ هر مقدار نامعتبری
+        // لیست را با خطای دیتابیس می‌شکست
+        $sortable = ['id', 'total_price', 'final_price', 'status', 'created_at'];
+        $sort = in_array($request->input('order'), $sortable, true) ? $request->input('order') : 'id';
+        $dir  = strtolower((string) $request->input('orderby')) === 'asc' ? 'asc' : 'desc';
 
-        $totalCount = $query->count();
-        $model = $query->paginate($request->showcount ?? 20);
+        $query->orderBy($sort, $dir);
+
+        $perPage = (int) $request->input('showcount', 20);
+        $perPage = in_array($perPage, [10, 20, 50, 100], true) ? $perPage : 20;
+
+        // paginate خودش تعداد کل را می‌شمارد؛ count() جداگانه یک کوئری اضافه بود
+        $model      = $query->paginate($perPage);
+        $totalCount = $model->total();
 
         if ($request->ajax()) {
             $view = view('order.admin.list_type', compact('model', 'totalCount'))->render();
@@ -78,31 +88,25 @@ class OrderAdminController extends Controller
         if (!Auth::user()) return redirect('/login');
         access(388);
 
-        $validator = Validator::make($request->all(), [
-            'customer_id' => 'required|exists:customers,id',
-            'address_id' => 'nullable|exists:customer_addresses,id',
-            'shipping_method_id' => 'required|exists:shipping_methods,id',
-            'shipping_price' => 'nullable|integer|min:0',
-            'total_price' => 'required|integer|min:0',
-            'final_price' => 'required|integer|min:0',
-            'status' => 'required|string',
-        ]);
+        $validator = Validator::make($request->all(), $this->orderRules(), $this->orderMessages());
 
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput();
         }
 
-        Order::create($request->only([
+        $order = new Order($request->only([
             'customer_id',
             'address_id',
             'shipping_method_id',
-            'shipping_price',
-            'total_price',
             'final_price',
             'status',
         ]));
 
-        return redirect('/admin/orders/list')
+        $order->shipping_price = (int) $request->input('shipping_price', 0);
+        $order->recalculateTotals();
+        $order->save();
+
+        return redirect('/admin/order/list')
             ->with('success', 'سفارش با موفقیت ثبت شد');
     }
 
@@ -130,15 +134,7 @@ class OrderAdminController extends Controller
 
         $order = Order::findOrFail($id);
 
-        $validator = Validator::make($request->all(), [
-            'customer_id' => 'required|exists:customers,id',
-            'address_id' => 'nullable|exists:customer_addresses,id',
-            'shipping_method_id' => 'required|exists:shipping_methods,id',
-            'shipping_price' => 'nullable|integer|min:0',
-            'total_price' => 'required|integer|min:0',
-            'final_price' => 'required|integer|min:0',
-            'status' => 'required|string',
-        ]);
+        $validator = Validator::make($request->all(), $this->orderRules(), $this->orderMessages());
 
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput();
@@ -146,15 +142,17 @@ class OrderAdminController extends Controller
 
         $previousStatus = $order->status;
 
-        $order->update($request->only([
+        $order->fill($request->only([
             'customer_id',
             'address_id',
             'shipping_method_id',
-            'shipping_price',
-            'total_price',
             'final_price',
             'status',
         ]));
+
+        $order->shipping_price = (int) $request->input('shipping_price', 0);
+        $order->recalculateTotals();
+        $order->save();
 
         // اطلاع‌رسانی فقط وقتی وضعیت واقعا عوض شده باشد؛ ویرایش مبلغ یا آدرس
         // نباید برای مشتری پیامک بفرستد. خطای درگاه هم نباید ذخیره را بشکند.
@@ -169,7 +167,7 @@ class OrderAdminController extends Controller
             }
         }
 
-        return redirect('/admin/orders/list')
+        return redirect('/admin/order/list')
             ->with('success', 'سفارش با موفقیت بروزرسانی شد');
     }
 
@@ -244,9 +242,80 @@ class OrderAdminController extends Controller
         if (!Auth::user()) return redirect('/login');
         access(388);
 
-        Order::findOrFail($id)->delete();
+        $order = Order::findOrFail($id);
+
+        // جدول‌ها MyISAM هستند و کلید خارجیِ آبشاری ندارند؛ بدون این دو خط،
+        // اقلام و پرداخت‌های سفارشِ حذف‌شده برای همیشه یتیم می‌ماندند
+        DB::table('order_items')->where('order_id', $order->id)->delete();
+        DB::table('payments')->where('order_id', $order->id)->delete();
+
+        $order->delete();
 
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * صفحه‌ی مشاهده‌ی سفارش.
+     *
+     * لینک «مشاهده» در لیست به /admin/order/show/{id} می‌رفت که هیچ مسیری
+     * برایش تعریف نشده بود و ۴۰۴ می‌داد؛ یعنی مدیر هیچ صفحه‌ای برای دیدن
+     * اقلام، آدرس و پرداخت‌های یک سفارش نداشت.
+     */
+    public function admin_show($id)
+    {
+        if (!Auth::user()) return redirect('/login');
+        access(388);
+
+        $order = Order::with([
+            'customer',
+            'address.province',
+            'items.product',
+            'payments.reviewer',
+            'shippingMethod',
+        ])->find($id);
+
+        if (! $order) {
+            return redirect('/admin/order/list')
+                ->with('error', 'سفارشی با شناسه‌ی ' . (int) $id . ' پیدا نشد.');
+        }
+
+        return view('order.admin.show', compact('order'));
+    }
+
+    /**
+     * قوانین اعتبارسنجی مشترک ثبت و ویرایش سفارش.
+     *
+     * total_price اینجا نیست: مبلغ پرداختی از روی اقلام، تخفیف و هزینه‌ی
+     * ارسال در Order::recalculateTotals() ساخته می‌شود، نه از فرم.
+     */
+    private function orderRules(): array
+    {
+        return [
+            'customer_id'        => 'required|exists:customers,id',
+            'address_id'         => 'nullable|exists:customer_addresses,id',
+            // جدول shipping_methods خالی است و فرم هم چنین فیلدی ندارد؛ با
+            // required بودنِ قبلی هیچ سفارشی از پنل ذخیره یا ویرایش نمی‌شد
+            'shipping_method_id' => 'nullable|exists:shipping_methods,id',
+            'shipping_price'     => 'nullable|integer|min:0',
+            'final_price'        => 'required|integer|min:0',
+            'status'             => 'required|string|in:' . implode(',', array_keys(Order::STATUSES)),
+        ];
+    }
+
+    private function orderMessages(): array
+    {
+        return [
+            'customer_id.required'    => 'مشتری سفارش را انتخاب کنید.',
+            'customer_id.exists'      => 'مشتری انتخاب‌شده وجود ندارد.',
+            'address_id.exists'       => 'آدرس انتخاب‌شده ثبت نشده است.',
+            'shipping_price.integer'  => 'هزینه ارسال باید عدد باشد.',
+            'shipping_price.min'      => 'هزینه ارسال نمی‌تواند منفی باشد.',
+            'final_price.required'    => 'جمع کل اقلام را وارد کنید.',
+            'final_price.integer'     => 'جمع کل اقلام باید عدد باشد.',
+            'final_price.min'         => 'جمع کل اقلام نمی‌تواند منفی باشد.',
+            'status.required'         => 'وضعیت سفارش را انتخاب کنید.',
+            'status.in'               => 'وضعیت انتخاب‌شده معتبر نیست.',
+        ];
     }
 
     /** لیست مشتریان */

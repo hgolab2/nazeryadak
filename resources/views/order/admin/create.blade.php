@@ -19,6 +19,19 @@
     </h2>
 </div>
 
+@if(isset($errors) && $errors->any())
+{{-- بدون این بلوک، فرم بعد از خطای اعتبارسنجی بی‌هیچ پیامی برمی‌گشت و
+     مدیر فکر می‌کرد ذخیره انجام شده است --}}
+<div class="alert alert-danger">
+    <p class="mb-2 fw-bold"><i class="fa fa-exclamation-triangle me-1"></i> ذخیره انجام نشد:</p>
+    <ul class="mb-0 ps-3">
+        @foreach($errors->all() as $error)
+            <li>{{ $error }}</li>
+        @endforeach
+    </ul>
+</div>
+@endif
+
 <form method="POST"
       action="{{ !empty($model) ? url('/admin/order/update/'.$model->id) : url('/admin/order/store') }}">
     @csrf
@@ -48,9 +61,12 @@
                     <option value="">{{ l('انتخاب آدرس') }}</option>
                     @if(!empty($addresses))
                         @foreach($addresses as $address)
+                            {{-- CustomerAddress ستون title ندارد و همه‌ی
+                                 گزینه‌ها «آدرس #x» می‌شدند؛ از روی خود آدرس
+                                 نوشته می‌شود تا قابل تشخیص باشند --}}
                             <option value="{{ $address->id }}"
-                                {{ ($model->address_id ?? null) == $address->id ? 'selected' : '' }}>
-                                {{ $address->title ?? 'آدرس #' . $address->id }}
+                                {{ old('address_id', $model->address_id ?? null) == $address->id ? 'selected' : '' }}>
+                                {{ trim(implode('، ', array_filter([$address->city, $address->address_line]))) ?: 'آدرس #' . $address->id }}
                             </option>
                         @endforeach
                     @endif
@@ -70,23 +86,9 @@
             <div class="col-md-4 mb-3">
                 <label class="form-label fw-bold">{{ l('وضعیت سفارش') }}</label>
                 <select name="status" class="form-control" required>
-                    @php
-                        $statuses = [
-                            'pending' => 'در انتظار پرداخت',
-                            'awaiting_call' => 'در انتظار تماس کارشناس',
-                            'paid' => 'پرداخت شده',
-                            'processing' => 'در حال آماده‌سازی',
-                            'shipped' => 'ارسال شده',
-                            'delivered' => 'تحویل داده شده',
-                            'canceled' => 'لغو شده',
-                            'returned' => 'مرجوع شده',
-                            'failed' => 'پرداخت ناموفق',
-                        ];
-                    @endphp
-
-                    @foreach($statuses as $key => $label)
+                    @foreach(\App\Models\Order::STATUSES as $key => $label)
                         <option value="{{ $key }}"
-                            {{ ($model->status ?? 'pending') == $key ? 'selected' : '' }}>
+                            {{ old('status', $model->status ?? 'pending') == $key ? 'selected' : '' }}>
                             {{ $label }}
                         </option>
                     @endforeach
@@ -96,14 +98,18 @@
             {{-- مبلغ‌ها --}}
             <div class="col-md-4 mb-3">
                 <label class="form-label fw-bold">{{ l('جمع کل اقلام') }}</label>
-                <input type="number" name="total_price" class="form-control"
-                       value="{{ old('total_price', $model->total_price ?? 0) }}">
+                <input type="number" name="final_price" class="form-control" min="0" required
+                       value="{{ old('final_price', $model->final_price ?? 0) }}">
+                <div class="form-text">{{ l('مبلغ قطعات پیش از تخفیف و بدون هزینه ارسال') }}</div>
             </div>
 
             <div class="col-md-4 mb-3">
-                <label class="form-label fw-bold">{{ l('مبلغ نهایی') }}</label>
-                <input type="number" name="final_price" class="form-control"
-                       value="{{ old('final_price', $model->final_price ?? 0) }}">
+                <label class="form-label fw-bold">{{ l('مبلغ پرداختی') }}</label>
+                <input type="text" class="form-control bg-light"
+                       value="{{ number_format((int) ($model->total_price ?? 0)) }}" readonly>
+                {{-- دستی وارد نمی‌شود؛ هنگام ذخیره از «اقلام − تخفیف + ارسال»
+                     ساخته می‌شود تا فاکتور با خودش ناسازگار نشود --}}
+                <div class="form-text">{{ l('هنگام ذخیره از روی اقلام، تخفیف و هزینه ارسال محاسبه می‌شود') }}</div>
             </div>
 
             @if(!empty($model) && $model->hasDiscount())

@@ -75,6 +75,9 @@
 <a href="/admin/user/list" class="admin-menu-item {{ ($menu ?? '') == 'user/list' ? 'active' : '' }}">
     <i class="fas fa-user-cog"></i> کاربران سیستم
 </a>
+<a href="/admin/sms" class="admin-menu-item {{ ($menu ?? '') == 'sms/list' ? 'active' : '' }}">
+    <i class="fas fa-comment-sms"></i> مدیریت پیامک‌ها
+</a>
 
 <div style="padding:15px 18px; margin-top:20px; border-top:1px solid rgba(255,255,255,0.08);">
     <a href="/" target="_blank" class="admin-menu-item" style="padding:8px 0; color:rgba(255,255,255,0.5); font-size:0.75rem;">

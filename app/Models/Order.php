@@ -225,41 +225,40 @@ class Order extends Model
         return ! in_array((string) $this->status, ['paid', 'shipped', 'delivered', 'canceled', 'returned'], true);
     }
 
+    /**
+     * وضعیت‌های مجاز سفارش و برچسب فارسی هرکدام.
+     *
+     * فهرست پیش از این سه جا تکرار شده بود (این متد، فیلتر لیست پنل و فرم
+     * ویرایش) و از هم عقب افتاده بودند؛ فیلترِ لیست دو وضعیت را نداشت.
+     */
+    public const STATUSES = [
+        'pending'       => 'در انتظار پرداخت',
+        // سفارشی که بدون پرداخت آنلاین ثبت شده و منتظر تماس کارشناس است
+        'awaiting_call' => 'در انتظار تماس کارشناس',
+        'paid'          => 'پرداخت شده',
+        'processing'    => 'در حال آماده‌سازی',
+        'shipped'       => 'ارسال شده',
+        'delivered'     => 'تحویل داده شده',
+        'canceled'      => 'لغو شده',
+        'returned'      => 'مرجوع شده',
+        'failed'        => 'پرداخت ناموفق',
+    ];
+
     public function status()
     {
-        switch ($this->status) {
+        return self::STATUSES[$this->status] ?? 'نامشخص';
+    }
 
-            case 'pending':
-                return 'در انتظار پرداخت';
-
-            // سفارشی که بدون پرداخت آنلاین ثبت شده و منتظر تماس کارشناس است
-            case 'awaiting_call':
-                return 'در انتظار تماس کارشناس';
-
-            case 'paid':
-                return 'پرداخت شده';
-
-            case 'processing':
-                return 'در حال آماده‌سازی';
-
-            case 'shipped':
-                return 'ارسال شده';
-
-            case 'delivered':
-                return 'تحویل داده شده';
-
-            case 'canceled':
-                return 'لغو شده';
-
-            case 'returned':
-                return 'مرجوع شده';
-
-            case 'failed':
-                return 'پرداخت ناموفق';
-
-            default:
-                return 'نامشخص';
-        }
+    /** کلاس رنگ نشان وضعیت در پنل مدیریت. */
+    public function statusBadgeClass(): string
+    {
+        return match ($this->status) {
+            'paid', 'delivered'      => 'bg-success',
+            'processing', 'shipped'  => 'bg-primary',
+            'canceled', 'failed'     => 'bg-danger',
+            'returned'               => 'bg-dark',
+            default                  => 'bg-warning text-dark',
+        };
     }
 
 }
