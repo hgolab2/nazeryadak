@@ -40,9 +40,20 @@ class ImportController extends Controller
         $file = $request->file('file');
 
         try {
-            $result = $importer->import($file->getRealPath(), $file->getClientOriginalName(), (int) $user->user_id, true);
+            $result = $importer->import(
+                $file->getRealPath(),
+                $file->getClientOriginalName(),
+                (int) $user->user_id,
+                true,
+                $request->boolean('clear_discounts')
+            );
 
-            return back()->with('success', "عملیات با موفقیت انجام شد. {$result['imported']} محصول جدید اضافه و {$result['updated']} محصول بروزرسانی شد. {$result['deleted']} رکورد تکراری حذف شد. {$result['deactivated']} محصول دارای SKU که خارج از فایل بود ناموجود شد. {$result['categories']} دسته‌بندی خودرو ایجاد/بررسی شد.");
+            $message = "عملیات با موفقیت انجام شد. {$result['imported']} محصول جدید اضافه و {$result['updated']} محصول بروزرسانی شد. {$result['deleted']} رکورد تکراری حذف شد. {$result['deactivated']} محصول دارای SKU که خارج از فایل بود ناموجود شد. {$result['categories']} دسته‌بندی خودرو ایجاد/بررسی شد.";
+            if ($result['discounts_cleared'] > 0) {
+                $message .= " تخفیف {$result['discounts_cleared']} محصول صفر شد.";
+            }
+
+            return back()->with('success', $message);
         } catch (\Throwable $e) {
             return back()->with('error', 'خطا در پردازش فایل: ' . $e->getMessage());
         }

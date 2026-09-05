@@ -178,6 +178,40 @@ class ProductStockImportTest extends TestCase
         $this->assertSame((int) round($base * 75 / 100), (int) $product->price);
     }
 
+    /**
+     * تیک «صفر کردن تخفیف‌های قبلی» فرم ایمپورت: درصدهای ثبت‌شده پاک می‌شوند و
+     * قیمت به مقدار پیش از تخفیف برمی‌گردد — حتی برای محصولی که در فایل نیست.
+     */
+    public function test_clear_discounts_option_zeroes_previous_percentages(): void
+    {
+        $importer = app(ProductStockImportService::class);
+        $path = $this->excel([
+            ['1014', 'واترپمپ', 'عدد', 'سمند', '5', '1,000,000', '1,000,000'],
+        ]);
+
+        $importer->import($path);
+        $inFile = Product::where('sku', '1014')->first();
+        $inFile->applyDiscountPercent(25);
+        $inFile->save();
+
+        // محصولی که در فایل نیست و تخفیف دستی ۱۵٪ دارد
+        $outside = Product::create(['sku' => '9999', 'title' => 'لنت', 'price' => 200000]);
+        $outside->applyDiscountPercent(15);
+        $outside->save();
+        $this->assertSame(170000, (int) $outside->price);
+
+        $importer->import($path, null, null, false, true);
+
+        $inFile = $inFile->fresh();
+        $this->assertSame(0, (int) $inFile->discount_percent);
+        $this->assertSame(120000, (int) $inFile->price);
+
+        $outside = $outside->fresh();
+        $this->assertSame(0, (int) $outside->discount_percent);
+        $this->assertSame(200000, (int) $outside->price);
+        $this->assertNull($outside->compare_at_price);
+    }
+
     public function test_missing_prices_stay_zero(): void
     {
         $path = $this->excel([

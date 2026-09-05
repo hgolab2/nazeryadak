@@ -39,7 +39,7 @@ class ProductStockImportService
      */
     private const RIAL_TO_TOMAN = 10;
 
-    public function import(string $path, ?string $fileName = null, ?int $userId = null, bool $deactivateMissing = false): array
+    public function import(string $path, ?string $fileName = null, ?int $userId = null, bool $deactivateMissing = false, bool $clearDiscounts = false): array
     {
         $skipped = 0;
         $rowsData = $this->parseRows($path, $skipped);
@@ -48,6 +48,10 @@ class ProductStockImportService
 
         $carModelNames = array_values(array_unique(array_filter(array_column($rowsData, 'car_model'))));
         $catMap = $this->ensureCarCategories($carModelNames);
+
+        // پیش از خواندن محصولات، وگرنه نسخه‌ی درون حافظه هنوز درصد قدیمی را
+        // دارد و حلقه‌ی زیر همان تخفیف را دوباره روی قیمت تازه می‌نشاند.
+        $discountsCleared = $clearDiscounts ? $this->clearDiscounts($now) : 0;
 
         $existing = Product::whereIn('sku', $allSkus)
             ->get()
@@ -162,10 +166,29 @@ class ProductStockImportService
             'deleted' => count($idsToDelete),
             'deactivated' => $deactivated,
             'price_points' => $pricePoints,
+            'discounts_cleared' => $discountsCleared,
             'skipped' => $skipped,
             'total' => count($rowsData),
             'categories' => count($catMap),
         ];
+    }
+
+    /**
+     * صفرکردن تخفیف‌های ثبت‌شده‌ی قبلی؛ تیک اختیاری فرم ایمپورت.
+     *
+     * قیمت به مقدار پیش از تخفیف برمی‌گردد، چون price همیشه قیمتِ تخفیف‌خورده
+     * است و با صفرکردنِ تنها درصد، کالا برای همیشه با قیمت تخفیفی می‌ماند بی‌آنکه
+     * جایی تخفیفی دیده شود. برای محصولات داخل فایل تفاوتی ندارد؛ قیمتشان چند خط
+     * پایین‌تر از نو نوشته می‌شود.
+     */
+    private function clearDiscounts($now): int
+    {
+        return Product::where('discount_percent', '>', 0)->update([
+            'price'            => DB::raw('CASE WHEN compare_at_price > 0 THEN compare_at_price ELSE price END'),
+            'compare_at_price' => null,
+            'discount_percent' => 0,
+            'updated_at'       => $now,
+        ]);
     }
 
     private function parseRows(string $path, int &$skipped = 0): array

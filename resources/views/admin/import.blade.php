@@ -57,6 +57,16 @@
                     </div>
                 </div>
 
+                <div class="form-check mt-3 p-3" style="background:#f5f5f5; border-radius:8px; border:1px solid #e0e0e0;">
+                    <input class="form-check-input" type="checkbox" name="clear_discounts" value="1" id="clearDiscounts">
+                    <label class="form-check-label" for="clearDiscounts" style="font-size:0.85rem; font-weight:600;">
+                        صفر کردن تخفیف‌های قبلی
+                    </label>
+                    <div style="font-size:0.75rem; color:#777; margin-top:4px;">
+                        درصدهای تخفیفی که قبلا روی محصولات ثبت شده (مثل ۱۵٪ و ۲۵٪) صفر می‌شود و قیمت هر کالا به مقدار پیش از تخفیف برمی‌گردد. تخفیف خودکارِ خودِ ایمپورت جدا از این است و همیشه اعمال می‌شود.
+                    </div>
+                </div>
+
                 <div class="mt-3 p-3" style="background:#fff8e1; border-radius:8px; border:1px solid #ffe082;">
                     <p style="font-size:0.82rem; color:#e65100; margin:0;">
                         <i class="fas fa-info-circle me-1"></i>
