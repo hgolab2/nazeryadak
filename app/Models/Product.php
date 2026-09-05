@@ -19,7 +19,14 @@ class Product extends Model
      * ضریب قیمت خرده‌فروشی روی قیمت فایل اکسل (همان ضریبی که
      * ProductStockImportService هنگام ایمپورت اعمال می‌کند).
      */
-    public const RETAIL_MARKUP = 1.3;
+    public const RETAIL_MARKUP = 1.2;
+
+    /**
+     * سقف درصد پاداش تصادفی ایمپورت: بین صفر تا این عدد روی قیمت نشانده
+     * می‌شود و دقیقا همان مبلغ به‌عنوان تخفیف کسر می‌گردد، پس قیمت پرداختی
+     * همان RETAIL_MARKUP می‌ماند و فقط تخفیف روی کارت محصول دیده می‌شود.
+     */
+    public const IMPORT_BONUS_MAX_PERCENT = 5;
 
     /** ضریب قیمت عمده روی قیمت فایل اکسل؛ ۱۰٪ بالاتر از قیمت خرید. */
     public const WHOLESALE_MARKUP = 1.1;
@@ -48,6 +55,7 @@ class Product extends Model
         'price',
         'regular_price',
         'compare_at_price',
+        'import_bonus_percent',
         'discount_percent',
         'is_special_offer',
         'wholesale_min_qty',
@@ -76,6 +84,7 @@ class Product extends Model
         'price'         => 'integer',
         'regular_price' => 'integer',
         'compare_at_price' => 'integer',
+        'import_bonus_percent' => 'integer',
         'discount_percent' => 'integer',
         'is_special_offer' => 'boolean',
         'wholesale_enabled' => 'boolean',
@@ -255,6 +264,31 @@ class Product extends Model
     public function category()
     {
         return $this->categories();
+    }
+
+    /** بازدید روزانه؛ یک ردیف برای هر روزی که این محصول دیده شده. */
+    public function dailyViews()
+    {
+        return $this->hasMany(ProductView::class);
+    }
+
+    /**
+     * فقط محصول‌های عکس‌دار.
+     *
+     * «عکس‌دار» یعنی همان چیزی که image() برمی‌گرداند تصویر واقعی باشد نه
+     * no-image.svg: یا file_path پر است، یا ردیفی در product_images دارد.
+     * فیلترِ تنها روی file_path، محصول‌هایی را که عکسشان از پنل آپلود شده
+     * جا می‌انداخت.
+     */
+    public function scopeWithImage($query)
+    {
+        return $query->where(function ($q) {
+            $q->where(function ($inner) {
+                $inner->whereNotNull('file_path')
+                      ->where('file_path', '!=', '')
+                      ->where('file_path', '!=', '/images/no-image.svg');
+            })->orWhereHas('images');
+        });
     }
 
     /** تاریخچه‌ی قیمت، از قدیم به جدید — همان ترتیبی که نمودار لازم دارد. */
@@ -648,7 +682,7 @@ class Product extends Model
     /**
      * قیمت هر واحد در خرید عمده: ۱۰٪ بالاتر از قیمت فایل اکسل.
      *
-     * قیمت فروش سایت همان قیمت اکسل با ضریب ۱.۳ است، پس قیمت عمده از روی
+     * قیمت فروش سایت همان قیمت اکسل با ضریب ۱.۲ است، پس قیمت عمده از روی
      * قیمتِ پیش از تخفیف بازسازی می‌شود؛ اگر مبنا را قیمتِ تخفیف‌خورده
      * بگیریم، تخفیف دوبار اعمال می‌شود.
      */
@@ -665,6 +699,14 @@ class Product extends Model
         $base = (int) ($this->compare_at_price ?: $this->price);
         if ($base <= 0) {
             return 0;
+        }
+
+        // پاداش تصادفی ایمپورت روی قیمتِ پیش از تخفیف نشسته ولی بخشی از قیمت
+        // اکسل نیست؛ اگر برداشته نشود، قیمت عمده تا ۵٪ بالاتر از ضریب واقعی
+        // درمی‌آمد.
+        $bonus = min(100, max(0, (int) $this->import_bonus_percent));
+        if ($bonus > 0) {
+            $base = $base * 100 / (100 + $bonus);
         }
 
         return (int) round($base / self::RETAIL_MARKUP * self::WHOLESALE_MARKUP);

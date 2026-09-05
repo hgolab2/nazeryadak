@@ -6,6 +6,7 @@ use App\Enums\ProductCategory;
 use App\Models\Category;
 use App\Models\EshopCategory;
 use App\Models\ProductReview;
+use App\Models\ProductView;
 use App\Support\CarModels;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
@@ -416,6 +417,13 @@ class ProductController extends Controller
         if ($currentPath !== ltrim($model->url(), '/')) {
             return redirect($model->url(), 301);
         }
+        /*
+        | ثبت بازدید بعد از بررسی کانونیکال انجام می‌شود: درخواستی که 301
+        | می‌خورد صفحه‌ی محصول را ندیده و شمردنش هر بازدید را دو بار حساب
+        | می‌کرد (یک بار روی آدرس بدون اسلاگ، یک بار روی مقصد).
+        */
+        ProductView::record($model, request());
+
         $products = $this->relatedProducts($model, 8);
         $priceHistory = $this->priceHistoryPoints($model);
 

@@ -34,6 +34,7 @@ class WholesalePricingTest extends TestCase
             $table->integer('price')->default(0);
             $table->integer('regular_price')->default(0);
             $table->integer('compare_at_price')->nullable();
+            $table->integer('import_bonus_percent')->default(0);
             $table->integer('discount_percent')->default(0);
             $table->boolean('is_special_offer')->default(false);
             $table->integer('wholesale_min_qty')->nullable();
@@ -101,8 +102,23 @@ class WholesalePricingTest extends TestCase
 
     public function test_wholesale_price_is_ten_percent_over_the_excel_price(): void
     {
-        // قیمت سایت = قیمت اکسل × ۱.۳ → اکسل ۱٬۰۰۰٬۰۰۰ / قیمت عمده ۱٬۱۰۰٬۰۰۰
-        $product = $this->product(['price' => 1300000]);
+        // قیمت سایت = قیمت اکسل × ۱.۲ → اکسل ۱٬۰۰۰٬۰۰۰ / قیمت عمده ۱٬۱۰۰٬۰۰۰
+        $product = $this->product(['price' => 1200000]);
+
+        $this->assertSame(1100000, $product->wholesalePrice());
+    }
+
+    /**
+     * پاداش تصادفی ایمپورت روی قیمتِ خط‌خورده می‌نشیند ولی بخشی از قیمت اکسل
+     * نیست؛ قیمت عمده باید همان ۱۰٪ روی قیمت اکسل بماند.
+     */
+    public function test_wholesale_price_ignores_the_random_import_bonus(): void
+    {
+        $product = $this->product([
+            'price' => 1200000,
+            'compare_at_price'     => 1260000,
+            'import_bonus_percent' => 5,
+        ]);
 
         $this->assertSame(1100000, $product->wholesalePrice());
     }
@@ -170,7 +186,7 @@ class WholesalePricingTest extends TestCase
     public function test_auto_values_ignore_the_stored_ones(): void
     {
         $product = $this->product([
-            'price' => 1300000,
+            'price' => 1200000,
             'wholesale_min_qty' => 3,
             'wholesale_price'   => 800000,
         ]);
@@ -179,8 +195,8 @@ class WholesalePricingTest extends TestCase
         $this->assertSame(800000, $product->wholesalePrice());
         $this->assertSame(1100000, $product->autoWholesalePrice());
 
-        // ۲۰٬۰۰۰٬۰۰۰ ÷ ۱٬۳۰۰٬۰۰۰ = ۱۵.۳ → ۱۶
-        $this->assertSame(16, $product->autoWholesaleMinQty());
+        // ۲۰٬۰۰۰٬۰۰۰ ÷ ۱٬۲۰۰٬۰۰۰ = ۱۶.۶ → ۱۷
+        $this->assertSame(17, $product->autoWholesaleMinQty());
     }
 
     public function test_disabled_flag_turns_wholesale_off(): void

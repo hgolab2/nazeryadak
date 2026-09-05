@@ -24,6 +24,15 @@ class ProductStockImportService
     private const PRICE_MARKUP = Product::RETAIL_MARKUP;
 
     /**
+     * سقف پاداش تصادفی. روی قیمتِ ۲۰٪‌شده بین صفر تا این درصد اضافه می‌شود و
+     * دقیقا همان مبلغ به‌عنوان تخفیف کسر می‌گردد؛ یعنی قیمت پرداختی همان
+     * قیمتِ ضریب‌خورده می‌ماند و فقط قیمتِ خط‌خورده و درصد تخفیف روی کارت
+     * محصول دیده می‌شود. درصد در ستون import_bonus_percent می‌ماند تا قیمت
+     * عمده بتواند مبنایش را از این پاداش پاک کند.
+     */
+    private const BONUS_MAX_PERCENT = Product::IMPORT_BONUS_MAX_PERCENT;
+
+    /**
      * قیمت‌های فایل اکسل به ریال هستند ولی قیمت محصولات در کل سایت تومان است
      * (همان قراردادی که getShippingRules() برای تنظیمات ارسال دارد). بدون این
      * تبدیل، هر قیمتِ ایمپورت‌شده ده برابر واقعی روی سایت نمایش داده می‌شد.
@@ -54,12 +63,19 @@ class ProductStockImportService
             $matches = $existing->get($sku, collect());
             $product = $this->pickProductToKeep($matches);
 
+            // قیمت پرداختی؛ پاداش تصادفی فقط قیمتِ پیش از تخفیف را بالا می‌برد
+            $listPrice = $this->sitePrice($row['sale_price']);
+            $bonus     = $listPrice > 0 ? random_int(0, self::BONUS_MAX_PERCENT) : 0;
+            $beforeDiscount = $bonus > 0 ? (int) round($listPrice * (100 + $bonus) / 100) : null;
+
             $data = [
                 'sku'           => $sku,
                 'title'         => $row['title'],
                 'slug'          => Str::slug($sku),
-                'price'         => $this->sitePrice($row['sale_price']),
+                'price'         => $listPrice,
                 'regular_price' => $this->sitePrice($row['avg_price']),
+                'compare_at_price'     => $beforeDiscount,
+                'import_bonus_percent' => $bonus,
                 'stock'         => $row['stock'],
                 'unit'          => $row['unit'],
                 'pack_qty'      => $row['pack_qty'],
@@ -69,10 +85,9 @@ class ProductStockImportService
             ];
 
             if ($product) {
-                // قیمت تازه، قیمتِ پیش از تخفیف است؛ اگر محصول تخفیف فعال دارد
-                // باید دوباره روی همین مبنا اعمال شود وگرنه ایمپورت تخفیف را پاک می‌کند.
+                // تخفیف دستی مدیر جای پاداش تصادفی را می‌گیرد: قیمت دوباره روی
+                // همان مبنای تازه حساب می‌شود، وگرنه ایمپورت تخفیف را پاک می‌کرد.
                 $activeDiscount = (int) $product->discount_percent;
-                $product->compare_at_price = null;
                 $product->update($data);
                 if ($activeDiscount > 0) {
                     $product->applyDiscountPercent($activeDiscount);

@@ -33,7 +33,9 @@ class ProductStockImportTest extends TestCase
             $table->integer('price')->default(0);
             $table->integer('regular_price')->default(0);
             $table->integer('compare_at_price')->nullable();
+            $table->integer('import_bonus_percent')->default(0);
             $table->integer('discount_percent')->default(0);
+            $table->boolean('is_special_offer')->default(false);
             $table->boolean('wholesale_enabled')->default(true);
             $table->integer('stock')->default(0);
             $table->string('unit', 50)->nullable();
@@ -111,9 +113,69 @@ class ProductStockImportTest extends TestCase
 
         $product = Product::where('sku', '1001')->first();
 
-        // ۱۰٬۰۰۰٬۰۰۰ ریال = ۱٬۰۰۰٬۰۰۰ تومان × ۱.۳
-        $this->assertSame(1300000, $product->price);
-        $this->assertSame(1560000, $product->regular_price);
+        // ۱۰٬۰۰۰٬۰۰۰ ریال = ۱٬۰۰۰٬۰۰۰ تومان × ۱.۲
+        $this->assertSame(1200000, $product->price);
+        $this->assertSame(1440000, $product->regular_price);
+    }
+
+    /**
+     * روی قیمتِ ۲۰٪‌شده بین ۰ تا ۵ درصد تصادفی اضافه می‌شود و دقیقا همان مبلغ
+     * تخفیف می‌خورد؛ پس قیمت پرداختی همان ۲۰٪ است و فقط قیمت خط‌خورده بالاتر
+     * می‌رود.
+     */
+    public function test_import_adds_a_random_bonus_and_gives_it_back_as_a_discount(): void
+    {
+        $rows = [];
+        for ($i = 0; $i < 30; $i++) {
+            $rows[] = [(string) (2000 + $i), 'قطعه', 'عدد', 'سمند', '5', '1,000,000', '1,000,000'];
+        }
+
+        app(ProductStockImportService::class)->import($this->excel($rows));
+
+        $bonuses = [];
+        foreach (Product::all() as $product) {
+            // قیمت پرداختی دست‌نخورده: ۱۰۰٬۰۰۰ تومان × ۱.۲
+            $this->assertSame(120000, $product->price);
+
+            $bonus = (int) $product->import_bonus_percent;
+            $this->assertGreaterThanOrEqual(0, $bonus);
+            $this->assertLessThanOrEqual(Product::IMPORT_BONUS_MAX_PERCENT, $bonus);
+            $bonuses[$bonus] = true;
+
+            if ($bonus === 0) {
+                $this->assertNull($product->compare_at_price);
+                continue;
+            }
+
+            // مبلغِ اضافه‌شده و مبلغِ تخفیف یکی‌اند
+            $this->assertSame((int) round(120000 * (100 + $bonus) / 100), (int) $product->compare_at_price);
+        }
+
+        // تصادفی است، پس نباید همه‌ی محصولات یک درصد بگیرند
+        $this->assertGreaterThan(1, count($bonuses));
+    }
+
+    /** تخفیف دستی مدیر با ایمپورت بعدی پاک نمی‌شود. */
+    public function test_manual_discount_survives_the_import(): void
+    {
+        $importer = app(ProductStockImportService::class);
+        $path = $this->excel([
+            ['1013', 'دیسک ترمز', 'عدد', 'سمند', '5', '1,000,000', '1,000,000'],
+        ]);
+
+        $importer->import($path);
+        $product = Product::where('sku', '1013')->first();
+        $product->applyDiscountPercent(25);
+        $product->save();
+
+        $importer->import($path);
+        $product = $product->fresh();
+
+        $this->assertSame(25, (int) $product->discount_percent);
+        // مبنای تخفیف، قیمت تازه‌ی ایمپورت با پاداش تصادفی است
+        $base = (int) round(120000 * (100 + (int) $product->import_bonus_percent) / 100);
+        $this->assertSame($base, (int) $product->compare_at_price);
+        $this->assertSame((int) round($base * 75 / 100), (int) $product->price);
     }
 
     public function test_missing_prices_stay_zero(): void
@@ -141,8 +203,8 @@ class ProductStockImportTest extends TestCase
         $importer->import($path);
         $importer->import($path);
 
-        // ۲٬۰۰۰٬۰۰۰ ریال = ۲۰۰٬۰۰۰ تومان × ۱.۳
-        $this->assertSame(260000, Product::where('sku', '1003')->first()->price);
+        // ۲٬۰۰۰٬۰۰۰ ریال = ۲۰۰٬۰۰۰ تومان × ۱.۲
+        $this->assertSame(240000, Product::where('sku', '1003')->first()->price);
     }
 
     /**
@@ -195,7 +257,7 @@ class ProductStockImportTest extends TestCase
         $points  = DB::table('product_price_history')->where('product_id', $product->id)->get();
 
         $this->assertCount(1, $points);
-        $this->assertSame(130000, (int) $points->first()->price);
+        $this->assertSame(120000, (int) $points->first()->price);
         $this->assertSame('import', $points->first()->source);
     }
 
@@ -310,6 +372,6 @@ class ProductStockImportTest extends TestCase
             ->map(fn ($p) => (int) $p)
             ->all();
 
-        $this->assertSame([130000, 260000], $prices);
+        $this->assertSame([120000, 240000], $prices);
     }
 }

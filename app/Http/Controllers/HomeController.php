@@ -18,6 +18,12 @@ use DOMXPath;
 
 class HomeController extends Controller
 {
+    /** کمینه‌ی درصد تخفیف برای راه‌یافتن به ریل «پیشنهاد ویژه» (اکید: بالاتر از این عدد). */
+    private const SPECIAL_OFFER_MIN_DISCOUNT = 3;
+
+    /** پنجره‌ی «پربازدید» برای همان ریل: امروز و دیروز. */
+    private const SPECIAL_OFFER_VIEW_DAYS = 2;
+
     public function fetchPage($url)
     {
         $ch = curl_init();
@@ -55,13 +61,7 @@ class HomeController extends Controller
             ->take(4)
             ->get();
         $products = $this->getProduct(12);
-        $specialProducts = Product::with(['images', 'categories'])
-            ->where('is_active', 1)
-            ->where('is_special_offer', 1)
-            ->where('discount_percent', '>', 0)
-            ->latest('updated_at')
-            ->take(12)
-            ->get();
+        $specialProducts = $this->getSpecialOfferProducts(12);
         $specialHasDiscount = $specialProducts->isNotEmpty();
         if (!$specialHasDiscount) {
             // تا وقتی تخفیفی ثبت نشده، ریل «پیشنهاد ویژه» با منتخب قطعات پر می‌شود
@@ -107,6 +107,45 @@ class HomeController extends Controller
             return Advertisement::where('position' , 5)->where('hidden' , 0)->where('site_id' , langid($lang))->where('startdate'  , '<=' , date('Y-m-d') . ' 00:00:00')->where('enddate'  , '>=' , date('Y-m-d') . ' 23:59:59')->orderBy('priority', 'desc')->orderBy('advertisementid', 'desc')->get();
         });
 
+    }
+
+    /**
+     * ریل «پیشنهاد ویژه»: پربازدیدترین قطعه‌های تخفیف‌دار.
+     *
+     * سه شرط، هر سه لازم:
+     *
+     * ۱) تخفیف بالای SPECIAL_OFFER_MIN_DISCOUNT درصد — تخفیف ۱ یا ۲ درصدی
+     *    روی قطعه‌ی چند میلیونی چند هزار تومان است و «شگفت‌انگیز» نامیدنش
+     *    اعتماد کاربر را می‌برد.
+     *
+     * ۲) عکس‌دار بودن — کارت بدون عکس در اسلایدر یک قاب خالی است و کل ریل را
+     *    بی‌ریخت می‌کند؛ اینجا از همه‌جا مهم‌تر است چون بالای صفحه‌ی اصلی است.
+     *
+     * ۳) ترتیب بر اساس مجموع بازدیدِ SPECIAL_OFFER_VIEW_DAYS روز اخیر —
+     *    یعنی همان قطعه‌هایی که این روزها دنبالشان هستند، نه قدیمی‌ترین
+     *    تخفیف‌های ثبت‌شده. محصولی که در این بازه بازدید ندارد حذف نمی‌شود،
+     *    فقط ته صف می‌رود (مجموعِ خالی در MySQL نال است و در ORDER BY DESC
+     *    آخر می‌نشیند)؛ وگرنه ریل تا انباشته‌شدن آمار بازدید خالی می‌ماند.
+     */
+    public function getSpecialOfferProducts($count)
+    {
+        $since = today()->subDays(self::SPECIAL_OFFER_VIEW_DAYS - 1)->toDateString();
+
+        return Product::with(['images', 'categories'])
+            ->where('is_active', 1)
+            ->where('discount_percent', '>', self::SPECIAL_OFFER_MIN_DISCOUNT)
+            ->withImage()
+            ->withSum(
+                ['dailyViews as recent_views' => fn ($q) => $q->where('viewed_on', '>=', $since)],
+                'hits'
+            )
+            ->orderByDesc('recent_views')
+            // تساوی بازدید (مثلا وقتی همه صفر هستند) نباید ترتیب تصادفی بدهد؛
+            // تخفیف بیشتر جلوتر، و بعد تازه‌ترین تغییر.
+            ->orderByDesc('discount_percent')
+            ->latest('updated_at')
+            ->take($count)
+            ->get();
     }
 
     public function getProduct($count)

@@ -78,7 +78,7 @@
                         <tr>
                             <th>#</th>
                             <th>مشتری</th>
-                            <th>مبلغ</th>
+                            <th>مبلغ پرداختی</th>
                             <th>وضعیت</th>
                             <th>تاریخ</th>
                             <th></th>
@@ -91,23 +91,20 @@
                             <td>{{ $order->customer?->fullName() ?: $order->customer?->phone ?? '—' }}</td>
                             <td>{{ number_format($order->total_price) }} <small class="text-muted">تومان</small></td>
                             <td>
-                                @php
-                                    $statusColors = [
-                                        'pending' => 'background:#fff3e0; color:#e65100;',
-                                        'paid' => 'background:#e8f5e9; color:#2e7d32;',
-                                        'processing' => 'background:#e3f2fd; color:#1565c0;',
-                                        'shipped' => 'background:#f3e5f5; color:#7b1fa2;',
-                                        'delivered' => 'background:#e8f5e9; color:#2e7d32;',
-                                        'failed' => 'background:#fce4ec; color:#c62828;',
-                                        'canceled' => 'background:#f5f5f5; color:#616161;',
-                                    ];
-                                    $sColor = $statusColors[$order->status] ?? 'background:#f5f5f5; color:#616161;';
-                                @endphp
-                                <span class="badge-status" style="{{ $sColor }}">{{ $order->status() }}</span>
+                                {{-- نقشه‌ی رنگ اینجا دستی نوشته شده بود و awaiting_call و
+                                     returned را نداشت؛ همان‌ها در لیست سفارش‌ها رنگ داشتند
+                                     ولی در داشبورد خاکستریِ «لغو شده» می‌شدند --}}
+                                <span class="badge {{ $order->statusBadgeClass() }}">{{ $order->status() }}</span>
+                                @if($order->pendingReceipt)
+                                    <a href="/admin/payment/list?status=pending&order_id={{ $order->id }}"
+                                       class="badge bg-warning text-dark d-block mt-1 text-decoration-none">
+                                        <i class="fa fa-receipt me-1"></i>رسید در انتظار بررسی
+                                    </a>
+                                @endif
                             </td>
-                            <td style="font-size:0.75rem; color:#999;">{{ gregorian_to_jalali2($order->created_at) }}</td>
+                            <td style="font-size:0.75rem; color:#999;">{{ $order->created_at != null ? toPersianDate($order->created_at) : '' }}</td>
                             <td>
-                                <a href="/admin/order/edit/{{ $order->id }}" style="color:var(--admin-primary);">
+                                <a href="/admin/order/show/{{ $order->id }}" style="color:var(--admin-primary);">
                                     <i class="fas fa-eye"></i>
                                 </a>
                             </td>

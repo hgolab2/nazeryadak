@@ -253,7 +253,9 @@ class ProductAdminController extends Controller
         }
 
         // ادمین قیمت فروش تازه را وارد می‌کند، پس مبنای تخفیف باید از نو حساب شود
+        // و پاداش تصادفی ایمپورت هم دیگر روی این قیمت ننشسته است.
         $product->compare_at_price = null;
+        $product->import_bonus_percent = 0;
         $product->update($data);
         $product->applyDiscountPercent($discountPercent);
         $product->save();

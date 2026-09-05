@@ -20,8 +20,10 @@ class DashboardController extends Controller
         $totalCustomers = Customer::count();
         $totalRevenue = Order::where('status', 'paid')->sum('total_price');
 
-        $recentOrders = Order::with('customer')
-            ->latest()
+        // ترتیب و رابطه‌ها مثل /admin/order/list؛ داشبورد بر اساس created_at
+        // مرتب می‌شد و لیست بر اساس id، پس دو صفحه یک چیز نشان نمی‌دادند
+        $recentOrders = Order::with(['customer', 'pendingReceipt'])
+            ->orderByDesc('id')
             ->take(10)
             ->get();
 
