@@ -422,6 +422,32 @@ class SeoAdminController extends Controller
         return back()->with('success', 'وضعیت نظر تغییر کرد.');
     }
 
+    /**
+     * ثبت یا حذف پاسخ فروشگاه به یک نظر.
+     *
+     * فرستادن متن خالی یعنی «پاسخ را بردار»؛ دکمه‌ی جدا برای حذف اضافه نشد
+     * چون همان textarea هر دو کار را انجام می‌دهد.
+     */
+    public function reviewReply(Request $request, $id)
+    {
+        if ($response = $this->guard()) {
+            return $response;
+        }
+
+        $data = $request->validate([
+            'reply' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $reply = trim((string) ($data['reply'] ?? ''));
+
+        ProductReview::findOrFail($id)->update([
+            'reply'      => $reply !== '' ? $reply : null,
+            'replied_at' => $reply !== '' ? now() : null,
+        ]);
+
+        return back()->with('success', $reply !== '' ? 'پاسخ ثبت شد.' : 'پاسخ حذف شد.');
+    }
+
     public function reviewDestroy($id)
     {
         if ($response = $this->guard()) {

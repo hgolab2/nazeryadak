@@ -403,7 +403,10 @@ class ProductController extends Controller
         }
         // approvedReviews همراه محصول لود می‌شود چون هم در صفحه نمایش
         // داده می‌شود و هم seo_product_schema از آن اسکیمای Review می‌سازد.
-        $model = Product::with(['images', 'approvedReviews'])->where('is_active' , 1)->where('id' , $id)->first();
+        // categories هم لازم است: قطعه‌ای که ستون category_id‌اش خالی است،
+        // دسته‌اش را از جدول واسط می‌گیرد و بدون آن، حلقه‌ی دسته در مسیر
+        // راهنما و لینک داخلی به صفحه‌ی دسته‌بندی ساخته نمی‌شود.
+        $model = Product::with(['images', 'approvedReviews', 'categories'])->where('is_active' , 1)->where('id' , $id)->first();
         if(!$model)
         {
             return response()->view('errors.404', [], 404);

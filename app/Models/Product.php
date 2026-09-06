@@ -365,16 +365,51 @@ class Product extends Model
         $code = $this->isaco_code ? ' کد ' . $this->isaco_code : '';
         $prefix = 'خرید ';
 
+        /*
+        | مدل خودرو داخل عنوان.
+        |
+        | یک قطعه‌ی مشترک با چند خودروی مختلف، چند ردیف جدا در انبار دارد که
+        | نام و کد ایساکوی یکسان دارند؛ بدون نام خودرو، عنوانِ هر چند صفحه
+        | دقیقا یکی می‌شد. اندازه‌گیری روی همین انبار: ۷۴۴ صفحه در ۳۳۱ گروهِ
+        | عنوان تکراری (یک گروه ۸ صفحه‌ای). صفحه‌هایی با عنوان یکسان در گوگل
+        | با هم رقابت می‌کنند و معمولا فقط یکی‌شان می‌ماند.
+        |
+        | ضمنا «نام قطعه + نام خودرو» دقیقا شکل جستجوی کاربر است، نه نام
+        | قطعه به‌تنهایی. اگر نام قطعه خودش مدل خودرو را دارد تکرار نمی‌شود.
+        */
+        $name = trim((string) $this->title);
+
         // همان بودجه‌ای که seo_title() برای متن قائل است، منهای پیشوند و کد
         $budget = 60 - mb_strlen(seo_site_name()) - 3 - mb_strlen($prefix) - mb_strlen($code);
 
-        $name = trim((string) $this->title);
+        $car = trim((string) $this->car_model);
+        $normalize = fn (string $text) => preg_replace('/[\s\x{200C}]+/u', '', seo_slug($text, ''));
+
+        /*
+        | خودرو فقط وقتی اضافه می‌شود که در جای باقی‌مانده جا شود.
+        |
+        | چپاندنِ نام خودرو به قیمتِ بریدن بیشترِ نام قطعه، عنوان را بدتر
+        | می‌کند («… غربیلک فرمان (با ای… سمند») — یک عنوان بریده‌ی وسط کلمه
+        | در نتیجه‌ی گوگل بیشتر ضرر می‌زند تا اینکه کلمه‌ی کلیدی اضافه سود
+        | برساند. اگر نام قطعه خودش مدل خودرو را دارد هم تکرار نمی‌شود.
+        */
+        if ($car !== ''
+            && $normalize($car) !== ''
+            && ! str_contains($normalize($name), $normalize($car))
+            && mb_strlen($name) + 1 + mb_strlen($car) <= $budget
+        ) {
+            $car = ' ' . $car;
+            $budget -= mb_strlen($car);
+        } else {
+            $car = '';
+        }
+
         if ($budget > 8 && mb_strlen($name) > $budget) {
             // «&» و «+» هم حذف می‌شوند وگرنه عنوان به «موتور EF7 &…» ختم می‌شد
             $name = preg_replace('/[\s،,.\-&+]+$/u', '', mb_substr($name, 0, $budget - 1)) . '…';
         }
 
-        return seo_title($prefix . $name . $code);
+        return seo_title($prefix . $name . $car . $code);
     }
 
     /**
@@ -445,8 +480,15 @@ class Product extends Model
         return '<p>' . implode('</p><p>', $paragraphs) . '</p>';
     }
 
-    /** برچسب دسته‌بندی برای متن‌های سئویی؛ از جدول واسط یا ستون محصول. */
-    public function categoryLabelForSeo(): ?string
+    /**
+     * دسته‌ی محصول برای متن‌های سئویی.
+     *
+     * جدول واسط علاوه بر ۱۱ دسته‌ی ProductCategory، دسته‌های مدل خودرو را هم
+     * نگه می‌دارد (شناسه‌ی ۱۰۰ به بالا)؛ فقط بازه‌ی ۱ تا ۱۱ به enum تبدیل
+     * می‌شود. مثل قبل، جدول واسط تنها وقتی خوانده می‌شود که رابطه از قبل لود
+     * شده باشد تا این متد در حلقه، کوئری اضافه نسازد.
+     */
+    public function categoryForSeo(): ?\App\Enums\ProductCategory
     {
         $categoryId = $this->category_id;
 
@@ -456,9 +498,13 @@ class Product extends Model
             ))->category_id;
         }
 
-        return $categoryId
-            ? (\App\Enums\ProductCategory::tryFrom((int) $categoryId)?->label())
-            : null;
+        return $categoryId ? \App\Enums\ProductCategory::tryFrom((int) $categoryId) : null;
+    }
+
+    /** برچسب دسته‌بندی برای متن‌های سئویی؛ از جدول واسط یا ستون محصول. */
+    public function categoryLabelForSeo(): ?string
+    {
+        return $this->categoryForSeo()?->label();
     }
 
     public function seoTitle(): string
