@@ -41,12 +41,14 @@ class ProductReview extends Model
     protected $fillable = [
         'product_id', 'customer_id', 'name', 'rating', 'criteria',
         'title', 'comment', 'status', 'is_buyer', 'ip',
+        'admin_reply', 'replied_at',
     ];
 
     protected $casts = [
         'rating'   => 'integer',
         'criteria' => 'array',
         'is_buyer' => 'boolean',
+        'replied_at' => 'datetime',
     ];
 
     /** نتیجه‌ی Schema::hasColumn برای ستون criteria، در همین درخواست. */

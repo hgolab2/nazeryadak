@@ -473,6 +473,9 @@
 .dk-review-stars{color:#f5a623;font-size:.8rem;margin-right:auto}
 .dk-review-title{font-weight:700;font-size:.9rem;margin-bottom:4px}
 .dk-review-body{font-size:.87rem;line-height:2;color:#444;margin:0}
+.dk-review-reply{margin:10px 18px 0 0;padding:10px 13px;border-right:3px solid #35a7a0;background:#f4fbfa;border-radius:8px;font-size:.82rem;color:#3f5553}
+.dk-review-reply b{display:block;margin-bottom:4px;color:#18756f}
+.dk-review-reply p{margin:0;line-height:1.9}
 .dk-review-empty,.dk-review-notice{font-size:.87rem;color:#666;padding:10px 0}
 .dk-review-notice{background:#e8f7ee;color:#176b3a;border-radius:8px;padding:10px 14px;margin-bottom:12px}
 .dk-review-errors{background:#fff5f5;color:#842029;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:.85rem}
