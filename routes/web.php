@@ -147,6 +147,20 @@ Route::group(['namespace' => 'Frontend', 'middleware' => [ShareDataInFrontend::c
     Route::get('car/{car}/{category}', [ProductController::class, 'carCategory'])
         ->where(['car' => '[^/]+', 'category' => '[^/]+'])
         ->name('shop.car.category');
+
+    /*
+    | صفحات فرود «نوع قطعه».
+    |
+    | دسته‌بندی‌های سایت یازده گروه کلان‌اند («چرخ، ترمز و جلوبندی») و کسی
+    | آن‌ها را جستجو نمی‌کند. کاربر «لنت ترمز» و «لنت ترمز پژو ۲۰۶» را
+    | جستجو می‌کند؛ این دو مسیر دقیقا همان دو صفحه‌اند.
+    */
+    Route::get('part/{part}', [ProductController::class, 'part'])
+        ->where('part', '[^/]+')
+        ->name('shop.part');
+    Route::get('part/{part}/{car}', [ProductController::class, 'partCar'])
+        ->where(['part' => '[^/]+', 'car' => '[^/]+'])
+        ->name('shop.part.car');
     Route::get('/product/fetch-image/{id}', [ProductController::class, 'fetchImage']);
     // ثبت نظر باید پیش از مسیر عمومی محصول تعریف شود؛ وگرنه «review» به
     // عنوان slug خوانده می‌شود و درخواست به show می‌رسد.

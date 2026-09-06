@@ -6,6 +6,7 @@ use App\Enums\ProductCategory;
 use App\Models\Article1;
 use App\Models\Product;
 use App\Support\CarModels;
+use App\Support\PartTypes;
 use App\Support\SeoContent;
 use Illuminate\Support\Facades\Cache;
 
@@ -169,6 +170,43 @@ class SitemapController extends Controller
                     $urls[] = [
                         'loc' => seo_url('/car/' . rawurlencode($carSlug) . '/' . rawurlencode($category->slug())),
                         'priority' => '0.6',
+                        'changefreq' => 'weekly',
+                    ];
+                }
+            }
+
+            /*
+            | صفحات «نوع قطعه» و «نوع قطعه × خودرو».
+            |
+            | دقیق‌ترین شکل کوئری این بازار («لنت ترمز پژو ۲۰۶») و پرارزش‌ترین
+            | صفحات سایت. مثل بقیه، فقط آدرس‌هایی اعلام می‌شوند که واقعا
+            | محصول دارند؛ آدرس noindex در نقشه‌ی سایت خطای Search Console
+            | می‌سازد.
+            */
+            $partCarCounts = PartTypes::carCounts();
+
+            foreach (PartTypes::counts() as $partSlug => $partCount) {
+                if ($partCount >= PartTypes::INDEX_MIN_PRODUCTS) {
+                    $urls[] = [
+                        'loc' => seo_url('/part/' . rawurlencode($partSlug)),
+                        'priority' => '0.8',
+                        'changefreq' => 'weekly',
+                    ];
+                }
+
+                foreach ($partCarCounts[$partSlug] ?? [] as $carSlug => $comboCount) {
+                    if ($comboCount < PartTypes::COMBO_MIN_INDEXABLE) {
+                        continue;
+                    }
+
+                    // خودروی کم‌محصول در صفحه noindex می‌گیرد؛ ترکیبش هم نباید اعلام شود.
+                    if (! CarModels::isIndexable($carSlug)) {
+                        continue;
+                    }
+
+                    $urls[] = [
+                        'loc' => seo_url('/part/' . rawurlencode($partSlug) . '/' . rawurlencode($carSlug)),
+                        'priority' => '0.7',
                         'changefreq' => 'weekly',
                     ];
                 }

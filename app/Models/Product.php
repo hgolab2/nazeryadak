@@ -148,6 +148,19 @@ class Product extends Model
         return strtr($value, self::DIGIT_MAP);
     }
 
+    /**
+     * همان کاری که normalizedColumn('title', LETTER_MAP) در SQL می‌کند، در PHP.
+     *
+     * برای شمارشِ دسته‌جمعی لازم است: به‌جای ۵۲ کوئریِ LIKE روی کل جدول (که
+     * چند ثانیه طول می‌کشید)، عنوان‌ها یک‌بار خوانده و همین‌جا تطبیق داده
+     * می‌شوند. چون از همان نگاشتِ ستون استفاده می‌کند، نتیجه‌ی شمارش با
+     * نتیجه‌ی واقعی scopePartType یکی می‌ماند.
+     */
+    public static function normalizeTitleForMatch(?string $title): string
+    {
+        return strtr(mb_strtolower((string) $title), self::LETTER_MAP);
+    }
+
     private static function normalizedColumn(string $column, array $map): string
     {
         $expr = "LOWER($column)";
@@ -214,6 +227,40 @@ class Product extends Model
             self::normalizedColumn('car_model', self::LETTER_MAP) . ' LIKE ?',
             ['%' . $term . '%']
         );
+    }
+
+    /**
+     * فیلتر بر اساس «نوع قطعه» — صفحات فرودِ /part/{slug}.
+     *
+     * برخلاف searchText که کلمات را AND می‌کند، اینجا الگوهای یک نوع قطعه با
+     * OR جمع می‌شوند: «کوئل» یا «کویل» یا «وایر شمع» هر سه یک صفحه‌اند.
+     * الگوهای exclude بعد از آن کم می‌کنند، چون LIKE مرز کلمه نمی‌شناسد و
+     * «سرسیلندر» به «واشر سرسیلندر» هم می‌خورد.
+     *
+     * اسلاگ ناشناخته عمدا نتیجه‌ی خالی می‌دهد نه فهرست کامل؛ صفحه‌ای که به‌جای
+     * قطعه‌ی خواسته‌شده همه‌چیز را نشان دهد، بدتر از صفحه‌ی خالی است.
+     */
+    public function scopePartType($query, ?string $slug)
+    {
+        $part = \App\Support\PartTypes::catalog()[(string) $slug] ?? null;
+
+        if ($part === null) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        $titleExpr = self::normalizedColumn('title', self::LETTER_MAP);
+
+        $query->where(function ($q) use ($titleExpr, $part) {
+            foreach ($part['match'] as $pattern) {
+                $q->orWhereRaw($titleExpr . ' LIKE ?', ['%' . self::normalizeTerm($pattern) . '%']);
+            }
+        });
+
+        foreach ($part['exclude'] as $pattern) {
+            $query->whereRaw($titleExpr . ' NOT LIKE ?', ['%' . self::normalizeTerm($pattern) . '%']);
+        }
+
+        return $query;
     }
 
     public function images()

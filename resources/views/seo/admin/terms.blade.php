@@ -72,9 +72,11 @@
     <div><strong>{{ $withText($categories) }}</strong> از <strong>{{ count($categories) }}</strong> دسته‌بندی متن دارد</div>
     <div><strong>{{ $withText($cars) }}</strong> از <strong>{{ count($cars) }}</strong> مدل خودرو متن دارد</div>
     <div>
-        <strong>{{ $combos->count() }}</strong> از <strong>{{ $comboTotal }}</strong> ترکیبِ دارای محصول متن دارد
+        <strong>{{ $combos->count() }}</strong> از <strong>{{ $comboTotal }}</strong> ترکیبِ دسته×خودرو متن دارد
         <span class="text-muted small">({{ $comboIndexable }} تا ایندکس‌پذیر)</span>
     </div>
+    <div><strong>{{ $withText($parts) }}</strong> از <strong>{{ count($parts) }}</strong> نوع قطعه متن دارد</div>
+    <div><strong>{{ $partCombos->count() }}</strong> از <strong>{{ $partComboTotal }}</strong> ترکیب قطعه×خودرو متن دارد</div>
     <div class="ms-auto">
         <code dir="ltr" style="font-size:12px">php artisan seo:landing</code>
         <span class="text-muted small">— ساخت خودکار متن صفحاتی که هنوز متن ندارند</span>
@@ -132,6 +134,73 @@
             </tbody>
         </table>
     </div>
+</section>
+
+<section class="card card-body shadow-sm p-4 mb-4">
+    <h6 class="border-bottom pb-2 mb-3"><i class="fas fa-cogs me-1"></i> انواع قطعه ({{ count($parts) }})</h6>
+    <p class="text-muted small">
+        دقیق‌تر از دسته‌بندی: «لنت ترمز» در برابر «چرخ، ترمز و جلوبندی». کاربر عبارت دوم را جستجو نمی‌کند.
+        فهرست انواع قطعه در <code dir="ltr">app/Support/PartTypes.php</code> تعریف شده و شمارش‌ها از انبار می‌آیند.
+    </p>
+    <div class="table-responsive">
+        <table class="table table-sm">
+            <thead><tr><th>نوع قطعه</th><th class="text-center">تعداد قطعه</th><th>آدرس</th><th>وضعیت</th><th></th></tr></thead>
+            <tbody>
+                @foreach($parts as $row)
+                <tr class="term-row">
+                    <td>
+                        {{ $row['name'] }}
+                        @unless($row['indexable'])
+                            <i class="fas fa-eye-slash text-muted ms-1" title="کمتر از {{ \App\Support\PartTypes::INDEX_MIN_PRODUCTS }} قطعه — صفحه کار می‌کند ولی به گوگل اعلام نمی‌شود"></i>
+                        @endunless
+                    </td>
+                    <td class="text-center"><span class="badge bg-light text-dark">{{ $row['count'] }}</span></td>
+                    <td><a href="{{ $row['url'] }}" target="_blank" dir="ltr" style="font-size:12px">{{ $row['url'] }}</a></td>
+                    <td>{!! $badge($row['term']) !!}</td>
+                    <td class="text-end">
+                        <a href="/admin/seo/terms/edit?type=part&slug={{ urlencode($row['slug']) }}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-pen"></i> ویرایش
+                        </a>
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="card card-body shadow-sm p-4 mb-4">
+    <h6 class="border-bottom pb-2 mb-3"><i class="fas fa-bullseye me-1"></i> صفحات ترکیبی قطعه × خودرو</h6>
+    <p class="text-muted small">
+        مثل «لنت ترمز پژو ۲۰۶» — دقیق‌ترین شکل کوئری این بازار.
+        {{ $partComboTotal }} ترکیب به‌قدری محصول دارد که صفحه بگیرد؛ اینجا آن‌هایی فهرست می‌شوند که متن گرفته‌اند.
+    </p>
+
+    @if($partCombos->count())
+    <div class="table-responsive" style="max-height:520px">
+        <table class="table table-sm">
+            <thead class="sticky-top bg-white"><tr><th>عنوان</th><th>آدرس</th><th>وضعیت</th><th></th></tr></thead>
+            <tbody>
+                @foreach($partCombos as $term)
+                <tr class="term-row">
+                    <td>{{ $term->name }}</td>
+                    <td><a href="/part/{{ $term->slug }}" target="_blank" dir="ltr" style="font-size:12px">/part/{{ $term->slug }}</a></td>
+                    <td>{!! $badge($term) !!}</td>
+                    <td class="text-end text-nowrap">
+                        <a href="/admin/seo/terms/edit?type=part_car&slug={{ urlencode($term->slug) }}" class="btn btn-sm btn-primary"><i class="fas fa-pen"></i></a>
+                        <form method="POST" action="/admin/seo/terms/{{ $term->id }}" class="d-inline" onsubmit="return confirm('متن این صفحه حذف شود؟')">
+                            @csrf @method('delete')
+                            <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+    @else
+        <p class="text-muted mb-0">هنوز برای هیچ ترکیب قطعه × خودرویی متن نوشته نشده است.</p>
+    @endif
 </section>
 
 <section class="card card-body shadow-sm p-4">

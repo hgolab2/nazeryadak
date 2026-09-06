@@ -12,10 +12,22 @@
         if ($shopCase->slug() === $shopCategorySlug) { $shopCategoryLabel = $shopCase->label(); break; }
     }
 
+    /* نوع قطعه از مسیر /part/{slug} می‌آید — یک پله دقیق‌تر از دسته‌بندی.
+       «لنت ترمز» در برابر «چرخ، ترمز و جلوبندی». */
+    $shopPartSlug = trim((string) ($partLanding ?? ''));
+    $shopPartName = trim((string) ($partName ?? ''));
+    // دسته‌ی والدِ نوع قطعه، فقط برای مسیر راهنما
+    $shopPartCategory = $shopPartSlug ? \App\Support\PartTypes::categoryOf($shopPartSlug) : null;
+
     /* متن دستیِ صفحه‌ی فرود (اگر مدیر در پنل «صفحات فرود سئو» ثبت کرده باشد).
-       نوع ترم از ترکیب خودرو و دسته تعیین می‌شود. */
+       نوع ترم از ترکیب نوع قطعه، خودرو و دسته تعیین می‌شود؛ دقیق‌ترین ترکیب
+       اول بررسی می‌شود. */
     $shopTerm = null;
-    if ($shopCarSlug && $shopCategorySlug) {
+    if ($shopPartSlug && $shopCarSlug) {
+        $shopTerm = \App\Models\SeoTerm::find_(\App\Models\SeoTerm::TYPE_PART_CAR, $shopPartSlug . '/' . $shopCarSlug);
+    } elseif ($shopPartSlug) {
+        $shopTerm = \App\Models\SeoTerm::find_(\App\Models\SeoTerm::TYPE_PART, $shopPartSlug);
+    } elseif ($shopCarSlug && $shopCategorySlug) {
         $shopTerm = \App\Models\SeoTerm::find_(\App\Models\SeoTerm::TYPE_CAR_CATEGORY, $shopCarSlug . '/' . $shopCategorySlug);
     } elseif ($shopCarSlug) {
         $shopTerm = \App\Models\SeoTerm::find_(\App\Models\SeoTerm::TYPE_CAR, $shopCarSlug);
@@ -23,8 +35,14 @@
         $shopTerm = \App\Models\SeoTerm::find_(\App\Models\SeoTerm::TYPE_CATEGORY, $shopCategorySlug);
     }
 
-    // عنوان به ترتیب اولویت: دسته×خودرو ← دسته‌بندی ← مدل خودرو ← جستجو ← عمومی
-    if ($shopCategoryLabel && $shopCarLanding) {
+    // عنوان به ترتیب اولویت: قطعه×خودرو ← قطعه ← دسته×خودرو ← دسته ← خودرو ← جستجو ← عمومی
+    if ($shopPartName && $shopCarLanding) {
+        $shopTitle = 'خرید ' . $shopPartName . ' ' . $shopCarLanding . ' | قیمت و کد فنی';
+        $shopDescription = seo_description('خرید ' . $shopPartName . ' ' . $shopCarLanding . ' با ضمانت اصالت؛ کد فنی اصلی، نشانه‌های خرابی، زمان تعویض و قیمت روز در فروشگاه ناظر یدک.');
+    } elseif ($shopPartName) {
+        $shopTitle = 'خرید ' . $shopPartName . ' | قیمت روز و کد فنی اصلی';
+        $shopDescription = seo_description('خرید ' . $shopPartName . ' برای انواع خودرو با ضمانت اصالت کالا؛ راهنمای انتخاب، زمان تعویض، کد فنی و قیمت روز در ناظر یدک.');
+    } elseif ($shopCategoryLabel && $shopCarLanding) {
         $shopTitle = 'خرید ' . $shopCategoryLabel . ' ' . $shopCarLanding . ' | ناظر یدک';
         $shopDescription = seo_description('خرید ' . $shopCategoryLabel . ' مناسب ' . $shopCarLanding . ' با کد فنی اصلی، ضمانت اصالت کالا، قیمت روز و ارسال سریع به سراسر ایران از فروشگاه ناظر یدک.');
     } elseif ($shopCategoryLabel) {
@@ -56,7 +74,9 @@
 
     /* هر صفحه‌ی فرود آدرس اختصاصی خودش را دارد؛ canonical باید همان باشد
        نه /shop، وگرنه گوگل این صفحه را نسخه‌ی تکراری فروشگاه می‌بیند. */
-    if ($shopCarSlug) {
+    if ($shopPartSlug) {
+        $shopCanonical = seo_canonical('/part/' . $shopPartSlug . ($shopCarSlug ? '/' . $shopCarSlug : ''));
+    } elseif ($shopCarSlug) {
         $shopCanonical = seo_canonical('/car/' . $shopCarSlug . ($shopCategorySlug ? '/' . $shopCategorySlug : ''));
     } elseif ($shopCategorySlug) {
         $shopCanonical = seo_canonical('/shop/' . $shopCategorySlug);
@@ -66,7 +86,19 @@
 
     // مسیر راهنما
     $shopCrumbs = [['name' => 'ناظر یدک', 'url' => seo_url()], ['name' => 'فروشگاه لوازم یدکی', 'url' => seo_url('/shop')]];
-    if ($shopCarLanding) {
+    if ($shopPartName) {
+        // دسته‌ی والد حلقه‌ی میانی است تا صفحه‌ی قطعه در سلسله‌مراتب سایت جا بیفتد
+        if ($shopPartCategory) {
+            $shopCrumbs[] = ['name' => $shopPartCategory->label(), 'url' => seo_url('/shop/' . $shopPartCategory->slug())];
+        }
+        $shopCrumbs[] = [
+            'name' => $shopPartName,
+            'url'  => $shopCarSlug ? seo_url('/part/' . $shopPartSlug) : null,
+        ];
+        if ($shopCarLanding) {
+            $shopCrumbs[] = ['name' => $shopCarLanding, 'url' => null];
+        }
+    } elseif ($shopCarLanding) {
         // در صفحه‌ی ترکیبی، خودرو حلقه‌ی میانی است و لینک‌دار می‌ماند
         $shopCrumbs[] = [
             'name' => 'قطعات ' . $shopCarLanding,
@@ -105,7 +137,11 @@
         && $model->total() > 0
         && (!$shopTerm || $shopTerm->robots_index)
         && (!$shopCarSlug || \App\Support\CarModels::isIndexable($shopCarSlug))
-        && (!($shopCarSlug && $shopCategorySlug) || $model->total() >= \App\Support\SeoContent::COMBO_MIN_INDEXABLE);
+        && (!($shopCarSlug && $shopCategorySlug) || $model->total() >= \App\Support\SeoContent::COMBO_MIN_INDEXABLE)
+        // صفحه‌ی نوع قطعه هم همین قاعده را دارد: کم‌محصول یعنی نازک
+        && (!$shopPartSlug || $model->total() >= ($shopCarSlug
+            ? \App\Support\PartTypes::COMBO_MIN_INDEXABLE
+            : \App\Support\PartTypes::INDEX_MIN_PRODUCTS));
 
     $shopRobots = seo_robots_tag($shopIndexable);
 
@@ -122,20 +158,90 @@
 
     $shopCarLinks = [];
     $shopComboLinks = [];
-    if ($shopCarSlug && !$shopCategorySlug) {
+    $shopPartLinks = [];
+    $shopPartLinksTitle = null;
+
+    if ($shopPartSlug) {
+        /* صفحه‌ی نوع قطعه → خودروهایی که همان قطعه را دارند.
+           فهرست از شمارشِ واقعی می‌آید، پس لینکی به ترکیب خالی ساخته نمی‌شود. */
+        $shopPartCars = \App\Support\PartTypes::carCounts()[$shopPartSlug] ?? [];
+        arsort($shopPartCars);
+        foreach ($shopPartCars as $shopPartCarSlug => $shopPartCarCount) {
+            if ($shopPartCarCount < \App\Support\PartTypes::COMBO_MIN_INDEXABLE || $shopPartCarSlug === $shopCarSlug) {
+                continue;
+            }
+            $shopCarLinks[] = [
+                'label' => $shopPartName . ' ' . (\App\Support\CarModels::fromSlug($shopPartCarSlug) ?? $shopPartCarSlug),
+                'url'   => '/part/' . rawurlencode($shopPartSlug) . '/' . rawurlencode($shopPartCarSlug),
+                'count' => $shopPartCarCount,
+            ];
+            if (count($shopCarLinks) >= 14) { break; }
+        }
+
+        /* در صفحه‌ی قطعه×خودرو، سایر قطعاتِ همان خودرو هم لینک می‌شوند تا
+           بازدیدکننده و خزنده بین صفحات این خودرو حرکت کنند. */
+        if ($shopCarSlug) {
+            foreach (\App\Support\PartTypes::carCounts() as $shopOtherPart => $shopOtherCars) {
+                if ($shopOtherPart === $shopPartSlug) { continue; }
+                $shopOtherCount = $shopOtherCars[$shopCarSlug] ?? 0;
+                if ($shopOtherCount < \App\Support\PartTypes::COMBO_MIN_INDEXABLE) { continue; }
+                $shopPartLinks[] = [
+                    'label' => \App\Support\PartTypes::name($shopOtherPart) . ' ' . $shopCarLanding,
+                    'url'   => '/part/' . rawurlencode($shopOtherPart) . '/' . rawurlencode($shopCarSlug),
+                    'count' => $shopOtherCount,
+                ];
+            }
+            usort($shopPartLinks, fn($a, $b) => $b['count'] <=> $a['count']);
+            $shopPartLinks = array_slice($shopPartLinks, 0, 14);
+            $shopPartLinksTitle = 'سایر قطعات ' . $shopCarLanding;
+        }
+    } elseif ($shopCarSlug && !$shopCategorySlug) {
         foreach (\App\Enums\ProductCategory::cases() as $shopCase) {
             $shopComboLinks[] = [
                 'label' => $shopCase->label() . ' ' . $shopCarLanding,
                 'url'   => '/car/' . rawurlencode($shopCarSlug) . '/' . rawurlencode($shopCase->slug()),
             ];
         }
-    } elseif (!$shopCarSlug) {
+
+        /* از صفحه‌ی خودرو به صفحات «نوع قطعه × خودرو».
+           این پرجستجوترین صفحات سایت‌اند و بدون لینک داخلی، فقط از نقشه‌ی
+           سایت قابل کشف بودند. */
+        foreach (\App\Support\PartTypes::carCounts() as $shopPartKey => $shopPartCars) {
+            $shopPartCount = $shopPartCars[$shopCarSlug] ?? 0;
+            if ($shopPartCount < \App\Support\PartTypes::COMBO_MIN_INDEXABLE) { continue; }
+            $shopPartLinks[] = [
+                'label' => \App\Support\PartTypes::name($shopPartKey) . ' ' . $shopCarLanding,
+                'url'   => '/part/' . rawurlencode($shopPartKey) . '/' . rawurlencode($shopCarSlug),
+                'count' => $shopPartCount,
+            ];
+        }
+        usort($shopPartLinks, fn($a, $b) => $b['count'] <=> $a['count']);
+        $shopPartLinks = array_slice($shopPartLinks, 0, 16);
+        $shopPartLinksTitle = 'قطعات پرجستجوی ' . $shopCarLanding;
+    } else {
         foreach (array_slice(\App\Support\CarModels::all(), 0, 12, true) as $shopCarKey => $shopCarInfo) {
             $shopCarLinks[] = [
                 'label' => 'قطعات ' . $shopCarInfo['name'],
                 'url'   => '/car/' . rawurlencode($shopCarKey) . ($shopCategorySlug ? '/' . rawurlencode($shopCategorySlug) : ''),
                 'count' => $shopCarInfo['count'],
             ];
+        }
+
+        /* در صفحه‌ی دسته‌بندی، انواع قطعه‌ی همان دسته لینک می‌شوند؛ این همان
+           پلی است که از گروه کلان («چرخ، ترمز و جلوبندی») به عبارتی می‌رسد
+           که کاربر واقعا جستجو می‌کند («لنت ترمز»). */
+        if ($shopCategorySlug) {
+            foreach (\App\Support\PartTypes::counts() as $shopPartKey => $shopPartCount) {
+                $shopPartCase = \App\Support\PartTypes::categoryOf($shopPartKey);
+                if (! $shopPartCase || $shopPartCase->slug() !== $shopCategorySlug) { continue; }
+                if ($shopPartCount < 1) { continue; }
+                $shopPartLinks[] = [
+                    'label' => \App\Support\PartTypes::name($shopPartKey),
+                    'url'   => '/part/' . rawurlencode($shopPartKey),
+                    'count' => $shopPartCount,
+                ];
+            }
+            $shopPartLinksTitle = 'خرید بر اساس نوع قطعه';
         }
     }
 @endphp
@@ -242,6 +348,10 @@
                 <h1 class="nx-page-title">
                     @if($shopHeading)
                         {{ $shopHeading }}
+                    @elseif($shopPartName && $shopCarLanding)
+                        {{ $shopPartName }} {{ $shopCarLanding }}
+                    @elseif($shopPartName)
+                        خرید {{ $shopPartName }}
                     @elseif($shopCategoryLabel && $shopCarLanding)
                         {{ $shopCategoryLabel }} {{ $shopCarLanding }}
                     @elseif($shopCategoryLabel)
@@ -300,9 +410,20 @@
                 </section>
                 @endif
 
+                @if($shopPartLinks)
+                <section class="nx-card nx-seo-links">
+                    <div class="nx-card-head"><h2><i class="fas fa-cogs"></i> {{ $shopPartLinksTitle }}</h2></div>
+                    <div class="nx-seo-links-body">
+                        @foreach($shopPartLinks as $shopLink)
+                            <a href="{{ $shopLink['url'] }}">{{ $shopLink['label'] }}</a>
+                        @endforeach
+                    </div>
+                </section>
+                @endif
+
                 @if($shopCarLinks)
                 <section class="nx-card nx-seo-links">
-                    <div class="nx-card-head"><h2><i class="fas fa-car"></i> {{ $shopCategoryLabel ? $shopCategoryLabel . ' بر اساس خودرو' : 'قطعات بر اساس خودرو' }}</h2></div>
+                    <div class="nx-card-head"><h2><i class="fas fa-car"></i> {{ $shopPartName ? $shopPartName . ' بر اساس خودرو' : ($shopCategoryLabel ? $shopCategoryLabel . ' بر اساس خودرو' : 'قطعات بر اساس خودرو') }}</h2></div>
                     <div class="nx-seo-links-body">
                         @foreach($shopCarLinks as $shopLink)
                             <a href="{{ $shopLink['url'] }}">{{ $shopLink['label'] }}</a>
@@ -364,9 +485,17 @@
 <script>
     var pagin = {{ (int) $model->currentPage() }};
     var str="";
+    /* نوع قطعه کنترلی در سایدبار ندارد، پس باید صریح همراه هر درخواست ایجکسی
+       برود؛ وگرنه با رفتن به صفحه‌ی دوم، فیلتر قطعه گم می‌شد و فهرست به همه‌ی
+       محصولات برمی‌گشت. سمت سرور، همین پارامتر در حالت غیرایجکسی با 301 به
+       /part/{slug} می‌رود تا نسخه‌ی تکراری ایندکس نشود. */
+    var LANDING_PART = @json($shopPartSlug ?: null);
     function createQuery()
     {
         let params = [];
+        if (LANDING_PART) {
+            params.push('part=' + encodeURIComponent(LANDING_PART));
+        }
         let title = $('#search_title').val();
         if (title && title.length > 0) {
             params.push('title=' + encodeURIComponent(title));

@@ -6,10 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
 /**
- * سئوی دستیِ یک صفحه‌ی فرود (دسته‌بندی، مدل خودرو، یا ترکیب این دو).
+ * محتوای یک صفحه‌ی فرود — دسته‌بندی، مدل خودرو، نوع قطعه، یا ترکیب آن‌ها.
  *
- * چون این رکوردها روی هر بازدیدِ صفحه‌ی فروشگاه خوانده می‌شوند و تعدادشان
- * چند صد تا بیشتر نمی‌شود، کل جدول یک‌جا کش می‌شود.
+ * رکوردها یا با «php artisan seo:landing» ساخته می‌شوند (پرچم generated) یا
+ * دستی در پنل نوشته می‌شوند؛ نوشته‌ی دستی از بازتولید خودکار مصون است.
+ *
+ * این رکوردها روی هر بازدید صفحه‌ی فروشگاه خوانده می‌شوند و هرکدام چند
+ * کیلوبایت HTML دارند، پس فقط فهرست کلیدها کش می‌شود نه خود رکوردها —
+ * توضیح کامل در activeKeys().
  */
 class SeoTerm extends Model
 {
@@ -18,11 +22,15 @@ class SeoTerm extends Model
     public const TYPE_CATEGORY = 'category';
     public const TYPE_CAR = 'car';
     public const TYPE_CAR_CATEGORY = 'car_category';
+    public const TYPE_PART = 'part';
+    public const TYPE_PART_CAR = 'part_car';
 
     public const TYPES = [
         self::TYPE_CATEGORY     => 'دسته‌بندی',
         self::TYPE_CAR          => 'مدل خودرو',
         self::TYPE_CAR_CATEGORY => 'دسته × خودرو',
+        self::TYPE_PART         => 'نوع قطعه',
+        self::TYPE_PART_CAR     => 'قطعه × خودرو',
     ];
 
     protected $table = 'seo_terms';
