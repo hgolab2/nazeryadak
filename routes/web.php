@@ -42,6 +42,7 @@ Route::get('/sitemap-images.xml', [SitemapController::class, 'images']);
 Route::get('/sitemap-products-{page}.xml', [SitemapController::class, 'products'])->where('page', '[0-9]+');
 Route::get('/robots.txt', [SitemapController::class, 'robots']);
 Route::get('/llms.txt', [SitemapController::class, 'llms']);
+Route::get('/llms-full.txt', [SitemapController::class, 'llmsFull']);
 
 /*
 | مانیفست PWA — هویت اپلیکیشن از config/seo.php خوانده می‌شود تا با بقیه‌ی

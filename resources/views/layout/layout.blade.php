@@ -75,6 +75,12 @@
     @if($seoPrev)<link rel="prev" href="{{ $seoPrev }}">@endif
     @if($seoNext)<link rel="next" href="{{ $seoNext }}">@endif
 
+    {{-- نسخه‌ی ماشین‌خوانِ محتوا. ایجنت‌هایی که صفحه را برای یک مدل زبانی
+         می‌خوانند از همین‌جا می‌فهمند متن تمیزِ سایت کجاست و لازم نیست
+         HTML را پارس کنند. --}}
+    <link rel="alternate" type="text/plain" title="llms.txt" href="{{ seo_url('/llms.txt') }}">
+    <link rel="alternate" type="text/plain" title="llms-full.txt" href="{{ seo_url('/llms-full.txt') }}">
+
     {{-- Open Graph --}}
     <meta property="og:locale" content="{{ seo_config('locale', 'fa_IR') }}">
     <meta property="og:site_name" content="{{ seo_site_name() }}">

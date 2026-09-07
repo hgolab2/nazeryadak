@@ -373,8 +373,13 @@ class SeoAdminController extends Controller
             }
         }
 
-        // متاتگ‌ها و اسکیماها از seo_config می‌آیند و در نقشه‌ی سایت کش شده‌اند
+        // متاتگ‌ها و اسکیماها از seo_config می‌آیند و در نقشه‌ی سایت کش شده‌اند.
+        // فایل‌های llms هم نام فروشگاه، توضیح و اطلاعات تماس را از همین تنظیمات
+        // می‌گیرند؛ اگر پاک نشوند، مدل‌های زبانی تا سه ساعت شماره‌ی تماس قدیمی
+        // را به کاربرانشان می‌دهند.
         \Illuminate\Support\Facades\Cache::forget('sitemap:index');
+        \Illuminate\Support\Facades\Cache::forget('llms:txt');
+        \Illuminate\Support\Facades\Cache::forget('llms:full');
 
         return redirect('/admin/seo/settings')->with('success', 'تنظیمات سئو ذخیره شد.');
     }
