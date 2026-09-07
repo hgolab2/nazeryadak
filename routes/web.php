@@ -348,6 +348,7 @@ Route::group(['namespace' => 'Frontend', 'middleware' => [ShareDataInFrontend::c
 
         Route::get('/admin/seo/reviews', [SeoAdminController::class, 'reviews']);
         Route::put('/admin/seo/reviews/{id}/status', [SeoAdminController::class, 'reviewStatus']);
+        Route::put('/admin/seo/reviews/{id}/reply', [SeoAdminController::class, 'reviewReply']);
         Route::delete('/admin/seo/reviews/{id}', [SeoAdminController::class, 'reviewDestroy']);
 
         Route::get('/admin/seo/settings', [SeoAdminController::class, 'settings']);

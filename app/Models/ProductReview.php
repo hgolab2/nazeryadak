@@ -40,14 +40,13 @@ class ProductReview extends Model
 
     protected $fillable = [
         'product_id', 'customer_id', 'name', 'rating', 'criteria',
-        'title', 'comment', 'status', 'is_buyer', 'ip',
-        'admin_reply', 'replied_at',
+        'title', 'comment', 'reply', 'replied_at', 'status', 'is_buyer', 'ip',
     ];
 
     protected $casts = [
-        'rating'   => 'integer',
-        'criteria' => 'array',
-        'is_buyer' => 'boolean',
+        'rating'     => 'integer',
+        'criteria'   => 'array',
+        'is_buyer'   => 'boolean',
         'replied_at' => 'datetime',
     ];
 
@@ -126,6 +125,12 @@ class ProductReview extends Model
         }
 
         return $labelled;
+    }
+
+    /** آیا فروشگاه به این نظر پاسخ داده است؟ */
+    public function hasReply(): bool
+    {
+        return trim((string) $this->reply) !== '';
     }
 
     /**

@@ -8,6 +8,10 @@
 .review-stars{color:#f5a623;font-size:.8rem}
 .review-comment{max-width:520px;font-size:.85rem;line-height:1.9}
 .review-crit{display:inline-block;background:#f1f3f6;color:#555;border-radius:99px;padding:1px 8px;font-size:11px;margin:3px 0 0 3px;white-space:nowrap}
+.review-reply{margin-top:8px}
+.review-reply summary{cursor:pointer;font-size:12px;color:#6c757d;list-style:none}
+.review-reply summary::-webkit-details-marker{display:none}
+.review-reply textarea{width:100%;border:1px solid #dee2e6;border-radius:6px;padding:8px 10px;font-size:.82rem;font-family:inherit;margin:6px 0}
 </style>
 
 <nav class="mb-3 pt-md-3" aria-label="Breadcrumb">
@@ -72,6 +76,25 @@
                     <td class="review-comment">
                         @if($review->title)<b>{{ $review->title }}</b><br>@endif
                         {{ $review->comment }}
+
+                        {{-- پاسخ‌دادن جای اصلی‌اش همین‌جاست: مدیر باید متن نظر را
+                             جلوی چشمش داشته باشد تا جواب به سوال بخورد. --}}
+                        <details class="review-reply">
+                            <summary>
+                                @if($review->hasReply())
+                                    <i class="fas fa-reply text-primary"></i> پاسخ داده شده
+                                    <small class="text-muted">{{ $review->replied_at?->diffForHumans() }}</small>
+                                @else
+                                    <i class="fas fa-reply"></i> پاسخ فروشگاه
+                                @endif
+                            </summary>
+                            <form method="POST" action="/admin/seo/reviews/{{ $review->id }}/reply">
+                                @csrf @method('put')
+                                <textarea name="reply" rows="3" maxlength="2000"
+                                          placeholder="پاسخ فروشگاه؛ خالی بگذارید تا پاسخ حذف شود.">{{ $review->reply }}</textarea>
+                                <button class="btn btn-sm btn-primary">ثبت پاسخ</button>
+                            </form>
+                        </details>
                     </td>
                     <td class="text-nowrap" style="font-size:12px">{{ $review->created_at?->diffForHumans() }}</td>
                     <td class="text-nowrap">

@@ -160,6 +160,8 @@ class CustomerAuthController extends Controller
             'status'   => 'success',
             'is_new'   => $isNew,
             'step'     => $needsProfile ? 'profile' : 'done',
+            // نشست بعد از ورود بازتولید شد؛ صفحه باید با توکن تازه ادامه دهد.
+            'csrf'     => csrf_token(),
             // در گام پروفایل، مقصد فقط خوانده می‌شود و در نشست می‌ماند تا
             // completeProfile هم بتواند کاربر را به همان‌جا برگرداند.
             'redirect' => $needsProfile
@@ -203,6 +205,7 @@ class CustomerAuthController extends Controller
 
         return response()->json([
             'status'   => 'success',
+            'csrf'     => csrf_token(),
             'redirect' => session()->pull('url.intended', '/dashboard'),
         ]);
     }
@@ -259,6 +262,7 @@ class CustomerAuthController extends Controller
 
         return response()->json([
             'status'   => 'success',
+            'csrf'     => csrf_token(),
             'redirect' => session()->pull('url.intended', '/dashboard'),
         ]);
     }

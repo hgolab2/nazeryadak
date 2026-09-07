@@ -146,7 +146,17 @@
     const $dev     = $('#authDevCode');
     const $title   = $('#authTitle');
     const $sub     = $('#authSubtitle');
-    const csrf     = '{{ csrf_token() }}';
+    let   csrf     = '{{ csrf_token() }}';
+
+    /*
+    | ورود موفق، نشست را بازتولید می‌کند و توکنِ داخل صفحه را باطل. گام بعدی
+    | (تکمیل حساب) در همین صفحه می‌ماند، پس اگر توکن تازه نشود درخواستش با
+    | «CSRF token mismatch» رد می‌شود. هر پاسخی که توکن تازه بفرستد، از اینجا
+    | جایگزین می‌شود.
+    */
+    $(document).ajaxSuccess(function (event, xhr, settings, data) {
+        if (data && data.csrf) csrf = data.csrf;
+    });
 
     const faDigits = v => String(v).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
     const enDigits = v => String(v)

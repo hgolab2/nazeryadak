@@ -28,13 +28,45 @@
         ['name' => seo_site_name(), 'url' => seo_url()],
         ['name' => $fa('%D9%81%D8%B1%D9%88%D8%B4%DA%AF%D8%A7%D9%87%20%D9%84%D9%88%D8%A7%D8%B2%D9%85%20%DB%8C%D8%AF%DA%A9%DB%8C'), 'url' => seo_url('/shop')],
     ];
-    /* حلقه‌ی «خودرو» به صفحه‌ی فرود مسیری می‌رود. آدرس «?car_model=» که اینجا
-       بود از سمت کنترلر 301 می‌خورد، و آدرسِ ریدایرکت‌شونده داخل BreadcrumbList
-       در سرچ‌کنسول هشدار می‌سازد. */
+    /*
+    | مسیر واقعیِ سایت تا این قطعه: فروشگاه ← دسته ← دسته×خودرو ← محصول.
+    |
+    | تا پیش از این فقط حلقه‌ی «خودرو» اینجا بود، آن هم با آدرس «?car_model=»
+    | که از سمت کنترلر 301 می‌خورد — آدرسِ ریدایرکت‌شونده داخل BreadcrumbList
+    | در سرچ‌کنسول هشدار می‌سازد.
+    |
+    | حالا صفحه‌ی دسته هم یک حلقه است. یعنی هر کدام از هزاران صفحه‌ی محصول
+    | یک لینک داخلی به صفحه‌ی دسته‌بندی و یکی به صفحه‌ی فرود خودرو می‌دهد؛
+    | تا حالا این جریان فقط یک‌طرفه بود (دسته → محصول) و صفحات فرود اعتبار
+    | لینکی از محصولاتشان نمی‌گرفتند.
+    */
+    $productCategory = $model->categoryForSeo();
+    $productCarSlug  = !empty($model->car_model) ? \App\Support\CarModels::slugFor($model->car_model) : '';
+    $productCarKnown = $productCarSlug !== '' && \App\Support\CarModels::fromSlug($productCarSlug) !== null;
+
+    $productCategoryUrl = $productCategory
+        ? '/shop/' . rawurlencode($productCategory->slug())
+        : null;
+
+    /* اگر ترکیب «دسته × خودرو» به‌اندازه‌ی کافی قطعه دارد، همان صفحه‌ی
+       دقیق‌تر حلقه‌ی بعدی می‌شود؛ وگرنه صفحه‌ی خودرو. ترکیبِ کم‌محصول خودش
+       noindex است و فرستادن هزاران لینک به آن ارزشی ندارد. */
     $productCarUrl = null;
     if (!empty($model->car_model)) {
-        $productCarUrl = seo_url(car_landing_url($model->car_model));
-        $productBreadcrumb[] = ['name' => $model->car_model, 'url' => $productCarUrl];
+        $productCarUrl = $productCategory && $productCarKnown
+            && \App\Support\CarModels::comboCount($productCarSlug, $productCategory->value) >= \App\Support\SeoContent::COMBO_MIN_INDEXABLE
+                ? car_landing_url($model->car_model, $productCategory->slug())
+                : car_landing_url($model->car_model);
+    }
+    $productCarCrumb = $productCategory && $productCarUrl && str_contains($productCarUrl, '/' . rawurlencode($productCategory->slug()))
+        ? $productCategory->label() . ' ' . $model->car_model
+        : $model->car_model;
+
+    if ($productCategoryUrl) {
+        $productBreadcrumb[] = ['name' => $productCategory->label(), 'url' => seo_url($productCategoryUrl)];
+    }
+    if ($productCarUrl) {
+        $productBreadcrumb[] = ['name' => $productCarCrumb, 'url' => seo_url($productCarUrl)];
     }
     $productBreadcrumb[] = ['name' => $model->title, 'url' => null];
 
@@ -89,12 +121,16 @@
             <a href="/">{{ $fa('%D9%86%D8%A7%D8%B8%D8%B1%20%DB%8C%D8%AF%DA%A9') }}</a>
             <i class="fas fa-chevron-left"></i>
             <a href="/shop">{{ $fa('%D9%81%D8%B1%D9%88%D8%B4%DA%AF%D8%A7%D9%87') }}</a>
-            {{-- حلقه‌ی خودرو در BreadcrumbList هست ولی روی صفحه دیده نمی‌شد؛
-                 گوگل انتظار دارد مسیر ساختاریافته با مسیر دیده‌شده یکی باشد.
-                 ضمنا یک لینک داخلی از هر صفحه‌ی محصول به صفحه‌ی فرود خودرو. --}}
+            {{-- همان حلقه‌هایی که در BreadcrumbList اعلام شده‌اند. گوگل انتظار
+                 دارد مسیر ساختاریافته با مسیرِ دیده‌شده یکی باشد، و کاربر هم
+                 از صفحه‌ی قطعه یک راه بازگشت به دسته و خودرویش می‌خواهد. --}}
+            @if($productCategoryUrl)
+                <i class="fas fa-chevron-left"></i>
+                <a href="{{ $productCategoryUrl }}">{{ $productCategory->label() }}</a>
+            @endif
             @if($productCarUrl)
                 <i class="fas fa-chevron-left"></i>
-                <a href="{{ car_landing_url($model->car_model) }}">{{ $model->car_model }}</a>
+                <a href="{{ $productCarUrl }}">{{ $productCarCrumb }}</a>
             @endif
             <i class="fas fa-chevron-left"></i>
             <b>{{ $model->title }}</b>
@@ -392,6 +428,21 @@
                                 </div>
                             @endif
                             <p class="dk-review-body">{{ $review->comment }}</p>
+                            {{-- پاسخ فروشگاه. تورفتگی و رنگ متفاوت لازم است چون
+                                 خواننده باید در یک نگاه بفهمد این جمله را فروشنده
+                                 نوشته نه یک خریدار دیگر. --}}
+                            @if($review->hasReply())
+                                <div class="dk-review-reply">
+                                    <div class="dk-review-reply-head">
+                                        <i class="fas fa-store"></i>
+                                        <b>پاسخ نازک‌یدک</b>
+                                        @if($review->replied_at)
+                                            <span>{{ $review->replied_at->diffForHumans() }}</span>
+                                        @endif
+                                    </div>
+                                    <p>{{ $review->reply }}</p>
+                                </div>
+                            @endif
                         </article>
                     @endforeach
                 @else
@@ -473,9 +524,10 @@
 .dk-review-stars{color:#f5a623;font-size:.8rem;margin-right:auto}
 .dk-review-title{font-weight:700;font-size:.9rem;margin-bottom:4px}
 .dk-review-body{font-size:.87rem;line-height:2;color:#444;margin:0}
-.dk-review-reply{margin:10px 18px 0 0;padding:10px 13px;border-right:3px solid #35a7a0;background:#f4fbfa;border-radius:8px;font-size:.82rem;color:#3f5553}
-.dk-review-reply b{display:block;margin-bottom:4px;color:#18756f}
-.dk-review-reply p{margin:0;line-height:1.9}
+.dk-review-reply{margin:10px 0 0 0;padding:10px 14px;background:#f6f8fb;border-right:3px solid #0d6efd;border-radius:8px}
+.dk-review-reply-head{display:flex;align-items:center;gap:6px;font-size:.8rem;color:#0d6efd;margin-bottom:4px}
+.dk-review-reply-head span{color:#8a94a6;font-size:11px;margin-right:auto}
+.dk-review-reply p{font-size:.84rem;line-height:1.9;color:#4a5568;margin:0}
 .dk-review-empty,.dk-review-notice{font-size:.87rem;color:#666;padding:10px 0}
 .dk-review-notice{background:#e8f7ee;color:#176b3a;border-radius:8px;padding:10px 14px;margin-bottom:12px}
 .dk-review-errors{background:#fff5f5;color:#842029;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:.85rem}
