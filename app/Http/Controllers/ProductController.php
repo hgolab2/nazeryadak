@@ -8,6 +8,7 @@ use App\Models\EshopCategory;
 use App\Models\ProductReview;
 use App\Models\ProductView;
 use App\Support\CarModels;
+use App\Support\PartTypes;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -73,7 +74,41 @@ class ProductController extends Controller
         return $this->index($request, $categorySlug, $carName);
     }
 
-    public function index(Request $request, ?string $categorySlug = null, ?string $carLanding = null)
+    /**
+     * صفحه‌ی فرود نوع قطعه: /part/{slug}
+     *
+     * «لنت ترمز» — یک پله دقیق‌تر از دسته‌بندی («چرخ، ترمز و جلوبندی») و
+     * همان چیزی که کاربر واقعا جستجو می‌کند.
+     */
+    public function part(Request $request, string $part)
+    {
+        $partSlug = rawurldecode($part);
+
+        if (! PartTypes::has($partSlug)) {
+            return response()->view('errors.404', [], 404);
+        }
+
+        return $this->index($request, null, null, $partSlug);
+    }
+
+    /**
+     * صفحه‌ی ترکیبی نوع قطعه × خودرو: /part/{part}/{car}
+     *
+     * «لنت ترمز پژو ۲۰۶» — دقیق‌ترین شکل کوئری این بازار.
+     */
+    public function partCar(Request $request, string $part, string $car)
+    {
+        $partSlug = rawurldecode($part);
+        $carName  = CarModels::fromSlug(rawurldecode($car));
+
+        if (! PartTypes::has($partSlug) || $carName === null) {
+            return response()->view('errors.404', [], 404);
+        }
+
+        return $this->index($request, null, $carName, $partSlug);
+    }
+
+    public function index(Request $request, ?string $categorySlug = null, ?string $carLanding = null, ?string $partLanding = null)
     {
         /*
         | آدرس قدیمی /shop?category=X دیگر کانونیکال نیست. اگر کاربر یا
@@ -115,6 +150,28 @@ class ProductController extends Controller
             }
         }
 
+        /*
+        | نوع قطعه، برخلاف دسته و خودرو، کنترلی در سایدبار ندارد؛ پس
+        | صفحه‌بندی ایجکسی آن را به‌صورت «?part=» می‌فرستد وگرنه با رفتن به
+        | صفحه‌ی دوم، فیلتر قطعه گم می‌شد و همه‌ی محصولات برمی‌گشت.
+        |
+        | همان آدرس اگر مستقیم (غیرایجکسی) صدا زده شود با 301 به /part/{slug}
+        | می‌رود — همان قاعده‌ای که برای ?category= و ?car_model= برقرار است،
+        | تا از هر صفحه فقط یک نسخه ایندکس شود.
+        */
+        if ($partLanding === null && $request->filled('part') && PartTypes::has($request->part)) {
+            if ($request->ajax() || $request->filled('ajaxi')) {
+                $partLanding = (string) $request->part;
+            } else {
+                $rest = $request->except('part');
+
+                return redirect(
+                    '/part/' . rawurlencode($request->part) . ($rest ? '?' . http_build_query($rest) : ''),
+                    301
+                );
+            }
+        }
+
         $selectedCategoryIds = [];
         if ($categorySlug !== null) {
             $enum = ProductCategory::fromSlug($categorySlug);
@@ -141,6 +198,10 @@ class ProductController extends Controller
         if ($request->filled('title')) {
             // Search part name, SKU, and car model together.
             $query->searchText($request->title);
+        }
+        // نوع قطعه فقط از مسیر /part/{slug} می‌آید و با فیلتر خودرو ترکیب می‌شود
+        if ($partLanding !== null) {
+            $query->partType($partLanding);
         }
         // فیلتر خودرو یا از مسیر صفحه‌ی فرود می‌آید یا از سایدبار فروشگاه
         if ($carLanding !== null) {
@@ -206,9 +267,13 @@ class ProductController extends Controller
         // صفحه‌ی فرود: اسلاگ خودرو برای ساخت canonical و لینک‌های داخلی
         $carLandingSlug = $carLanding !== null ? CarModels::slugFor($carLanding) : null;
 
+        // نام نمایشی نوع قطعه برای عنوان، H1 و مسیر راهنما
+        $partName = $partLanding !== null ? PartTypes::name($partLanding) : null;
+
         return view('product.list', compact(
             'model', 'totalCount', 'categories', 'categoryCounts', 'selectedCategoryIds',
-            'title', 'carModel', 'carCategories', 'categorySlug', 'carLanding', 'carLandingSlug'
+            'title', 'carModel', 'carCategories', 'categorySlug', 'carLanding', 'carLandingSlug',
+            'partLanding', 'partName'
         ));
     }
 

@@ -1,7 +1,3 @@
-# robots.txt — فروشگاه لوازم یدکی ناظر یدک
-# نسخه‌ی داینامیک همین فایل در SitemapController::robots() نگهداری می‌شود؛
-# اگر وب‌سرور فایل استاتیک را سرو کند، این نسخه پاسخ داده می‌شود.
-
 User-agent: *
 Allow: /
 
@@ -31,7 +27,7 @@ Disallow: /*?*utm_
 Disallow: /*?*fbclid=
 Disallow: /*?*gclid=
 
-# فایل‌های ظاهری صفحه باید خزیده شوند وگرنه رندر گوگل ناقص می‌ماند
+# فایل‌های ظاهری صفحه باید خزیده شوند وگرنه رندر ناقص می‌ماند
 Allow: /assets/
 Allow: /upload/
 Allow: /images/
@@ -41,35 +37,1028 @@ Allow: *.webp$
 Allow: *.jpg$
 Allow: *.png$
 
-# خزنده‌های موتورهای پاسخ‌گو (ChatGPT، Perplexity، Claude، Gemini).
-# «User-agent: *» از نظر فنی اجازه‌شان را می‌دهد، اما بلاک صریح
-# جلوی تفسیر سخت‌گیرانه‌ی این خزنده‌ها از قواعد عمومی را می‌گیرد.
+# ---------------------------------------------------------------
+# خزنده‌های موتورهای پاسخ‌گو و مدل‌های زبانی
+# ---------------------------------------------------------------
+# هر سه دسته لازم‌اند و هرکدام یک مسیر جداگانه‌ی دیده‌شدن است:
+# ایندکسِ موتور پاسخ‌گو (OAI-SearchBot، PerplexityBot)، فچرِ لحظه‌ای
+# که وقتی کاربر لینک می‌دهد صفحه را می‌خواند (ChatGPT-User،
+# Claude-User)، و خزنده‌ی دانش پایه (GPTBot، CCBot) که نام برند را
+# در حافظه‌ی مدل تثبیت می‌کند. بستن هر دسته، همان مسیر را می‌بندد.
+
 User-agent: OAI-SearchBot
 Allow: /
+
+# بخش‌های شخصی و تراکنشی؛ ارزش ایندکس ندارند
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /dashboardAdmin
+Disallow: /loginAdmin
+Disallow: /login
+Disallow: /logout
+Disallow: /cart
+Disallow: /favorite
+Disallow: /profile/
+Disallow: /order/
+Disallow: /payment/
+Disallow: /address/
+Disallow: /auth/
+Disallow: /product/fetch-image/
+Disallow: /products/favorite/
+
+# پارامترهای فیلتر و مرتب‌سازی، محتوای تکراری می‌سازند
+Disallow: /*?*order=
+Disallow: /*?*orderby=
+Disallow: /*?*categories=
+Disallow: /*?*ajaxi=
+Disallow: /*?*utm_
+Disallow: /*?*fbclid=
+Disallow: /*?*gclid=
+
+# فایل‌های ظاهری صفحه باید خزیده شوند وگرنه رندر ناقص می‌ماند
+Allow: /assets/
+Allow: /upload/
+Allow: /images/
+Allow: *.css$
+Allow: *.js$
+Allow: *.webp$
+Allow: *.jpg$
+Allow: *.png$
 
 User-agent: ChatGPT-User
 Allow: /
 
+# بخش‌های شخصی و تراکنشی؛ ارزش ایندکس ندارند
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /dashboardAdmin
+Disallow: /loginAdmin
+Disallow: /login
+Disallow: /logout
+Disallow: /cart
+Disallow: /favorite
+Disallow: /profile/
+Disallow: /order/
+Disallow: /payment/
+Disallow: /address/
+Disallow: /auth/
+Disallow: /product/fetch-image/
+Disallow: /products/favorite/
+
+# پارامترهای فیلتر و مرتب‌سازی، محتوای تکراری می‌سازند
+Disallow: /*?*order=
+Disallow: /*?*orderby=
+Disallow: /*?*categories=
+Disallow: /*?*ajaxi=
+Disallow: /*?*utm_
+Disallow: /*?*fbclid=
+Disallow: /*?*gclid=
+
+# فایل‌های ظاهری صفحه باید خزیده شوند وگرنه رندر ناقص می‌ماند
+Allow: /assets/
+Allow: /upload/
+Allow: /images/
+Allow: *.css$
+Allow: *.js$
+Allow: *.webp$
+Allow: *.jpg$
+Allow: *.png$
+
 User-agent: GPTBot
 Allow: /
 
-User-agent: PerplexityBot
-Allow: /
+# بخش‌های شخصی و تراکنشی؛ ارزش ایندکس ندارند
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /dashboardAdmin
+Disallow: /loginAdmin
+Disallow: /login
+Disallow: /logout
+Disallow: /cart
+Disallow: /favorite
+Disallow: /profile/
+Disallow: /order/
+Disallow: /payment/
+Disallow: /address/
+Disallow: /auth/
+Disallow: /product/fetch-image/
+Disallow: /products/favorite/
 
-User-agent: Perplexity-User
-Allow: /
+# پارامترهای فیلتر و مرتب‌سازی، محتوای تکراری می‌سازند
+Disallow: /*?*order=
+Disallow: /*?*orderby=
+Disallow: /*?*categories=
+Disallow: /*?*ajaxi=
+Disallow: /*?*utm_
+Disallow: /*?*fbclid=
+Disallow: /*?*gclid=
+
+# فایل‌های ظاهری صفحه باید خزیده شوند وگرنه رندر ناقص می‌ماند
+Allow: /assets/
+Allow: /upload/
+Allow: /images/
+Allow: *.css$
+Allow: *.js$
+Allow: *.webp$
+Allow: *.jpg$
+Allow: *.png$
 
 User-agent: ClaudeBot
 Allow: /
 
+# بخش‌های شخصی و تراکنشی؛ ارزش ایندکس ندارند
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /dashboardAdmin
+Disallow: /loginAdmin
+Disallow: /login
+Disallow: /logout
+Disallow: /cart
+Disallow: /favorite
+Disallow: /profile/
+Disallow: /order/
+Disallow: /payment/
+Disallow: /address/
+Disallow: /auth/
+Disallow: /product/fetch-image/
+Disallow: /products/favorite/
+
+# پارامترهای فیلتر و مرتب‌سازی، محتوای تکراری می‌سازند
+Disallow: /*?*order=
+Disallow: /*?*orderby=
+Disallow: /*?*categories=
+Disallow: /*?*ajaxi=
+Disallow: /*?*utm_
+Disallow: /*?*fbclid=
+Disallow: /*?*gclid=
+
+# فایل‌های ظاهری صفحه باید خزیده شوند وگرنه رندر ناقص می‌ماند
+Allow: /assets/
+Allow: /upload/
+Allow: /images/
+Allow: *.css$
+Allow: *.js$
+Allow: *.webp$
+Allow: *.jpg$
+Allow: *.png$
+
 User-agent: Claude-User
 Allow: /
+
+# بخش‌های شخصی و تراکنشی؛ ارزش ایندکس ندارند
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /dashboardAdmin
+Disallow: /loginAdmin
+Disallow: /login
+Disallow: /logout
+Disallow: /cart
+Disallow: /favorite
+Disallow: /profile/
+Disallow: /order/
+Disallow: /payment/
+Disallow: /address/
+Disallow: /auth/
+Disallow: /product/fetch-image/
+Disallow: /products/favorite/
+
+# پارامترهای فیلتر و مرتب‌سازی، محتوای تکراری می‌سازند
+Disallow: /*?*order=
+Disallow: /*?*orderby=
+Disallow: /*?*categories=
+Disallow: /*?*ajaxi=
+Disallow: /*?*utm_
+Disallow: /*?*fbclid=
+Disallow: /*?*gclid=
+
+# فایل‌های ظاهری صفحه باید خزیده شوند وگرنه رندر ناقص می‌ماند
+Allow: /assets/
+Allow: /upload/
+Allow: /images/
+Allow: *.css$
+Allow: *.js$
+Allow: *.webp$
+Allow: *.jpg$
+Allow: *.png$
+
+User-agent: Claude-SearchBot
+Allow: /
+
+# بخش‌های شخصی و تراکنشی؛ ارزش ایندکس ندارند
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /dashboardAdmin
+Disallow: /loginAdmin
+Disallow: /login
+Disallow: /logout
+Disallow: /cart
+Disallow: /favorite
+Disallow: /profile/
+Disallow: /order/
+Disallow: /payment/
+Disallow: /address/
+Disallow: /auth/
+Disallow: /product/fetch-image/
+Disallow: /products/favorite/
+
+# پارامترهای فیلتر و مرتب‌سازی، محتوای تکراری می‌سازند
+Disallow: /*?*order=
+Disallow: /*?*orderby=
+Disallow: /*?*categories=
+Disallow: /*?*ajaxi=
+Disallow: /*?*utm_
+Disallow: /*?*fbclid=
+Disallow: /*?*gclid=
+
+# فایل‌های ظاهری صفحه باید خزیده شوند وگرنه رندر ناقص می‌ماند
+Allow: /assets/
+Allow: /upload/
+Allow: /images/
+Allow: *.css$
+Allow: *.js$
+Allow: *.webp$
+Allow: *.jpg$
+Allow: *.png$
+
+User-agent: anthropic-ai
+Allow: /
+
+# بخش‌های شخصی و تراکنشی؛ ارزش ایندکس ندارند
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /dashboardAdmin
+Disallow: /loginAdmin
+Disallow: /login
+Disallow: /logout
+Disallow: /cart
+Disallow: /favorite
+Disallow: /profile/
+Disallow: /order/
+Disallow: /payment/
+Disallow: /address/
+Disallow: /auth/
+Disallow: /product/fetch-image/
+Disallow: /products/favorite/
+
+# پارامترهای فیلتر و مرتب‌سازی، محتوای تکراری می‌سازند
+Disallow: /*?*order=
+Disallow: /*?*orderby=
+Disallow: /*?*categories=
+Disallow: /*?*ajaxi=
+Disallow: /*?*utm_
+Disallow: /*?*fbclid=
+Disallow: /*?*gclid=
+
+# فایل‌های ظاهری صفحه باید خزیده شوند وگرنه رندر ناقص می‌ماند
+Allow: /assets/
+Allow: /upload/
+Allow: /images/
+Allow: *.css$
+Allow: *.js$
+Allow: *.webp$
+Allow: *.jpg$
+Allow: *.png$
 
 User-agent: Google-Extended
 Allow: /
 
+# بخش‌های شخصی و تراکنشی؛ ارزش ایندکس ندارند
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /dashboardAdmin
+Disallow: /loginAdmin
+Disallow: /login
+Disallow: /logout
+Disallow: /cart
+Disallow: /favorite
+Disallow: /profile/
+Disallow: /order/
+Disallow: /payment/
+Disallow: /address/
+Disallow: /auth/
+Disallow: /product/fetch-image/
+Disallow: /products/favorite/
+
+# پارامترهای فیلتر و مرتب‌سازی، محتوای تکراری می‌سازند
+Disallow: /*?*order=
+Disallow: /*?*orderby=
+Disallow: /*?*categories=
+Disallow: /*?*ajaxi=
+Disallow: /*?*utm_
+Disallow: /*?*fbclid=
+Disallow: /*?*gclid=
+
+# فایل‌های ظاهری صفحه باید خزیده شوند وگرنه رندر ناقص می‌ماند
+Allow: /assets/
+Allow: /upload/
+Allow: /images/
+Allow: *.css$
+Allow: *.js$
+Allow: *.webp$
+Allow: *.jpg$
+Allow: *.png$
+
+User-agent: GoogleOther
+Allow: /
+
+# بخش‌های شخصی و تراکنشی؛ ارزش ایندکس ندارند
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /dashboardAdmin
+Disallow: /loginAdmin
+Disallow: /login
+Disallow: /logout
+Disallow: /cart
+Disallow: /favorite
+Disallow: /profile/
+Disallow: /order/
+Disallow: /payment/
+Disallow: /address/
+Disallow: /auth/
+Disallow: /product/fetch-image/
+Disallow: /products/favorite/
+
+# پارامترهای فیلتر و مرتب‌سازی، محتوای تکراری می‌سازند
+Disallow: /*?*order=
+Disallow: /*?*orderby=
+Disallow: /*?*categories=
+Disallow: /*?*ajaxi=
+Disallow: /*?*utm_
+Disallow: /*?*fbclid=
+Disallow: /*?*gclid=
+
+# فایل‌های ظاهری صفحه باید خزیده شوند وگرنه رندر ناقص می‌ماند
+Allow: /assets/
+Allow: /upload/
+Allow: /images/
+Allow: *.css$
+Allow: *.js$
+Allow: *.webp$
+Allow: *.jpg$
+Allow: *.png$
+
+User-agent: Google-CloudVertexBot
+Allow: /
+
+# بخش‌های شخصی و تراکنشی؛ ارزش ایندکس ندارند
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /dashboardAdmin
+Disallow: /loginAdmin
+Disallow: /login
+Disallow: /logout
+Disallow: /cart
+Disallow: /favorite
+Disallow: /profile/
+Disallow: /order/
+Disallow: /payment/
+Disallow: /address/
+Disallow: /auth/
+Disallow: /product/fetch-image/
+Disallow: /products/favorite/
+
+# پارامترهای فیلتر و مرتب‌سازی، محتوای تکراری می‌سازند
+Disallow: /*?*order=
+Disallow: /*?*orderby=
+Disallow: /*?*categories=
+Disallow: /*?*ajaxi=
+Disallow: /*?*utm_
+Disallow: /*?*fbclid=
+Disallow: /*?*gclid=
+
+# فایل‌های ظاهری صفحه باید خزیده شوند وگرنه رندر ناقص می‌ماند
+Allow: /assets/
+Allow: /upload/
+Allow: /images/
+Allow: *.css$
+Allow: *.js$
+Allow: *.webp$
+Allow: *.jpg$
+Allow: *.png$
+
+User-agent: bingbot
+Allow: /
+
+# بخش‌های شخصی و تراکنشی؛ ارزش ایندکس ندارند
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /dashboardAdmin
+Disallow: /loginAdmin
+Disallow: /login
+Disallow: /logout
+Disallow: /cart
+Disallow: /favorite
+Disallow: /profile/
+Disallow: /order/
+Disallow: /payment/
+Disallow: /address/
+Disallow: /auth/
+Disallow: /product/fetch-image/
+Disallow: /products/favorite/
+
+# پارامترهای فیلتر و مرتب‌سازی، محتوای تکراری می‌سازند
+Disallow: /*?*order=
+Disallow: /*?*orderby=
+Disallow: /*?*categories=
+Disallow: /*?*ajaxi=
+Disallow: /*?*utm_
+Disallow: /*?*fbclid=
+Disallow: /*?*gclid=
+
+# فایل‌های ظاهری صفحه باید خزیده شوند وگرنه رندر ناقص می‌ماند
+Allow: /assets/
+Allow: /upload/
+Allow: /images/
+Allow: *.css$
+Allow: *.js$
+Allow: *.webp$
+Allow: *.jpg$
+Allow: *.png$
+
+User-agent: BingPreview
+Allow: /
+
+# بخش‌های شخصی و تراکنشی؛ ارزش ایندکس ندارند
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /dashboardAdmin
+Disallow: /loginAdmin
+Disallow: /login
+Disallow: /logout
+Disallow: /cart
+Disallow: /favorite
+Disallow: /profile/
+Disallow: /order/
+Disallow: /payment/
+Disallow: /address/
+Disallow: /auth/
+Disallow: /product/fetch-image/
+Disallow: /products/favorite/
+
+# پارامترهای فیلتر و مرتب‌سازی، محتوای تکراری می‌سازند
+Disallow: /*?*order=
+Disallow: /*?*orderby=
+Disallow: /*?*categories=
+Disallow: /*?*ajaxi=
+Disallow: /*?*utm_
+Disallow: /*?*fbclid=
+Disallow: /*?*gclid=
+
+# فایل‌های ظاهری صفحه باید خزیده شوند وگرنه رندر ناقص می‌ماند
+Allow: /assets/
+Allow: /upload/
+Allow: /images/
+Allow: *.css$
+Allow: *.js$
+Allow: *.webp$
+Allow: *.jpg$
+Allow: *.png$
+
+User-agent: PerplexityBot
+Allow: /
+
+# بخش‌های شخصی و تراکنشی؛ ارزش ایندکس ندارند
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /dashboardAdmin
+Disallow: /loginAdmin
+Disallow: /login
+Disallow: /logout
+Disallow: /cart
+Disallow: /favorite
+Disallow: /profile/
+Disallow: /order/
+Disallow: /payment/
+Disallow: /address/
+Disallow: /auth/
+Disallow: /product/fetch-image/
+Disallow: /products/favorite/
+
+# پارامترهای فیلتر و مرتب‌سازی، محتوای تکراری می‌سازند
+Disallow: /*?*order=
+Disallow: /*?*orderby=
+Disallow: /*?*categories=
+Disallow: /*?*ajaxi=
+Disallow: /*?*utm_
+Disallow: /*?*fbclid=
+Disallow: /*?*gclid=
+
+# فایل‌های ظاهری صفحه باید خزیده شوند وگرنه رندر ناقص می‌ماند
+Allow: /assets/
+Allow: /upload/
+Allow: /images/
+Allow: *.css$
+Allow: *.js$
+Allow: *.webp$
+Allow: *.jpg$
+Allow: *.png$
+
+User-agent: Perplexity-User
+Allow: /
+
+# بخش‌های شخصی و تراکنشی؛ ارزش ایندکس ندارند
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /dashboardAdmin
+Disallow: /loginAdmin
+Disallow: /login
+Disallow: /logout
+Disallow: /cart
+Disallow: /favorite
+Disallow: /profile/
+Disallow: /order/
+Disallow: /payment/
+Disallow: /address/
+Disallow: /auth/
+Disallow: /product/fetch-image/
+Disallow: /products/favorite/
+
+# پارامترهای فیلتر و مرتب‌سازی، محتوای تکراری می‌سازند
+Disallow: /*?*order=
+Disallow: /*?*orderby=
+Disallow: /*?*categories=
+Disallow: /*?*ajaxi=
+Disallow: /*?*utm_
+Disallow: /*?*fbclid=
+Disallow: /*?*gclid=
+
+# فایل‌های ظاهری صفحه باید خزیده شوند وگرنه رندر ناقص می‌ماند
+Allow: /assets/
+Allow: /upload/
+Allow: /images/
+Allow: *.css$
+Allow: *.js$
+Allow: *.webp$
+Allow: *.jpg$
+Allow: *.png$
+
+User-agent: Applebot
+Allow: /
+
+# بخش‌های شخصی و تراکنشی؛ ارزش ایندکس ندارند
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /dashboardAdmin
+Disallow: /loginAdmin
+Disallow: /login
+Disallow: /logout
+Disallow: /cart
+Disallow: /favorite
+Disallow: /profile/
+Disallow: /order/
+Disallow: /payment/
+Disallow: /address/
+Disallow: /auth/
+Disallow: /product/fetch-image/
+Disallow: /products/favorite/
+
+# پارامترهای فیلتر و مرتب‌سازی، محتوای تکراری می‌سازند
+Disallow: /*?*order=
+Disallow: /*?*orderby=
+Disallow: /*?*categories=
+Disallow: /*?*ajaxi=
+Disallow: /*?*utm_
+Disallow: /*?*fbclid=
+Disallow: /*?*gclid=
+
+# فایل‌های ظاهری صفحه باید خزیده شوند وگرنه رندر ناقص می‌ماند
+Allow: /assets/
+Allow: /upload/
+Allow: /images/
+Allow: *.css$
+Allow: *.js$
+Allow: *.webp$
+Allow: *.jpg$
+Allow: *.png$
+
 User-agent: Applebot-Extended
 Allow: /
+
+# بخش‌های شخصی و تراکنشی؛ ارزش ایندکس ندارند
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /dashboardAdmin
+Disallow: /loginAdmin
+Disallow: /login
+Disallow: /logout
+Disallow: /cart
+Disallow: /favorite
+Disallow: /profile/
+Disallow: /order/
+Disallow: /payment/
+Disallow: /address/
+Disallow: /auth/
+Disallow: /product/fetch-image/
+Disallow: /products/favorite/
+
+# پارامترهای فیلتر و مرتب‌سازی، محتوای تکراری می‌سازند
+Disallow: /*?*order=
+Disallow: /*?*orderby=
+Disallow: /*?*categories=
+Disallow: /*?*ajaxi=
+Disallow: /*?*utm_
+Disallow: /*?*fbclid=
+Disallow: /*?*gclid=
+
+# فایل‌های ظاهری صفحه باید خزیده شوند وگرنه رندر ناقص می‌ماند
+Allow: /assets/
+Allow: /upload/
+Allow: /images/
+Allow: *.css$
+Allow: *.js$
+Allow: *.webp$
+Allow: *.jpg$
+Allow: *.png$
+
+User-agent: Amazonbot
+Allow: /
+
+# بخش‌های شخصی و تراکنشی؛ ارزش ایندکس ندارند
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /dashboardAdmin
+Disallow: /loginAdmin
+Disallow: /login
+Disallow: /logout
+Disallow: /cart
+Disallow: /favorite
+Disallow: /profile/
+Disallow: /order/
+Disallow: /payment/
+Disallow: /address/
+Disallow: /auth/
+Disallow: /product/fetch-image/
+Disallow: /products/favorite/
+
+# پارامترهای فیلتر و مرتب‌سازی، محتوای تکراری می‌سازند
+Disallow: /*?*order=
+Disallow: /*?*orderby=
+Disallow: /*?*categories=
+Disallow: /*?*ajaxi=
+Disallow: /*?*utm_
+Disallow: /*?*fbclid=
+Disallow: /*?*gclid=
+
+# فایل‌های ظاهری صفحه باید خزیده شوند وگرنه رندر ناقص می‌ماند
+Allow: /assets/
+Allow: /upload/
+Allow: /images/
+Allow: *.css$
+Allow: *.js$
+Allow: *.webp$
+Allow: *.jpg$
+Allow: *.png$
+
+User-agent: Meta-ExternalAgent
+Allow: /
+
+# بخش‌های شخصی و تراکنشی؛ ارزش ایندکس ندارند
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /dashboardAdmin
+Disallow: /loginAdmin
+Disallow: /login
+Disallow: /logout
+Disallow: /cart
+Disallow: /favorite
+Disallow: /profile/
+Disallow: /order/
+Disallow: /payment/
+Disallow: /address/
+Disallow: /auth/
+Disallow: /product/fetch-image/
+Disallow: /products/favorite/
+
+# پارامترهای فیلتر و مرتب‌سازی، محتوای تکراری می‌سازند
+Disallow: /*?*order=
+Disallow: /*?*orderby=
+Disallow: /*?*categories=
+Disallow: /*?*ajaxi=
+Disallow: /*?*utm_
+Disallow: /*?*fbclid=
+Disallow: /*?*gclid=
+
+# فایل‌های ظاهری صفحه باید خزیده شوند وگرنه رندر ناقص می‌ماند
+Allow: /assets/
+Allow: /upload/
+Allow: /images/
+Allow: *.css$
+Allow: *.js$
+Allow: *.webp$
+Allow: *.jpg$
+Allow: *.png$
+
+User-agent: Meta-ExternalFetcher
+Allow: /
+
+# بخش‌های شخصی و تراکنشی؛ ارزش ایندکس ندارند
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /dashboardAdmin
+Disallow: /loginAdmin
+Disallow: /login
+Disallow: /logout
+Disallow: /cart
+Disallow: /favorite
+Disallow: /profile/
+Disallow: /order/
+Disallow: /payment/
+Disallow: /address/
+Disallow: /auth/
+Disallow: /product/fetch-image/
+Disallow: /products/favorite/
+
+# پارامترهای فیلتر و مرتب‌سازی، محتوای تکراری می‌سازند
+Disallow: /*?*order=
+Disallow: /*?*orderby=
+Disallow: /*?*categories=
+Disallow: /*?*ajaxi=
+Disallow: /*?*utm_
+Disallow: /*?*fbclid=
+Disallow: /*?*gclid=
+
+# فایل‌های ظاهری صفحه باید خزیده شوند وگرنه رندر ناقص می‌ماند
+Allow: /assets/
+Allow: /upload/
+Allow: /images/
+Allow: *.css$
+Allow: *.js$
+Allow: *.webp$
+Allow: *.jpg$
+Allow: *.png$
+
+User-agent: FacebookBot
+Allow: /
+
+# بخش‌های شخصی و تراکنشی؛ ارزش ایندکس ندارند
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /dashboardAdmin
+Disallow: /loginAdmin
+Disallow: /login
+Disallow: /logout
+Disallow: /cart
+Disallow: /favorite
+Disallow: /profile/
+Disallow: /order/
+Disallow: /payment/
+Disallow: /address/
+Disallow: /auth/
+Disallow: /product/fetch-image/
+Disallow: /products/favorite/
+
+# پارامترهای فیلتر و مرتب‌سازی، محتوای تکراری می‌سازند
+Disallow: /*?*order=
+Disallow: /*?*orderby=
+Disallow: /*?*categories=
+Disallow: /*?*ajaxi=
+Disallow: /*?*utm_
+Disallow: /*?*fbclid=
+Disallow: /*?*gclid=
+
+# فایل‌های ظاهری صفحه باید خزیده شوند وگرنه رندر ناقص می‌ماند
+Allow: /assets/
+Allow: /upload/
+Allow: /images/
+Allow: *.css$
+Allow: *.js$
+Allow: *.webp$
+Allow: *.jpg$
+Allow: *.png$
+
+User-agent: DuckAssistBot
+Allow: /
+
+# بخش‌های شخصی و تراکنشی؛ ارزش ایندکس ندارند
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /dashboardAdmin
+Disallow: /loginAdmin
+Disallow: /login
+Disallow: /logout
+Disallow: /cart
+Disallow: /favorite
+Disallow: /profile/
+Disallow: /order/
+Disallow: /payment/
+Disallow: /address/
+Disallow: /auth/
+Disallow: /product/fetch-image/
+Disallow: /products/favorite/
+
+# پارامترهای فیلتر و مرتب‌سازی، محتوای تکراری می‌سازند
+Disallow: /*?*order=
+Disallow: /*?*orderby=
+Disallow: /*?*categories=
+Disallow: /*?*ajaxi=
+Disallow: /*?*utm_
+Disallow: /*?*fbclid=
+Disallow: /*?*gclid=
+
+# فایل‌های ظاهری صفحه باید خزیده شوند وگرنه رندر ناقص می‌ماند
+Allow: /assets/
+Allow: /upload/
+Allow: /images/
+Allow: *.css$
+Allow: *.js$
+Allow: *.webp$
+Allow: *.jpg$
+Allow: *.png$
+
+User-agent: YouBot
+Allow: /
+
+# بخش‌های شخصی و تراکنشی؛ ارزش ایندکس ندارند
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /dashboardAdmin
+Disallow: /loginAdmin
+Disallow: /login
+Disallow: /logout
+Disallow: /cart
+Disallow: /favorite
+Disallow: /profile/
+Disallow: /order/
+Disallow: /payment/
+Disallow: /address/
+Disallow: /auth/
+Disallow: /product/fetch-image/
+Disallow: /products/favorite/
+
+# پارامترهای فیلتر و مرتب‌سازی، محتوای تکراری می‌سازند
+Disallow: /*?*order=
+Disallow: /*?*orderby=
+Disallow: /*?*categories=
+Disallow: /*?*ajaxi=
+Disallow: /*?*utm_
+Disallow: /*?*fbclid=
+Disallow: /*?*gclid=
+
+# فایل‌های ظاهری صفحه باید خزیده شوند وگرنه رندر ناقص می‌ماند
+Allow: /assets/
+Allow: /upload/
+Allow: /images/
+Allow: *.css$
+Allow: *.js$
+Allow: *.webp$
+Allow: *.jpg$
+Allow: *.png$
+
+User-agent: MistralAI-User
+Allow: /
+
+# بخش‌های شخصی و تراکنشی؛ ارزش ایندکس ندارند
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /dashboardAdmin
+Disallow: /loginAdmin
+Disallow: /login
+Disallow: /logout
+Disallow: /cart
+Disallow: /favorite
+Disallow: /profile/
+Disallow: /order/
+Disallow: /payment/
+Disallow: /address/
+Disallow: /auth/
+Disallow: /product/fetch-image/
+Disallow: /products/favorite/
+
+# پارامترهای فیلتر و مرتب‌سازی، محتوای تکراری می‌سازند
+Disallow: /*?*order=
+Disallow: /*?*orderby=
+Disallow: /*?*categories=
+Disallow: /*?*ajaxi=
+Disallow: /*?*utm_
+Disallow: /*?*fbclid=
+Disallow: /*?*gclid=
+
+# فایل‌های ظاهری صفحه باید خزیده شوند وگرنه رندر ناقص می‌ماند
+Allow: /assets/
+Allow: /upload/
+Allow: /images/
+Allow: *.css$
+Allow: *.js$
+Allow: *.webp$
+Allow: *.jpg$
+Allow: *.png$
+
+User-agent: cohere-ai
+Allow: /
+
+# بخش‌های شخصی و تراکنشی؛ ارزش ایندکس ندارند
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /dashboardAdmin
+Disallow: /loginAdmin
+Disallow: /login
+Disallow: /logout
+Disallow: /cart
+Disallow: /favorite
+Disallow: /profile/
+Disallow: /order/
+Disallow: /payment/
+Disallow: /address/
+Disallow: /auth/
+Disallow: /product/fetch-image/
+Disallow: /products/favorite/
+
+# پارامترهای فیلتر و مرتب‌سازی، محتوای تکراری می‌سازند
+Disallow: /*?*order=
+Disallow: /*?*orderby=
+Disallow: /*?*categories=
+Disallow: /*?*ajaxi=
+Disallow: /*?*utm_
+Disallow: /*?*fbclid=
+Disallow: /*?*gclid=
+
+# فایل‌های ظاهری صفحه باید خزیده شوند وگرنه رندر ناقص می‌ماند
+Allow: /assets/
+Allow: /upload/
+Allow: /images/
+Allow: *.css$
+Allow: *.js$
+Allow: *.webp$
+Allow: *.jpg$
+Allow: *.png$
+
+User-agent: FirecrawlAgent
+Allow: /
+
+# بخش‌های شخصی و تراکنشی؛ ارزش ایندکس ندارند
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /dashboardAdmin
+Disallow: /loginAdmin
+Disallow: /login
+Disallow: /logout
+Disallow: /cart
+Disallow: /favorite
+Disallow: /profile/
+Disallow: /order/
+Disallow: /payment/
+Disallow: /address/
+Disallow: /auth/
+Disallow: /product/fetch-image/
+Disallow: /products/favorite/
+
+# پارامترهای فیلتر و مرتب‌سازی، محتوای تکراری می‌سازند
+Disallow: /*?*order=
+Disallow: /*?*orderby=
+Disallow: /*?*categories=
+Disallow: /*?*ajaxi=
+Disallow: /*?*utm_
+Disallow: /*?*fbclid=
+Disallow: /*?*gclid=
+
+# فایل‌های ظاهری صفحه باید خزیده شوند وگرنه رندر ناقص می‌ماند
+Allow: /assets/
+Allow: /upload/
+Allow: /images/
+Allow: *.css$
+Allow: *.js$
+Allow: *.webp$
+Allow: *.jpg$
+Allow: *.png$
+
+User-agent: CCBot
+Allow: /
+
+# بخش‌های شخصی و تراکنشی؛ ارزش ایندکس ندارند
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /dashboardAdmin
+Disallow: /loginAdmin
+Disallow: /login
+Disallow: /logout
+Disallow: /cart
+Disallow: /favorite
+Disallow: /profile/
+Disallow: /order/
+Disallow: /payment/
+Disallow: /address/
+Disallow: /auth/
+Disallow: /product/fetch-image/
+Disallow: /products/favorite/
+
+# پارامترهای فیلتر و مرتب‌سازی، محتوای تکراری می‌سازند
+Disallow: /*?*order=
+Disallow: /*?*orderby=
+Disallow: /*?*categories=
+Disallow: /*?*ajaxi=
+Disallow: /*?*utm_
+Disallow: /*?*fbclid=
+Disallow: /*?*gclid=
+
+# فایل‌های ظاهری صفحه باید خزیده شوند وگرنه رندر ناقص می‌ماند
+Allow: /assets/
+Allow: /upload/
+Allow: /images/
+Allow: *.css$
+Allow: *.js$
+Allow: *.webp$
+Allow: *.jpg$
+Allow: *.png$
 
 # خزنده‌های تجاری پرمصرف که سود سئویی ندارند
 User-agent: AhrefsBot
@@ -81,4 +1070,6 @@ Crawl-delay: 10
 User-agent: MJ12bot
 Disallow: /
 
+# خلاصه‌ی مارک‌داونی سایت برای مدل‌های زبانی:
+# https://nazeryadak.ir/llms.txt (فهرست) و https://nazeryadak.ir/llms-full.txt (متن کامل)
 Sitemap: https://nazeryadak.ir/sitemap.xml

@@ -6,6 +6,7 @@ use App\Enums\ProductCategory;
 use App\Models\Product;
 use App\Models\SeoTerm;
 use App\Support\CarModels;
+use App\Support\PartTypes;
 use App\Support\SeoContent;
 use Illuminate\Console\Command;
 
@@ -27,7 +28,7 @@ class GenerateSeoLandingContent extends Command
     protected $signature = 'seo:landing
         {--refresh : متن‌های تولیدشده‌ی قبلی هم بازنویسی شوند}
         {--force : متن دستیِ مدیر هم بازنویسی شود}
-        {--only= : فقط یک نوع: category|car|car_category}
+        {--only= : فقط یک نوع: category|car|car_category|part|part_car}
         {--dry-run : فقط گزارش، بدون ذخیره}';
 
     protected $description = 'ساخت محتوای سئوی صفحات فرود (دسته‌بندی، مدل خودرو و ترکیب دسته × خودرو)';
@@ -45,6 +46,7 @@ class GenerateSeoLandingContent extends Command
         // فهرست خودروها و شمارش‌ها از کش می‌آیند؛ اگر انبار تازه به‌روز شده
         // باشد، متنِ ساخته‌شده باید بر اساس موجودی امروز باشد نه شش ساعت پیش.
         CarModels::forgetCache();
+        PartTypes::forgetCache();
 
         if (! $only || $only === SeoTerm::TYPE_CATEGORY) {
             $this->buildCategories($dryRun);
@@ -56,6 +58,14 @@ class GenerateSeoLandingContent extends Command
 
         if (! $only || $only === SeoTerm::TYPE_CAR_CATEGORY) {
             $this->buildCombos($dryRun);
+        }
+
+        if (! $only || $only === SeoTerm::TYPE_PART) {
+            $this->buildParts($dryRun);
+        }
+
+        if (! $only || $only === SeoTerm::TYPE_PART_CAR) {
+            $this->buildPartCars($dryRun);
         }
 
         SeoTerm::forgetCache();
@@ -199,6 +209,112 @@ class GenerateSeoLandingContent extends Command
                 ->where('is_active', 1)
                 ->where('car_model', $carName)
                 ->whereHas('categories', fn ($q) => $q->where('category_id', $categoryId))
+                ->orderByRaw('CHAR_LENGTH(title)')
+                ->limit(3)
+                ->pluck('title')
+                ->map(fn ($title) => trim((string) $title))
+                ->filter()
+                ->values()
+                ->all();
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
+    /* ----------------------------------------------------------- نوع قطعه */
+
+    private function buildParts(bool $dryRun): void
+    {
+        $this->line('<comment>انواع قطعه</comment>');
+
+        $carCounts = PartTypes::carCounts();
+
+        foreach (PartTypes::counts() as $slug => $count) {
+            // پرمحصول‌ترین خودروهای همین قطعه، برای جمله‌ی «بیشتر از همه برای…»
+            $cars = $carCounts[$slug] ?? [];
+            arsort($cars);
+            $topCars = [];
+            foreach (array_slice($cars, 0, 3, true) as $carSlug => $carCount) {
+                if ($carCount >= PartTypes::COMBO_MIN_INDEXABLE && $name = CarModels::fromSlug($carSlug)) {
+                    $topCars[] = $name;
+                }
+            }
+
+            $content = SeoContent::forPart($slug, (int) $count, $topCars);
+
+            if ($content === null) {
+                $this->missing++;
+                $this->line('  - ' . $slug . ' — دانش ثبت‌شده ندارد');
+                continue;
+            }
+
+            $this->store(SeoTerm::TYPE_PART, $slug, $content, $dryRun);
+        }
+    }
+
+    /* ------------------------------------------------------ قطعه × خودرو */
+
+    private function buildPartCars(bool $dryRun): void
+    {
+        $this->line('<comment>ترکیب نوع قطعه × خودرو</comment>');
+
+        $carCounts = PartTypes::carCounts();
+        $steps = 0;
+        foreach ($carCounts as $cars) {
+            $steps += count($cars);
+        }
+
+        $bar = $this->output->createProgressBar(max(1, $steps));
+        $bar->start();
+
+        foreach ($carCounts as $partSlug => $cars) {
+            foreach ($cars as $carSlug => $count) {
+                $bar->advance();
+
+                // ترکیب یکی‌دو محصولی صفحه‌ی نازک می‌سازد؛ نه متن می‌گیرد و
+                // نه ردیفی در دیتابیس. با رشد موجودی، اجرای بعدی می‌سازدش.
+                if ($count < PartTypes::COMBO_MIN_INDEXABLE) {
+                    continue;
+                }
+
+                $carName = CarModels::fromSlug($carSlug);
+                if ($carName === null || ! SeoContent::hasCar($carSlug)) {
+                    continue;
+                }
+
+                $content = SeoContent::forPartCar(
+                    $partSlug,
+                    $carSlug,
+                    $carName,
+                    (int) $count,
+                    $this->partSampleTitles($partSlug, $carName)
+                );
+
+                if ($content === null) {
+                    continue;
+                }
+
+                $this->store(SeoTerm::TYPE_PART_CAR, $partSlug . '/' . $carSlug, $content, $dryRun);
+            }
+        }
+
+        $bar->finish();
+        $this->newLine();
+    }
+
+    /**
+     * نام چند محصول واقعیِ همین ترکیب — همان چیزی که متن هر صفحه را از
+     * بقیه متمایز می‌کند.
+     *
+     * @return array<int, string>
+     */
+    private function partSampleTitles(string $partSlug, string $carName): array
+    {
+        try {
+            return Product::query()
+                ->where('is_active', 1)
+                ->partType($partSlug)
+                ->where('car_model', $carName)
                 ->orderByRaw('CHAR_LENGTH(title)')
                 ->limit(3)
                 ->pluck('title')

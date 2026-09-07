@@ -104,6 +104,25 @@
                         {!! $text !!}
                     </div>
 
+                    {{-- پل مقاله به فروشگاه.
+                         صفحه‌ی مقاله تا امروز فقط به مقالات دیگر لینک می‌داد؛
+                         پنجاه صفحه‌ی محتوایی که هیچ اعتباری به صفحات فروش
+                         نمی‌رساندند و خواننده‌ای که مقاله‌ی «تعویض لنت» را تمام
+                         می‌کرد راهی به خودِ لنت‌ها نداشت. مقصدها از روی
+                         کلیدواژه‌های عنوان انتخاب می‌شوند؛ اگر عنوان به هیچ
+                         موضوعی نخورَد، بلوک اصلا رندر نمی‌شود. --}}
+                    @php $articleShopLinks = article_shop_links($info); @endphp
+                    @if($articleShopLinks)
+                    <section class="blog-article-shop">
+                        <h2 class="blog-article-shop-title"><i class="fas fa-boxes-stacked"></i> قطعات مرتبط با این مقاله</h2>
+                        <div class="blog-article-shop-links">
+                            @foreach($articleShopLinks as $articleShopLink)
+                                <a href="{{ $articleShopLink['url'] }}">{{ $articleShopLink['label'] }}</a>
+                            @endforeach
+                        </div>
+                    </section>
+                    @endif
+
                     <div class="blog-article-share">
                         <span class="blog-share-label"><i class="fas fa-share-alt"></i> اشتراک‌گذاری:</span>
                         <a href="https://t.me/share/url?url={{ urlencode(url()->current()) }}&text={{ urlencode($info->titr) }}" target="_blank" class="blog-share-btn" style="background:#0088cc;">
@@ -156,4 +175,12 @@
         </div>
     </div>
 </main>
+<style>
+.blog-article-shop{margin:26px 0 18px;padding:18px 20px;border:1px solid var(--border-color,#e3e8ef);border-radius:var(--radius-sm,10px);background:var(--primary-lighter,#f5f9fb)}
+.blog-article-shop-title{font-size:1rem;font-weight:700;margin:0 0 12px}
+.blog-article-shop-title i{color:var(--primary,#37b5b5);margin-left:6px}
+.blog-article-shop-links{display:flex;flex-wrap:wrap;gap:8px}
+.blog-article-shop-links a{display:inline-block;padding:7px 13px;border:1px solid var(--border-color,#e3e8ef);background:#fff;border-radius:999px;font-size:.82rem;color:var(--text-dark,#333);text-decoration:none}
+.blog-article-shop-links a:hover{border-color:var(--primary,#37b5b5);color:var(--primary,#37b5b5)}
+</style>
 @endsection

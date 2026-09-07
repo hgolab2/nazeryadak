@@ -1845,6 +1845,30 @@ function seo_faq_schema(array $faqs): array
     ];
 }
 
+/**
+ * پرسش‌های متداولِ کل سایت.
+ *
+ * یک منبع واحد برای سه مصرف‌کننده: صفحه‌ی /faq، اسکیمای FAQPage، و
+ * llms-full.txt. جدا نگه‌داشتنشان یعنی مدل زبانی جوابی نقل کند که مدت‌هاست
+ * روی سایت عوض شده — بدترین حالتِ ممکن، چون کاربر با انتظار غلط می‌آید.
+ *
+ * @return array<int, array{q: string, a: string}>
+ */
+function seo_site_faqs(): array
+{
+    $shipping = getShippingRules();
+
+    return [
+        ['q' => 'آیا قطعات شما اورجینال هستند؟', 'a' => 'بله، تمامی قطعات عرضه‌شده در ناظر یدک دارای ضمانت اصالت هستند. ما قطعات را مستقیماً از شرکت‌های معتبر تولیدکننده مانند ایساکو، سایپا یدک و سایر برندهای اصلی تأمین می‌کنیم و هولوگرام اصالت بر روی بسته‌بندی محصولات قابل مشاهده است.'],
+        ['q' => 'چگونه می‌توانم قطعه مناسب خودرو خود را پیدا کنم؟', 'a' => 'شما می‌توانید از طریق جستجوی نام قطعه، کد فنی (OEM) یا مدل خودرو، محصول مورد نظر خود را بیابید. همچنین از طریق دسته‌بندی‌های فروشگاه می‌توانید قطعات مربوط به هر بخش از خودرو را مشاهده کنید. در صورت نیاز، کارشناسان ما از طریق تلفن یا واتساپ آماده راهنمایی هستند.'],
+        ['q' => 'مدت‌زمان ارسال سفارش چقدر است؟', 'a' => 'سفارش‌های ثبت‌شده تا ساعت ۱۴، همان روز ارسال می‌شوند. مدت تحویل بسته به شهر مقصد بین ۱ تا ۵ روز کاری متغیر است. برای تهران و شهرهای بزرگ معمولاً ۱ تا ۲ روز کاری و برای سایر شهرستان‌ها ۳ تا ۵ روز کاری زمان لازم است.'],
+        ['q' => 'آیا امکان بازگشت کالا وجود دارد؟', 'a' => 'بازگشت کالا فقط در صورت داشتن عیب فنی یا مغایرت با سفارش ثبت‌شده امکان‌پذیر است. برای اطلاعات بیشتر با پشتیبانی تماس بگیرید.'],
+        ['q' => 'چه روش‌های پرداختی در دسترس است؟', 'a' => 'پرداخت آنلاین از طریق درگاه بانکی امن، پرداخت در محل (هنگام تحویل) و همچنین کارت به کارت از روش‌های پرداخت موجود هستند. درگاه پرداخت آنلاین ما دارای گواهینامه امنیتی SSL است.'],
+        ['q' => 'آیا قطعات گارانتی دارند؟', 'a' => 'قطعات ایساکو و سایر برندهای اصلی دارای گارانتی شرکتی هستند. مدت و شرایط گارانتی بسته به نوع قطعه متفاوت است و در صفحه هر محصول قابل مشاهده است. در صورت بروز مشکل، تیم پشتیبانی ما در کنار شماست.'],
+        ['q' => 'هزینه ارسال چقدر است؟', 'a' => 'سفارش‌های بالای ' . shippingAmountWords($shipping['local_free_threshold']) . ' در ' . $shipping['local_province_name'] . ' و بالای ' . shippingAmountWords($shipping['national_free_threshold']) . ' در سایر شهرها رایگان ارسال می‌شوند. در ' . $shipping['local_province_name'] . ' برای سفارش‌های کمتر از این مبلغ، ' . toPersianNumbers($shipping['local_shipping_cost']) . ' تومان هزینه پیک دریافت می‌شود و در سایر شهرها مرسوله با تیپاکس و پسکرایه از گیرنده ارسال می‌گردد. هزینه نهایی در مرحله ثبت سفارش به‌صورت شفاف نمایش داده می‌شود.'],
+    ];
+}
+
 function seo_article_schema(array $data): array
 {
     return [
@@ -1955,4 +1979,115 @@ function article_cover($article): string
     $id = is_object($article) ? (int) ($article->articleid ?? 0) : 0;
 
     return '/assets/images/blog/' . $covers[$id % count($covers)] . '.svg';
+}
+
+/**
+ * نگاشت موضوع مقاله به دسته‌بندی فروشگاه.
+ *
+ * ساختار عمدا کنار article_cover_map() است و همان منطق را دارد: کلیدواژه‌های
+ * عنوان مقاله را به یک گروه موضوعی می‌رساند. اینجا مقصد، به‌جای تصویر کاور،
+ * دسته‌ی متناظر در فروشگاه است.
+ *
+ * ترتیب مهم است: گروه‌های خاص‌تر (ترمز، خنک‌کننده) پیش از گروه‌های عام‌تر
+ * (موتور) بررسی می‌شوند، وگرنه «واتر پمپ» به دسته‌ی موتور می‌افتد.
+ *
+ * @return array<int, array{keywords: array<int,string>, category: \App\Enums\ProductCategory}>
+ */
+function article_topic_categories(): array
+{
+    $c = \App\Enums\ProductCategory::class;
+
+    return [
+        // «چرخ» و «طبق» تنها نمی‌آیند: «چرخه» و «طبقه/طبق گفته» را هم می‌گیرند.
+        ['keywords' => ['ترمز', 'لنت', 'کاسه چرخ', 'دیسک ترمز', 'جلوبندی', 'کمک فنر', 'بلبرینگ چرخ', 'پلوس', 'طبق چرخ', 'سیبک'], 'category' => $c::BRAKE_SUSPENSION],
+        ['keywords' => ['رادیاتور', 'واتر پمپ', 'واترپمپ', 'ترموستات', 'خنک', 'بخاری', 'فشنگی آب', 'شلنگ آب', 'ضدیخ'], 'category' => $c::COOLING],
+        ['keywords' => ['اگزوز', 'کاتالیزور', 'منیفولد دود', 'تهویه', 'کولر'], 'category' => $c::EXHAUST],
+        ['keywords' => ['انژکتور', 'پمپ بنزین', 'سوخت', 'شمع', 'کویل', 'کوئل', 'وایر شمع', 'دلکو', 'جرقه'], 'category' => $c::FUEL_SYSTEM],
+        ['keywords' => ['باتری', 'دینام', 'استارت', 'ecu', 'ای سی یو', 'رله', 'سنسور', 'برقی', 'چراغ', 'مه شکن', 'آمپر', 'سیم کشی'], 'category' => $c::ELECTRICAL],
+        ['keywords' => ['گیربکس', 'دیفرانسیل', 'کلاچ', 'دنده', 'دسته دنده'], 'category' => $c::GEARBOX],
+        ['keywords' => ['فیلتر', 'روغن', 'سرویس دوره', 'تسمه', 'مصرفی'], 'category' => $c::CONSUMABLES],
+        /* «درب» و «رنگ» عمدا نیامده‌اند: تطابق زیررشته‌ای است و «درباره» و
+           «درنگ» را هم می‌گیرد — «همه چیز درباره تسمه تایم» به شاسی و بدنه
+           لینک می‌شد. کلیدواژه‌ی کوتاهِ پرابهام از نبودش بدتر است. */
+        ['keywords' => ['سپر', 'بدنه', 'گلگیر', 'شاسی', 'صافکاری', 'درب موتور', 'رنگ بدنه'], 'category' => $c::CHASSIS_BODY],
+        ['keywords' => ['داشبورد', 'صندلی', 'تودوزی', 'قالپاق', 'آینه', 'برف پاک کن', 'تزئین'], 'category' => $c::INTERIOR],
+        ['keywords' => ['موتور', 'سرسیلندر', 'واشر سر سیلندر', 'پیستون', 'میل لنگ', 'کاسه نمد', 'اورینگ'], 'category' => $c::ENGINE],
+    ];
+}
+
+/**
+ * لینک‌های فروشگاهیِ مرتبط با یک مقاله.
+ *
+ * صفحه‌ی مقاله تا امروز فقط به مقالات دیگر و صفحه‌ی اصلی لینک می‌داد؛ یعنی
+ * پنجاه صفحه‌ی محتوایی که هیچ اعتباری به صفحات فروش نمی‌رساندند و خواننده‌ای
+ * که مقاله‌ی «تعویض لنت ترمز» را تمام می‌کرد، راهی به خود لنت‌ها نداشت.
+ *
+ * مقصدها از روی کلیدواژه‌های عنوان انتخاب می‌شوند: دسته‌ی مرتبط، مدل خودرویی
+ * که در عنوان آمده، و ترکیب این دو. اگر عنوان به هیچ موضوعی نخورد، لینکی
+ * ساخته نمی‌شود — بلوکِ لینکِ بی‌ربط از نبودش بدتر است.
+ *
+ * @return array<int, array{label: string, url: string}>
+ */
+function article_shop_links($article, int $limit = 6): array
+{
+    $title = is_object($article) ? (string) ($article->titr ?? '') : (string) $article;
+    $haystack = mb_strtolower(str_replace("\u{200C}", ' ', $title), 'UTF-8');
+
+    if (trim($haystack) === '') {
+        return [];
+    }
+
+    $matches = function (string $keyword) use ($haystack): bool {
+        $keyword = mb_strtolower(str_replace("\u{200C}", ' ', $keyword), 'UTF-8');
+
+        return $keyword !== '' && mb_strpos($haystack, $keyword) !== false;
+    };
+
+    // دسته‌ها؛ اولین تطابق مهم‌ترین است ولی مقاله ممکن است چند موضوع را بپوشاند.
+    $categories = [];
+    foreach (article_topic_categories() as $topic) {
+        foreach ($topic['keywords'] as $keyword) {
+            if ($matches($keyword)) {
+                $categories[$topic['category']->value] = $topic['category'];
+                break;
+            }
+        }
+    }
+
+    // مدل خودرو، فقط اگر واقعا در عنوان آمده باشد.
+    $car = null;
+    foreach (\App\Support\CarModels::all() as $carSlug => $carInfo) {
+        if (\App\Support\CarModels::isIndexable($carSlug) && $matches($carInfo['name'])) {
+            $car = ['slug' => $carSlug, 'name' => $carInfo['name']];
+            break;
+        }
+    }
+
+    $links = [];
+    $push = function (string $label, string $url) use (&$links, $limit) {
+        if (count($links) < $limit && ! isset($links[$url])) {
+            $links[$url] = ['label' => $label, 'url' => $url];
+        }
+    };
+
+    /* ترکیب «دسته × خودرو» دقیق‌ترین مقصد است و اول می‌آید — اما فقط وقتی آن
+       صفحه به‌اندازه‌ی کافی قطعه دارد، وگرنه خودش noindex است. */
+    if ($car) {
+        foreach ($categories as $category) {
+            if (\App\Support\CarModels::comboCount($car['slug'], $category->value) >= \App\Support\SeoContent::COMBO_MIN_INDEXABLE) {
+                $push(
+                    $category->label() . ' ' . $car['name'],
+                    '/car/' . rawurlencode($car['slug']) . '/' . rawurlencode($category->slug())
+                );
+            }
+        }
+
+        $push('قطعات ' . $car['name'], '/car/' . rawurlencode($car['slug']));
+    }
+
+    foreach ($categories as $category) {
+        $push('خرید ' . $category->label(), '/shop/' . rawurlencode($category->slug()));
+    }
+
+    return array_values($links);
 }

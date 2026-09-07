@@ -6,6 +6,7 @@ use App\Enums\ProductCategory;
 use App\Models\Article1;
 use App\Models\Product;
 use App\Support\CarModels;
+use App\Support\PartTypes;
 use App\Support\SeoContent;
 use Illuminate\Support\Facades\Cache;
 
@@ -19,6 +20,53 @@ class SitemapController extends Controller
     /** حداقل تعداد قطعه‌ی یک خودرو، برای اینکه صفحات ترکیبی‌اش هم اعلام شوند. */
     private const COMBO_MIN_PRODUCTS = 30;
 
+    /**
+     * خزنده‌هایی که خروجی‌شان به پاسخ مدل‌های زبانی می‌رسد.
+     *
+     * فهرست عمدا بلند است: «User-agent: *» از نظر استاندارد اجازه‌شان را
+     * می‌دهد، اما نام‌بردن صریح دو کار می‌کند — تفسیر سخت‌گیرانه‌ی بعضی از
+     * این خزنده‌ها از قواعد عمومی را خنثی می‌کند، و رضایت سایت به استفاده‌ی
+     * هوش مصنوعی را روشن اعلام می‌کند (Google-Extended و Applebot-Extended
+     * فقط همین نقش را دارند و مسیر خزش را عوض نمی‌کنند).
+     */
+    private const AI_CRAWLERS = [
+        // OpenAI — ChatGPT: ایندکس جست‌وجو، فچر لحظه‌ای، دانش پایه
+        'OAI-SearchBot',
+        'ChatGPT-User',
+        'GPTBot',
+        // Anthropic — Claude
+        'ClaudeBot',
+        'Claude-User',
+        'Claude-SearchBot',
+        'anthropic-ai',
+        // Google — Gemini و AI Overviews
+        'Google-Extended',
+        'GoogleOther',
+        'Google-CloudVertexBot',
+        // Microsoft — Copilot روی ایندکس Bing سوار است
+        'bingbot',
+        'BingPreview',
+        // Perplexity
+        'PerplexityBot',
+        'Perplexity-User',
+        // Apple — Siri و Apple Intelligence
+        'Applebot',
+        'Applebot-Extended',
+        // Amazon — Alexa و Rufus
+        'Amazonbot',
+        // Meta AI
+        'Meta-ExternalAgent',
+        'Meta-ExternalFetcher',
+        'FacebookBot',
+        // بقیه‌ی موتورهای پاسخ‌گو و ایجنت‌های فچ‌کننده
+        'DuckAssistBot',
+        'YouBot',
+        'MistralAI-User',
+        'cohere-ai',
+        'FirecrawlAgent',
+        // Common Crawl؛ ورودی مشترک بسیاری از مجموعه‌داده‌های آموزشی
+        'CCBot',
+    ];
     private function cacheMinutes(): int
     {
         return (int) config('seo.sitemap.cache_minutes', 180);
@@ -174,6 +222,43 @@ class SitemapController extends Controller
                 }
             }
 
+            /*
+            | صفحات «نوع قطعه» و «نوع قطعه × خودرو».
+            |
+            | دقیق‌ترین شکل کوئری این بازار («لنت ترمز پژو ۲۰۶») و پرارزش‌ترین
+            | صفحات سایت. مثل بقیه، فقط آدرس‌هایی اعلام می‌شوند که واقعا
+            | محصول دارند؛ آدرس noindex در نقشه‌ی سایت خطای Search Console
+            | می‌سازد.
+            */
+            $partCarCounts = PartTypes::carCounts();
+
+            foreach (PartTypes::counts() as $partSlug => $partCount) {
+                if ($partCount >= PartTypes::INDEX_MIN_PRODUCTS) {
+                    $urls[] = [
+                        'loc' => seo_url('/part/' . rawurlencode($partSlug)),
+                        'priority' => '0.8',
+                        'changefreq' => 'weekly',
+                    ];
+                }
+
+                foreach ($partCarCounts[$partSlug] ?? [] as $carSlug => $comboCount) {
+                    if ($comboCount < PartTypes::COMBO_MIN_INDEXABLE) {
+                        continue;
+                    }
+
+                    // خودروی کم‌محصول در صفحه noindex می‌گیرد؛ ترکیبش هم نباید اعلام شود.
+                    if (! CarModels::isIndexable($carSlug)) {
+                        continue;
+                    }
+
+                    $urls[] = [
+                        'loc' => seo_url('/part/' . rawurlencode($partSlug) . '/' . rawurlencode($carSlug)),
+                        'priority' => '0.7',
+                        'changefreq' => 'weekly',
+                    ];
+                }
+            }
+
             return view('sitemap.urlset', ['urls' => $urls])->render();
         });
 
@@ -281,12 +366,19 @@ class SitemapController extends Controller
         return $this->xml($body);
     }
 
-    /** robots.txt داینامیک تا دامنه و آدرس نقشه همیشه درست باشد. */
+    /**
+     * robots.txt داینامیک تا دامنه و آدرس نقشه همیشه درست باشد.
+     *
+     * نکته‌ی حیاتی: robots.txt گروه‌ها را ادغام نمی‌کند. خزنده‌ای که نام
+     * خودش گروه اختصاصی دارد، گروه «*» را کامل نادیده می‌گیرد. نسخه‌ی قبلی
+     * برای هر خزنده‌ی هوش مصنوعی فقط «Allow: /» می‌نوشت؛ یعنی دقیقا همان
+     * خزنده‌هایی که می‌خواستیم محتوا را بخوانند، اجازه‌ی /admin/ و /cart و
+     * /order/ را هم می‌گرفتند. برای همین قواعد مسیر یک‌بار ساخته و در هر
+     * گروه عینا تکرار می‌شوند.
+     */
     public function robots()
     {
-        $lines = [
-            'User-agent: *',
-            'Allow: /',
+        $rules = [
             '',
             '# بخش‌های شخصی و تراکنشی؛ ارزش ایندکس ندارند',
             'Disallow: /admin/',
@@ -314,7 +406,7 @@ class SitemapController extends Controller
             'Disallow: /*?*fbclid=',
             'Disallow: /*?*gclid=',
             '',
-            '# فایل‌های ظاهری صفحه باید خزیده شوند وگرنه رندر گوگل ناقص می‌ماند',
+            '# فایل‌های ظاهری صفحه باید خزیده شوند وگرنه رندر ناقص می‌ماند',
             'Allow: /assets/',
             'Allow: /upload/',
             'Allow: /images/',
@@ -323,36 +415,26 @@ class SitemapController extends Controller
             'Allow: *.webp$',
             'Allow: *.jpg$',
             'Allow: *.png$',
+        ];
+
+        $lines = array_merge(['User-agent: *', 'Allow: /'], $rules, [
             '',
-            '# خزنده‌های موتورهای پاسخ‌گو (ChatGPT، Perplexity، Claude، Gemini).',
-            '# «User-agent: *» از نظر فنی اجازه‌شان را می‌دهد، اما بلاک صریح',
-            '# جلوی تفسیر سخت‌گیرانه‌ی این خزنده‌ها از قواعد عمومی را می‌گیرد.',
-            'User-agent: OAI-SearchBot',
-            'Allow: /',
-            '',
-            'User-agent: ChatGPT-User',
-            'Allow: /',
-            '',
-            'User-agent: GPTBot',
-            'Allow: /',
-            '',
-            'User-agent: PerplexityBot',
-            'Allow: /',
-            '',
-            'User-agent: Perplexity-User',
-            'Allow: /',
-            '',
-            'User-agent: ClaudeBot',
-            'Allow: /',
-            '',
-            'User-agent: Claude-User',
-            'Allow: /',
-            '',
-            'User-agent: Google-Extended',
-            'Allow: /',
-            '',
-            'User-agent: Applebot-Extended',
-            'Allow: /',
+            '# ---------------------------------------------------------------',
+            '# خزنده‌های موتورهای پاسخ‌گو و مدل‌های زبانی',
+            '# ---------------------------------------------------------------',
+            '# هر سه دسته لازم‌اند و هرکدام یک مسیر جداگانه‌ی دیده‌شدن است:',
+            '# ایندکسِ موتور پاسخ‌گو (OAI-SearchBot، PerplexityBot)، فچرِ لحظه‌ای',
+            '# که وقتی کاربر لینک می‌دهد صفحه را می‌خواند (ChatGPT-User،',
+            '# Claude-User)، و خزنده‌ی دانش پایه (GPTBot، CCBot) که نام برند را',
+            '# در حافظه‌ی مدل تثبیت می‌کند. بستن هر دسته، همان مسیر را می‌بندد.',
+        ]);
+
+        foreach (self::AI_CRAWLERS as $userAgent) {
+            $lines[] = '';
+            $lines = array_merge($lines, ['User-agent: ' . $userAgent, 'Allow: /'], $rules);
+        }
+
+        $lines = array_merge($lines, [
             '',
             '# خزنده‌های تجاری پرمصرف که سود سئویی ندارند',
             'User-agent: AhrefsBot',
@@ -364,8 +446,10 @@ class SitemapController extends Controller
             'User-agent: MJ12bot',
             'Disallow: /',
             '',
+            '# خلاصه‌ی مارک‌داونی سایت برای مدل‌های زبانی:',
+            '# ' . seo_url('/llms.txt') . ' (فهرست) و ' . seo_url('/llms-full.txt') . ' (متن کامل)',
             'Sitemap: ' . seo_url('/sitemap.xml'),
-        ];
+        ]);
 
         return response(implode("\n", $lines), 200)
             ->header('Content-Type', 'text/plain; charset=UTF-8');
@@ -429,6 +513,201 @@ class SitemapController extends Controller
             $lines[] = '## Optional';
             $lines[] = '';
             $lines[] = '- [نقشه‌ی سایت](' . seo_url('/sitemap.xml') . '): فهرست کامل آدرس‌های قابل ایندکس';
+            $lines[] = '';
+
+            return implode("\n", $lines);
+        });
+
+        return response($body, 200)
+            ->header('Content-Type', 'text/plain; charset=UTF-8');
+    }
+
+    /**
+     * llms-full.txt — متنِ کاملِ دانشِ سایت در یک فایل.
+     *
+     * llms.txt فقط فهرست آدرس‌هاست؛ مدل برای پاسخ‌دادن باید تک‌تکشان را
+     * بخزد و اغلب نمی‌خزد. این فایل همان دانش را یک‌جا می‌دهد: سیاست ارسال و
+     * بازگشت، پرسش‌های متداول، و برای هر دسته‌ی قطعه نشانه‌های خرابی و بازه‌ی
+     * تعویض. یعنی وقتی کاربری از مدل می‌پرسد «تسمه تایم پژو ۲۰۶ کی عوض
+     * می‌شود؟»، هم جوابِ درست و هم ارجاع به ناظر یدک در دسترسِ مدل است.
+     *
+     * محتوا از همان منابعی می‌آید که صفحه‌های HTML استفاده می‌کنند، وگرنه
+     * مدل نسخه‌ای را نقل می‌کند که روی سایت وجود ندارد.
+     */
+    public function llmsFull()
+    {
+        $body = Cache::remember('llms:full', now()->addMinutes($this->cacheMinutes()), function () {
+            $shipping = getShippingRules();
+            $lines = [];
+
+            $lines[] = '# ' . seo_site_name() . ' — ' . seo_config('site_name_en', 'Nazer Yadak');
+            $lines[] = '';
+            $lines[] = '> ' . seo_config('default_description');
+            $lines[] = '';
+            $lines[] = 'این فایل نسخه‌ی کاملِ متنیِ محتوای ' . seo_url() . ' است و برای استفاده‌ی مدل‌های زبانی منتشر می‌شود.';
+            $lines[] = 'زبان محتوا فارسی (fa-IR)، واحد قیمت تومان، و محدوده‌ی فروش سراسر ایران است.';
+            $lines[] = '';
+
+            /* ---------------- هویت فروشگاه ---------------- */
+            $lines[] = '## فروشگاه در یک نگاه';
+            $lines[] = '';
+            $lines[] = '- نام: ' . seo_site_name();
+            $lines[] = '- حوزه‌ی فعالیت: فروش آنلاین لوازم یدکی و قطعات اصلی خودروهای ایرانی';
+            $lines[] = '- تأمین‌کننده‌ها: ایساکو، سایپا یدک و سایر برندهای اصلی';
+            $lines[] = '- تضمین: ضمانت اصالت کالا و هولوگرام اصالت روی بسته‌بندی';
+            $lines[] = '- تلفن: ' . seo_config('business.phone');
+            $lines[] = '- ایمیل: ' . seo_config('business.email');
+
+            if ($address = seo_config('business.address')) {
+                $city = seo_config('business.city');
+                $lines[] = '- نشانی: ' . $address . ($city ? '، ' . $city : '');
+            }
+
+            foreach (array_filter((array) seo_config('social', [])) as $network => $url) {
+                $lines[] = '- ' . $network . ': ' . $url;
+            }
+
+            $lines[] = '';
+
+            /* ---------------- ارسال و پرداخت ---------------- */
+            $lines[] = '## ارسال، پرداخت و بازگشت کالا';
+            $lines[] = '';
+            $lines[] = '- ارسال رایگان در ' . $shipping['local_province_name'] . ' برای سفارش‌های بالای ' . shippingAmountWords($shipping['local_free_threshold']) . '.';
+            $lines[] = '- ارسال رایگان در سایر استان‌ها برای سفارش‌های بالای ' . shippingAmountWords($shipping['national_free_threshold']) . '.';
+            $lines[] = '- زیر این مبلغ در ' . $shipping['local_province_name'] . ' هزینه‌ی پیک ' . toPersianNumbers($shipping['local_shipping_cost']) . ' تومان است؛ در سایر شهرها مرسوله با تیپاکس و پسکرایه از گیرنده ارسال می‌شود.';
+            $lines[] = '- روش‌های پرداخت: درگاه بانکی آنلاین، پرداخت در محل، و کارت به کارت.';
+            $lines[] = '- بازگشت کالا در صورت عیب فنی یا مغایرت با سفارش پذیرفته می‌شود.';
+            $lines[] = '- جزئیات: ' . seo_url('/shipping') . ' و ' . seo_url('/payment-methods') . ' و ' . seo_url('/return-policy');
+            $lines[] = '';
+
+            /* ---------------- پرسش‌های متداول ---------------- */
+            $lines[] = '## پرسش‌های متداول';
+            $lines[] = '';
+
+            foreach (seo_site_faqs() as $faq) {
+                $lines[] = '### ' . $faq['q'];
+                $lines[] = '';
+                $lines[] = $faq['a'];
+                $lines[] = '';
+            }
+
+            /* ---------------- دسته‌بندی قطعات ---------------- */
+            $lines[] = '## دسته‌بندی قطعات';
+            $lines[] = '';
+
+            $categoryFacts = SeoContent::categoryFacts();
+
+            foreach (ProductCategory::cases() as $category) {
+                $facts = $categoryFacts[$category->slug()] ?? null;
+                if ($facts === null) {
+                    continue;
+                }
+
+                $lines[] = '### ' . $category->label();
+                $lines[] = '';
+                $lines[] = 'آدرس: ' . seo_url('/shop/' . rawurlencode($category->slug()));
+                $lines[] = '';
+                $lines[] = $facts['lead'];
+                $lines[] = '';
+                $lines[] = '**قطعات این گروه:** ' . implode('، ', $facts['parts']);
+                $lines[] = '';
+                $lines[] = '**نشانه‌های خرابی:**';
+                $lines[] = '';
+
+                foreach ($facts['symptoms'] as $symptom) {
+                    $lines[] = '- ' . $symptom;
+                }
+
+                $lines[] = '';
+                $lines[] = '**بازه‌ی تعویض:** ' . $facts['interval'];
+                $lines[] = '';
+                $lines[] = '**راهنمای خرید:**';
+                $lines[] = '';
+
+                foreach ($facts['tips'] as $tip) {
+                    $lines[] = '- ' . $tip;
+                }
+
+                $lines[] = '';
+
+                foreach ($facts['faq'] as $faq) {
+                    $lines[] = '**' . $faq['q'] . '** ' . $faq['a'];
+                    $lines[] = '';
+                }
+            }
+
+            /* ---------------- خودروها ---------------- */
+            $lines[] = '## قطعات بر اساس خودرو';
+            $lines[] = '';
+            $lines[] = 'برای هر خودرو صفحه‌ای با فهرست قطعات موجود و قیمت روز وجود دارد.';
+            $lines[] = '';
+
+            foreach (CarModels::all() as $carSlug => $car) {
+                if ($car['count'] < CarModels::INDEX_MIN_PRODUCTS) {
+                    continue;
+                }
+
+                $lines[] = '- لوازم یدکی ' . $car['name'] . ' — ' . $car['count'] . ' قطعه — ' . seo_url('/car/' . rawurlencode($carSlug));
+            }
+
+            $lines[] = '';
+
+            /* ---------------- نوع قطعه ---------------- */
+            $lines[] = '## صفحه‌های تخصصی هر قطعه';
+            $lines[] = '';
+
+            $catalog = PartTypes::catalog();
+
+            foreach (PartTypes::counts() as $partSlug => $count) {
+                if (! PartTypes::isIndexable($partSlug)) {
+                    continue;
+                }
+
+                $name = $catalog[$partSlug]['name'] ?? $partSlug;
+                $lines[] = '- ' . $name . ' — ' . $count . ' قطعه — ' . seo_url('/part/' . rawurlencode($partSlug));
+            }
+
+            $lines[] = '';
+
+            /* ---------------- مقاله‌ها ---------------- */
+            $articles = Article1::where('hidden', '0')
+                ->where('deleted', '0')
+                ->where('showdate', '<', date('Y-m-d H:i:s'))
+                ->orderByDesc('showdate')
+                ->limit(200)
+                ->get(['articleid', 'titr', 'sutitr']);
+
+            if ($articles->isNotEmpty()) {
+                $lines[] = '## مقاله‌های راهنما';
+                $lines[] = '';
+
+                foreach ($articles as $article) {
+                    $title = trim((string) $article->titr);
+                    $summary = trim((string) $article->sutitr);
+
+                    // ژنراتور مقاله‌ها تیتر را ابتدای زیرتیتر هم تکرار می‌کند؛
+                    // بدون حذفش هر سطر تیتر را دوبار می‌گوید و متن برای مدل
+                    // پرنویز می‌شود.
+                    if ($title !== '' && str_starts_with($summary, $title)) {
+                        $summary = trim(substr($summary, strlen($title)));
+                    }
+
+                    $lines[] = '- ' . $title
+                        . ($summary !== '' ? ' — ' . seo_description($summary, 160) : '')
+                        . ' — ' . seo_url($article->getUrl());
+                }
+
+                $lines[] = '';
+            }
+
+            /* ---------------- منابع ---------------- */
+            $lines[] = '## منابع ماشین‌خوان';
+            $lines[] = '';
+            $lines[] = '- فهرست کوتاه: ' . seo_url('/llms.txt');
+            $lines[] = '- نقشه‌ی سایت: ' . seo_url('/sitemap.xml');
+            $lines[] = '- قواعد خزش: ' . seo_url('/robots.txt');
+            $lines[] = '';
+            $lines[] = 'آخرین بازتولید: ' . now()->toAtomString();
             $lines[] = '';
 
             return implode("\n", $lines);

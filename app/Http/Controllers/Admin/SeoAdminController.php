@@ -11,6 +11,7 @@ use App\Models\Redirect;
 use App\Models\SeoTerm;
 use App\Models\Setting;
 use App\Support\CarModels;
+use App\Support\PartTypes;
 use App\Support\SeoContent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -372,8 +373,13 @@ class SeoAdminController extends Controller
             }
         }
 
-        // متاتگ‌ها و اسکیماها از seo_config می‌آیند و در نقشه‌ی سایت کش شده‌اند
+        // متاتگ‌ها و اسکیماها از seo_config می‌آیند و در نقشه‌ی سایت کش شده‌اند.
+        // فایل‌های llms هم نام فروشگاه، توضیح و اطلاعات تماس را از همین تنظیمات
+        // می‌گیرند؛ اگر پاک نشوند، مدل‌های زبانی تا سه ساعت شماره‌ی تماس قدیمی
+        // را به کاربرانشان می‌دهند.
         \Illuminate\Support\Facades\Cache::forget('sitemap:index');
+        \Illuminate\Support\Facades\Cache::forget('llms:txt');
+        \Illuminate\Support\Facades\Cache::forget('llms:full');
 
         return redirect('/admin/seo/settings')->with('success', 'تنظیمات سئو ذخیره شد.');
     }
@@ -510,6 +516,31 @@ class SeoAdminController extends Controller
 
         $combos = $saved->filter(fn ($term) => $term->type === SeoTerm::TYPE_CAR_CATEGORY)->values();
 
+        /* انواع قطعه: «لنت ترمز» در برابر «چرخ، ترمز و جلوبندی».
+           فهرست ثابت است (app/Support/PartTypes.php) ولی شمارش از انبار می‌آید. */
+        $parts = [];
+        foreach (PartTypes::counts() as $partSlug => $partCount) {
+            $parts[] = [
+                'slug'      => $partSlug,
+                'name'      => PartTypes::name($partSlug),
+                'count'     => $partCount,
+                'indexable' => $partCount >= PartTypes::INDEX_MIN_PRODUCTS,
+                'url'       => '/part/' . rawurlencode($partSlug),
+                'term'      => $saved[SeoTerm::TYPE_PART . ':' . $partSlug] ?? null,
+            ];
+        }
+
+        $partCombos = $saved->filter(fn ($term) => $term->type === SeoTerm::TYPE_PART_CAR)->values();
+
+        $partComboTotal = 0;
+        foreach (PartTypes::carCounts() as $partCars) {
+            foreach ($partCars as $partCarCount) {
+                if ($partCarCount >= PartTypes::COMBO_MIN_INDEXABLE) {
+                    $partComboTotal++;
+                }
+            }
+        }
+
         /*
         | چند ترکیبِ واقعا موجود هست و برای چندتایشان متن نوشته شده؟
         |
@@ -537,6 +568,9 @@ class SeoAdminController extends Controller
             'combos'         => $combos,
             'comboTotal'     => $comboTotal,
             'comboIndexable' => $comboIndexable,
+            'parts'          => $parts,
+            'partCombos'     => $partCombos,
+            'partComboTotal' => $partComboTotal,
             'carOptions'     => CarModels::all(),
             'categoryCases'  => ProductCategory::cases(),
         ]);
@@ -662,6 +696,14 @@ class SeoAdminController extends Controller
                     && CarModels::fromSlug($parts[0]) !== null
                     && ProductCategory::fromSlug($parts[1]) !== null;
             })(),
+            SeoTerm::TYPE_PART => PartTypes::has($slug),
+            SeoTerm::TYPE_PART_CAR => (function () use ($slug) {
+                $parts = explode('/', $slug);
+
+                return count($parts) === 2
+                    && PartTypes::has($parts[0])
+                    && CarModels::fromSlug($parts[1]) !== null;
+            })(),
             default => false,
         };
     }
@@ -674,6 +716,19 @@ class SeoAdminController extends Controller
 
         if ($type === SeoTerm::TYPE_CAR) {
             return 'قطعات ' . (CarModels::fromSlug($slug) ?? $slug);
+        }
+
+        if ($type === SeoTerm::TYPE_PART) {
+            return PartTypes::name($slug) ?? $slug;
+        }
+
+        if ($type === SeoTerm::TYPE_PART_CAR) {
+            $parts = explode('/', $slug);
+            if (count($parts) === 2) {
+                return (PartTypes::name($parts[0]) ?? $parts[0]) . ' ' . (CarModels::fromSlug($parts[1]) ?? $parts[1]);
+            }
+
+            return $slug;
         }
 
         $parts = explode('/', $slug);
@@ -691,6 +746,8 @@ class SeoAdminController extends Controller
         return match ($type) {
             SeoTerm::TYPE_CATEGORY => '/shop/' . rawurlencode($slug),
             SeoTerm::TYPE_CAR      => '/car/' . rawurlencode($slug),
+            SeoTerm::TYPE_PART     => '/part/' . rawurlencode($slug),
+            SeoTerm::TYPE_PART_CAR => '/part/' . implode('/', array_map('rawurlencode', explode('/', $slug))),
             default => '/car/' . implode('/', array_map('rawurlencode', explode('/', $slug))),
         };
     }
