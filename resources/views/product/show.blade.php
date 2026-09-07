@@ -435,7 +435,7 @@
                                 <div class="dk-review-reply">
                                     <div class="dk-review-reply-head">
                                         <i class="fas fa-store"></i>
-                                        <b>پاسخ نازک‌یدک</b>
+                                        <b>پاسخ ناظر یدک</b>
                                         @if($review->replied_at)
                                             <span>{{ $review->replied_at->diffForHumans() }}</span>
                                         @endif
