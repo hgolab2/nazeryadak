@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\DiscountCode;
 use App\Models\Order;
+use App\Services\BaleNotifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -81,6 +82,14 @@ class DiscountController extends Controller
         $order->discount_code_id = $code->id;
         $order->syncDiscount();
         $order->save();
+
+        BaleNotifier::send('discount_used', [
+            'کد'     => $code->code,
+            'تخفیف'  => number_format((int) $order->discount_amount) . ' تومان',
+            'سفارش'  => '#' . $order->id,
+            'مشتری'  => $order->customer?->fullName() ?: '—',
+            'موبایل' => $order->customer?->phone ?: '',
+        ]);
 
         $message = 'کد تخفیف اعمال شد؛ '
             . toPersianNumbers(number_format((int) $order->discount_amount)) . ' تومان کم شد.';

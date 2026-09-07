@@ -1,11 +1,10 @@
 <?php
 
+use App\Services\ErrorReporter;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -36,60 +35,23 @@ return Application::configure(basePath: dirname(__DIR__))
             : '/login');
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        $exceptions->render(function (Throwable $e, Request $request) {
-            try {
-                /*
-                | هشدار فقط برای خطای واقعی سرور.
-                |
-                | تا پیش از این هر استثنایی — از جمله ۴۰۴ — پیش از ارسال پاسخ،
-                | یک درخواست HTTP خروجیِ مسدودکننده می‌زد. خزنده‌ها روزانه
-                | ده‌ها آدرس مرده را امتحان می‌کنند و هر کدام پاسخ ۴۰۴ را تا
-                | پایان آن درخواست (تایم‌اوت پیش‌فرض PHP: ۶۰ ثانیه) نگه
-                | می‌داشت؛ یعنی هم بودجه‌ی خزش می‌سوخت و هم پراسس‌های PHP.
-                | مسیرهای ۴۰۴ همچنان در «مانیتور ۴۰۴» پنل ثبت می‌شوند.
-                */
-                $status = method_exists($e, 'getStatusCode') ? (int) $e->getStatusCode() : 500;
-                if ($status < 500) {
-                    return null;
-                }
-
-                $token   = env('BALE_BOT_TOKEN');
-                $chat_id = env('BALE_CHAT_ID');
-                if (! $token || ! $chat_id) {
-                    return null;
-                }
-
-                try {
-                    $level = 'error';
-                    $userid = Auth::check() ? Auth::id() : "";
-                    $line = $e->getLine() ?? 0;
-                    $ip = $request->ip() ?? '';
-                    $text =
-                        "⚠️ Laravel Error Alert\n".
-                        "Level:{$level}\n".
-                        "Message: {$e->getMessage()}\n".
-                        "File: {$e->getFile()}:{$e->getLine()}\n".
-                        "URL: ".$request->fullUrl()."\n".
-                        "User_id: {$userid}\n".
-                        "Line: {$line}\n".
-                        "IP: {$ip}\n".
-                        "Time: ".now();
-
-                    $url = "https://tapi.bale.ai/bot{$token}/sendMessage";
-
-                    // تایم‌اوت کوتاه: پاسخ صفحه نباید منتظر سرویس هشدار بماند.
-                    file_get_contents($url . "?" . http_build_query([
-                        'chat_id' => $chat_id,
-                        'text'    => $text
-                    ]), false, stream_context_create(['http' => ['timeout' => 3, 'ignore_errors' => true]]));
-
-                } catch (\Throwable $telegramError) {
-                    // ignore
-                }
-
-
-            } catch (\Exception $e) {
-                // جلوگیری از خطای بیشتر
-            }
+        /*
+        | هر خطای سرور در جدول errorlog ثبت و در بله اطلاع‌رسانی می‌شود.
+        |
+        | این کار در report انجام می‌شود نه render، چون:
+        |
+        |   - خطای دستورهای artisan و صف هم باید ثبت شود؛ render فقط برای
+        |     درخواست‌های وب صدا زده می‌شود.
+        |   - لاراول خودش استثناهای بی‌اهمیت (۴۰۴، ۴۱۹، خطای اعتبارسنجی،
+        |     ورود نکردن کاربر) را گزارش نمی‌کند، پس دیگر لازم نیست دستی
+        |     فیلترشان کنیم. مسیرهای ۴۰۴ همچنان در «مانیتور ۴۰۴» ثبت می‌شوند.
+        |
+        | نسخه‌ی قبلی این بخش توکن بله را با env() می‌خواند؛ روی سرور بعد از
+        | «php artisan config:cache» مقدارِ env بیرون از فایل‌های config همیشه
+        | null است و هشدارها بی‌سروصدا قطع می‌شدند. حالا از config/bale.php
+        | خوانده می‌شود.
+        */
+        $exceptions->report(function (Throwable $e) {
+            ErrorReporter::capture($e);
         });
     })->create();

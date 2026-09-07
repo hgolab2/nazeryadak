@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Schema;
+use App\Services\BaleNotifier;
 use App\Services\IsacoImageService;
 
 class ProductController extends Controller
@@ -617,6 +618,16 @@ class ProductController extends Controller
         }
 
         ProductReview::create($attributes);
+
+        // نظر بدون تأیید روی صفحه می‌نشیند، پس مدیر باید همان لحظه ببیندش
+        BaleNotifier::send('product_review', [
+            'محصول'  => $product->title ?? ('#' . $product->id),
+            'امتیاز' => $attributes['rating'] . ' از ۵',
+            'نویسنده' => $attributes['name'],
+            'خریدار' => $attributes['is_buyer'] ? 'بله' : 'خیر',
+            'متن'    => mb_substr($attributes['comment'], 0, 300),
+            'صفحه'   => url('/product/' . $product->id),
+        ]);
 
         return back()->with('review_notice', 'نظر شما ثبت شد و روی صفحه‌ی محصول نمایش داده می‌شود.')->withFragment('reviews');
     }

@@ -32,6 +32,18 @@ use App\Models\Product;
  */
 class ProductDescription
 {
+    /**
+     * امضای متنِ ساخته‌شده‌ی این کلاس.
+     *
+     * article() هر متنِ HTML‌داری را «مقاله‌ی ایساکو» فرض می‌کرد و نگهش
+     * می‌داشت. از وقتی Product::generateDescription هم خروجی همین کلاس را
+     * می‌نویسد، اجرای بعدیِ products:seo-describe روی همان محصول، متنِ
+     * ساخته‌شده را به‌عنوان مقاله داخل متنِ تازه لانه می‌داد: کل صفحه دو بار،
+     * یک‌بار با h2 و یک‌بار با h3. این ردیفِ ثابتِ جدولِ مشخصات در هر خروجی
+     * هست و در هیچ مقاله‌ی ایساکویی نیست، پس تشخیص را قطعی می‌کند.
+     */
+    private const SIGNATURE = 'فروشنده: فروشگاه اینترنتی ناظر یدک';
+
     /** دانش دسته و خودرو یک‌بار ساخته می‌شود، نه به ازای هر محصول در حلقه. */
     private static ?array $categoryFacts = null;
 
@@ -116,11 +128,136 @@ class ProductDescription
             return '';
         }
 
+        // خروجیِ خودِ این کلاس مقاله نیست؛ نگه‌داشتنش یعنی تکرار کل متن.
+        if (static::isGenerated($source)) {
+            return '';
+        }
+
         $html = strip_tags($source, '<p><h2><h3><h4><ul><ol><li><strong><b><em><i><br><a>');
         $html = preg_replace('#<(/?)h2(\s[^>]*)?>#iu', '<$1h3>', $html);
         $html = preg_replace('#<p>(\s|&nbsp;)*</p>#iu', '', $html);
 
         return trim(preg_replace('/\s+/u', ' ', $html));
+    }
+
+    /**
+     * توضیح کوتاهِ یک‌جمله‌ای برای کارت محصول و بالای صفحه.
+     *
+     * ۳۹۵۹ محصول این ستون را خالی داشتند و کارتشان در فهرست دسته و صفحه‌ی
+     * فرود خودرو فقط نام و قیمت نشان می‌داد؛ صفحه‌ی فهرستی که چهل کارتِ
+     * بی‌متن دارد، خودش محتوای نازک است. متن عمدا از description جدا ساخته
+     * می‌شود، نه بریده‌ی آن، وگرنه همان جمله دو بار پشت سر هم در صفحه‌ی
+     * محصول می‌آمد (یک‌بار در dk-short-desc و یک‌بار در ابتدای توضیحات).
+     *
+     * خروجی متنِ ساده است، نه HTML: هر دو مصرف‌کننده آن را داخل یک <p>
+     * می‌گذارند و کارت محصول با Str::limit کوتاهش می‌کند.
+     */
+    public static function summary(Product $product): string
+    {
+        $self = new self($product, '');
+
+        if ($self->name === '') {
+            return '';
+        }
+
+        $for  = $self->car !== '' ? ' مناسب ' . $self->car : '';
+        $code = $self->sku !== '' ? ' با کد فنی ' . $self->sku : '';
+        $cat  = $self->catLabel !== '' ? ' از گروه ' . $self->catLabel : '';
+
+        return $self->pick([
+            $self->name . $for . $code . '؛ قطعه‌ی اصلی با ضمانت اصالت کالا، قیمت روز و ارسال سریع از انبار ناظر یدک.',
+            $self->name . $code . $for . ' — عرضه‌ی مستقیم از ناظر یدک با تضمین اصالت، موجودی لحظه‌ای و ارسال به سراسر ایران.',
+            'خرید ' . $self->name . $for . $cat . $code . '، اصل و دارای ضمانت اصالت کالا با ارسال سراسری.',
+            $self->name . $for . ' با تضمین اصالت کالا در ناظر یدک؛ '
+                . ($self->sku !== '' ? 'کد فنی ' . $self->sku . ' را پیش از خرید با قطعه‌ی فعلی خودرو مقایسه کنید.' : 'قیمت روز و ارسال سریع به سراسر ایران.'),
+        ]);
+    }
+    /** واژه‌هایی که یک عبارت جستجو با آن‌ها تمام نمی‌شود. */
+    private const KEYWORD_STOP_TAIL = ['و', 'با', 'یا', 'در', 'از', 'به', 'بدون', 'برای', 'طرح'];
+
+    /**
+     * کلیدواژه‌ی اصلی محصول: همان عبارتی که کاربر واقعا تایپ می‌کند.
+     *
+     * ستون focus_keyword برای هر ۴۶۲۴ محصول خالی بود، در حالی که صفحه‌ی
+     * محصول آن را اولین قلم فهرست keywords می‌گذارد و فرم «سئوی محصول» در
+     * پنل هم رویش تکیه دارد.
+     *
+     * عنوانِ خام به‌درد کلیدواژه نمی‌خورد: عنوان‌های این انبار مشخصات فنی،
+     * پرانتز و گاهی کد فنی را هم دارند («ترموستات بادمای اسمی بازشدن: 83
+     * درجه-موتور XU7JP4») و کسی این را جستجو نمی‌کند. پس تا اولین جداکننده
+     * بریده می‌شود، پرانتز و کد حذف می‌شود، و حاصل به چند واژه‌ی اول محدود
+     * می‌ماند — بعد مدل خودرو می‌آید، چون جستجوی واقعی «نام قطعه + خودرو»
+     * است نه نام قطعه به‌تنهایی.
+     */
+    public static function focusKeyword(Product $product): string
+    {
+        $name = trim((string) $product->title);
+        if ($name === '') {
+            return '';
+        }
+
+        // پرانتزِ توضیحی، سپس هر چه بعد از اولین جداکننده‌ی مشخصات آمده.
+        $name = preg_replace('/\([^)]*\)/u', ' ', $name);
+        $name = preg_split('/[:،,؛\-–]/u', $name)[0];
+
+        // کد فنی و کد پایه جای کلیدواژه نیستند؛ در عنوان متا و متن صفحه هستند.
+        $name = preg_replace('/\b\d{5,}\b/u', ' ', $name);
+        $name = trim(preg_replace('/\s+/u', ' ', $name));
+
+        $words = preg_split('/\s+/u', $name, -1, PREG_SPLIT_NO_EMPTY);
+
+        /*
+        | واژه‌های به‌هم‌چسبیده‌ی فایل مبدأ («متالیک9995باضربه») کلیدواژه نیستند.
+        | ملاک، رشته‌ی چهاررقمی یا بلندتر است تا نام موتور و مدل خودرو —
+        | XU7، TU5، S5، 206، 405 — سالم بمانند.
+        */
+        $words = array_values(array_filter($words, fn ($w) => ! preg_match('/\d{4,}/u', $w)));
+        $words = array_slice($words, 0, 5);
+
+        while ($words !== [] && in_array(end($words), self::KEYWORD_STOP_TAIL, true)) {
+            array_pop($words);
+        }
+
+        if ($words === []) {
+            return '';
+        }
+
+        $car = trim((string) $product->car_model);
+        if ($car === 'نامشخص') {
+            $car = '';
+        }
+
+        /*
+        | برشِ پنج‌واژه‌ای می‌تواند نام خودرو را از وسط نصف کند: عنوانِ
+        | «… قرمز پژو پارس» به «… قرمز پژو» می‌رسید و افزودن مدل خودرو
+        | «… قرمز پژو پژو پارس» می‌ساخت. واژه‌های انتهاییِ نصفه پیش از
+        | چسباندن نام کامل حذف می‌شوند.
+        */
+        if ($car !== '') {
+            $carWords = preg_split('/\s+/u', $car, -1, PREG_SPLIT_NO_EMPTY);
+            while ($words !== [] && in_array(end($words), $carWords, true)) {
+                array_pop($words);
+            }
+        }
+
+        if ($words === []) {
+            return '';
+        }
+
+        $keyword = implode(' ', $words);
+
+        $flatten = fn (string $text) => preg_replace('/[\s\x{200C}]+/u', '', $text);
+
+        if ($car !== '' && ! str_contains($flatten($keyword), $flatten($car))) {
+            $keyword .= ' ' . $car;
+        }
+
+        return mb_substr($keyword, 0, 255);
+    }
+    /** آیا این متن، خروجیِ پیشینِ همین سازنده است؟ */
+    public static function isGenerated(?string $html): bool
+    {
+        return $html !== null && str_contains($html, self::SIGNATURE);
     }
 
     private function render(): string
@@ -215,7 +352,7 @@ class ProductDescription
         }
 
         $rows[] = 'اصالت: قطعه‌ی اصلی، همراه با ضمانت اصالت کالا';
-        $rows[] = 'فروشنده: فروشگاه اینترنتی ناظر یدک';
+        $rows[] = self::SIGNATURE;
 
         return [
             static::h2('مشخصات ' . $this->e($this->name)),

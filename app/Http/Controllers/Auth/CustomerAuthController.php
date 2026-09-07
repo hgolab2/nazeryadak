@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
+use App\Services\BaleNotifier;
 use App\Services\OtpService;
 use App\Support\Mobile;
 use Illuminate\Http\Request;
@@ -151,6 +152,13 @@ class CustomerAuthController extends Controller
 
         $this->startSession($request, $customer);
 
+        BaleNotifier::send($isNew ? 'customer_register' : 'customer_login', [
+            'مشتری'  => $customer->fullName() ?: '—',
+            'موبایل' => $customer->phone,
+            'روش'    => 'کد یکبارمصرف',
+            'IP'     => $request->ip(),
+        ]);
+
         // حسابی که هنوز نام ندارد، یک گام دیگر در همین کارت می‌بیند: نام و
         // (اختیاری) رمز عبور. جای درست پرسیدن رمز همین‌جاست — نه صفحه‌ی ورود،
         // که کاربر هنوز حسابی ندارد تا برایش رمز داشته باشد.
@@ -259,6 +267,13 @@ class CustomerAuthController extends Controller
 
         RateLimiter::clear($key);
         $this->startSession($request, $customer);
+
+        BaleNotifier::send('customer_login', [
+            'مشتری'  => $customer->fullName() ?: '—',
+            'موبایل' => $customer->phone,
+            'روش'    => 'رمز عبور',
+            'IP'     => $request->ip(),
+        ]);
 
         return response()->json([
             'status'   => 'success',

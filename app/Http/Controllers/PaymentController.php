@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\Payment;
+use App\Services\BaleNotifier;
 use App\Services\OrderFulfillmentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -140,8 +141,7 @@ class PaymentController extends Controller
         $order = $payment->order;
 
         if ($status !== 'OK') {
-            $payment->update(['status' => 'failed']);
-            $order->update(['status' => 'failed']);
+            $this->markFailed($order, $payment, 'انصراف کاربر یا رد شدن در درگاه');
 
             return view('order.success', [
                 'order'         => $order,
@@ -186,8 +186,7 @@ class PaymentController extends Controller
                 ]);
             }
 
-            $payment->update(['status' => 'failed']);
-            $order->update(['status' => 'failed']);
+            $this->markFailed($order, $payment, 'تأیید تراکنش توسط زرین‌پال رد شد');
 
             return view('order.success', [
                 'order'         => $order,
@@ -195,14 +194,34 @@ class PaymentController extends Controller
             ]);
 
         } catch (\Throwable $e) {
-            $payment->update(['status' => 'failed']);
-            $order->update(['status' => 'failed']);
+            $this->markFailed($order, $payment, 'خطا در ارتباط با زرین‌پال: ' . $e->getMessage());
 
             return view('order.success', [
                 'order'         => $order,
                 'paymentStatus' => 'failed',
             ]);
         }
+    }
+
+    /**
+     * ثبت شکست پرداخت و خبر دادن به مدیر.
+     *
+     * پرداختِ نیمه‌کاره تنها چیزی است که مشتری خودش دنبالش را نمی‌گیرد؛
+     * سفارش در پنل «ناموفق» می‌ماند و اگر کسی خبردار نشود، همان‌جا می‌ماند.
+     */
+    private function markFailed(Order $order, Payment $payment, string $reason): void
+    {
+        $payment->update(['status' => 'failed']);
+        $order->update(['status' => 'failed']);
+
+        BaleNotifier::send('payment_failed', [
+            'سفارش'  => '#' . $order->id,
+            'مبلغ'   => number_format((int) $payment->amount) . ' تومان',
+            'علت'    => $reason,
+            'مشتری'  => $order->customer?->fullName() ?: '—',
+            'موبایل' => $order->customer?->phone ?: '',
+            'پنل'    => url('/admin/order/show/' . $order->id),
+        ]);
     }
 
     /**

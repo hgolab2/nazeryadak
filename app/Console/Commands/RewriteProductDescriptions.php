@@ -112,13 +112,36 @@ class RewriteProductDescriptions extends Command
                     $samples[] = [$product->id, $product->title, $html];
                 }
 
+                $updates = [
+                    'description_source' => $source,
+                    'description'        => $html,
+                ];
+
+                /*
+                | توضیحات متا هم باید متنِ تازه را دنبال کند.
+                |
+                | ستون seo_description بر نسخه‌ی خودکار اولویت دارد، پس اگر
+                | اینجا جا بماند، صفحه‌ای که متنش بازنویسی شده تا ابد توضیحات
+                | متای متنِ قبلی را نشان می‌دهد.
+                |
+                | ولی این ستون جای بازنویسیِ دستیِ مدیر هم هست. برای اینکه
+                | دست‌نوشته پاک نشود، فقط وقتی تازه می‌شود که مقدار فعلی‌اش
+                | دقیقا همان چیزی باشد که از متنِ قدیمی خودکار ساخته می‌شد —
+                | یعنی کسی دستکاری‌اش نکرده است.
+                */
+                $auto    = $product->autoSeoDescription();
+                $current = trim((string) $product->seo_description);
+
+                $product->description = $html;
+
+                if ($current === '' || $current === $auto) {
+                    $updates['seo_description'] = $product->autoSeoDescription();
+                }
+
                 if (! $dryRun) {
                     // update() مستقیم روی کوئری، تا updated_at و رویدادهای مدل
                     // برای ۱۵۹۵ ردیف بی‌دلیل به هم نریزند.
-                    DB::table('products')->where('id', $product->id)->update([
-                        'description_source' => $source,
-                        'description'        => $html,
-                    ]);
+                    DB::table('products')->where('id', $product->id)->update($updates);
                 }
 
                 $written++;

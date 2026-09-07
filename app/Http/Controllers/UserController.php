@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Auth\ImpersonationController;
 use App\Models\User;
+use App\Services\BaleNotifier;
 use App\Support\Mobile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -58,11 +59,25 @@ class UserController extends Controller
             Auth::loginUsingId($user->user_id, true);
             $request->session()->regenerate();
 
+            BaleNotifier::send('admin_login', [
+                'کاربر' => $user->username,
+                'نام'   => trim((string) $user->fullname()),
+                'IP'    => $request->ip(),
+            ]);
+
             return redirect(session()->pull('url.intended', '/dashboardAdmin'));
         }
 
         RateLimiter::hit($key, 600);
         Log::warning('Failed login attempt', ['username' => $request->username, 'ip' => $request->ip()]);
+
+        // ورود ناموفق پنل، تنها نشانه‌ی زودهنگام تلاش برای نفوذ است؛
+        // مدیر باید همان لحظه ببیندش، نه وقتی لاگ سرور را باز می‌کند.
+        BaleNotifier::send('admin_login_failed', [
+            'کاربر'   => (string) $request->username,
+            'IP'      => $request->ip(),
+            'مرورگر'  => mb_substr((string) $request->userAgent(), 0, 120),
+        ]);
 
         return back()->withErrors(['نام کاربری یا رمز عبور اشتباه است.'])->withInput();
     }

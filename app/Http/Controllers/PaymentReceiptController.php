@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\Payment;
+use App\Services\BaleNotifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -197,6 +198,16 @@ class PaymentReceiptController extends Controller
     /** پیامک به مدیر؛ شکستش نباید ثبت رسید را خراب کند. */
     private function notifyAdmin(Order $order, Payment $payment): void
     {
+        BaleNotifier::send('payment_receipt', [
+            'سفارش'  => '#' . $order->id,
+            'مبلغ'   => number_format((int) $payment->amount) . ' تومان',
+            'روش'    => $payment->methodLabel(),
+            'پیگیری' => (string) ($payment->reference ?? ''),
+            'مشتری'  => $order->customer?->fullName() ?: '—',
+            'موبایل' => $order->customer?->phone ?: '',
+            'پنل'    => url('/admin/order/show/' . $order->id),
+        ]);
+
         $adminPhone = config('payment.notify_mobile');
 
         if (! $adminPhone) {
