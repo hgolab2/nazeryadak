@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Services\BaleNotifier;
 use App\Services\OrderFulfillmentService;
+use App\Support\OrderSummary;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
@@ -214,14 +215,10 @@ class PaymentController extends Controller
         $payment->update(['status' => 'failed']);
         $order->update(['status' => 'failed']);
 
-        BaleNotifier::send('payment_failed', [
-            'سفارش'  => '#' . $order->id,
-            'مبلغ'   => number_format((int) $payment->amount) . ' تومان',
-            'علت'    => $reason,
-            'مشتری'  => $order->customer?->fullName() ?: '—',
-            'موبایل' => $order->customer?->phone ?: '',
-            'پنل'    => url('/admin/order/show/' . $order->id),
-        ]);
+        BaleNotifier::send('payment_failed', array_merge(
+            ['علت' => $reason, 'مبلغ تراکنش' => number_format((int) $payment->amount) . ' تومان'],
+            OrderSummary::baleFields($order)
+        ));
     }
 
     /**

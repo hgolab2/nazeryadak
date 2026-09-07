@@ -121,7 +121,13 @@ class BaleNotifier
             : ['ok' => false, 'message' => 'ارسال ناموفق بود؛ جزئیات در storage/logs/laravel.log است.'];
     }
 
-    /** متن نهایی پیام. */
+    /**
+     * متن نهایی پیام.
+     *
+     * کلید رشته‌ای «برچسب: مقدار» می‌شود؛ کلید عددی یک بلوک چندخطی است که
+     * دست‌نخورده چاپ می‌شود، تا فرستنده بتواند خط خالیِ بین بخش‌ها را خودش
+     * تعیین کند (خلاصه‌ی سفارش از همین استفاده می‌کند).
+     */
     public static function compose(string $event, array $fields = []): string
     {
         [$icon, $label] = self::EVENTS[$event] ?? ['🔔', $event];
@@ -130,19 +136,35 @@ class BaleNotifier
 
         foreach ($fields as $key => $value) {
             $value = is_array($value) ? implode('، ', array_filter($value)) : (string) $value;
-            $value = trim($value);
 
-            if ($value === '') {
+            if (trim($value) === '') {
                 continue;
             }
 
-            $lines[] = is_int($key) ? $value : $key . ': ' . $value;
+            $lines[] = is_int($key) ? rtrim($value) : $key . ': ' . trim($value);
         }
 
         $lines[] = '—';
         $lines[] = self::footer();
 
-        return implode("\n", $lines);
+        return self::fit(implode("\n", $lines));
+    }
+
+    /**
+     * پیام بلندتر از سقف بله بریده می‌شود.
+     *
+     * سفارش عمده با ده‌ها قلم می‌توانست از سقف رد شود؛ آن‌وقت بله کل پیام را
+     * رد می‌کرد و مدیر به‌جای پیامِ ناقص، هیچ خبری نمی‌گرفت.
+     */
+    private static function fit(string $text): string
+    {
+        $max = (int) config('bale.max_length', 3500);
+
+        if ($max <= 0 || mb_strlen($text) <= $max) {
+            return $text;
+        }
+
+        return mb_substr($text, 0, $max - 20) . "\n… (پیام بریده شد)";
     }
 
     /** خط پایانی: نام فروشگاه و زمان. */

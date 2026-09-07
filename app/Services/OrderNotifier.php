@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\CustomerNotification;
 use App\Models\Order;
 use App\Models\Setting;
+use App\Support\OrderSummary;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -125,7 +126,7 @@ class OrderNotifier
 
         // اطلاع‌رسانی بله برای مدیر است و به متن پیامکِ مشتری وابسته نیست؛
         // اگر ادمین متن پیامک را خالی کرده باشد هم باید از سفارش باخبر شود.
-        BaleNotifier::send($event, $this->baleFields($order));
+        BaleNotifier::send($event, OrderSummary::baleFields($order));
 
         if ($message === '') {
             // ادمین متن را خالی گذاشته یعنی این اطلاع‌رسانی را نمی‌خواهد
@@ -133,21 +134,6 @@ class OrderNotifier
         }
 
         $this->push($order, $config['title'], $message, $config['icon']);
-    }
-
-    /** خلاصه‌ی سفارش برای مدیر؛ همان چیزهایی که بدون باز کردن پنل لازم است. */
-    private function baleFields(Order $order): array
-    {
-        $customer = $order->customer;
-
-        return [
-            'سفارش' => $this->orderNumber($order),
-            'مشتری' => $customer?->fullName() ?: '—',
-            'موبایل' => $customer?->phone ?: '',
-            'مبلغ'  => number_format((int) $order->total_price) . ' تومان',
-            'اقلام' => $order->items()->count() . ' قطعه',
-            'پنل'   => url('/admin/order/show/' . $order->id),
-        ];
     }
 
     /** جایگذاری جانگهدارها در متن */
