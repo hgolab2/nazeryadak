@@ -19,10 +19,13 @@ use DOMXPath;
 class HomeController extends Controller
 {
     /** کمینه‌ی درصد تخفیف برای راه‌یافتن به ریل «پیشنهاد ویژه» (اکید: بالاتر از این عدد). */
-    private const SPECIAL_OFFER_MIN_DISCOUNT = 3;
+    private const SPECIAL_OFFER_MIN_DISCOUNT = 0;
 
-    /** پنجره‌ی «پربازدید» برای همان ریل: امروز و دیروز. */
+    /** پنجره‌ی نخستِ «پربازدید» برای همان ریل: امروز و دیروز. */
     private const SPECIAL_OFFER_VIEW_DAYS = 2;
+
+    /** پنجره‌ی جایگزین، وقتی دو روز اخیر ریل را پر نمی‌کند: یک هفته. */
+    private const SPECIAL_OFFER_WIDE_VIEW_DAYS = 7;
 
     public function fetchPage($url)
     {
@@ -114,31 +117,38 @@ class HomeController extends Controller
      *
      * سه شرط، هر سه لازم:
      *
-     * ۱) تخفیف بالای SPECIAL_OFFER_MIN_DISCOUNT درصد — تخفیف ۱ یا ۲ درصدی
-     *    روی قطعه‌ی چند میلیونی چند هزار تومان است و «شگفت‌انگیز» نامیدنش
-     *    اعتماد کاربر را می‌برد.
+     * ۱) تخفیف داشتن — هر درصدی، حتی ۱ درصد. ملاکْ ثبت‌شدن تخفیف است نه
+     *    بزرگی‌اش؛ تصمیمِ اینکه چه تخفیفی ارزش نشستن در این ریل را دارد با
+     *    ادمین است و در پنل گرفته می‌شود، نه با آستانه‌ای سفت در کد.
      *
      * ۲) عکس‌دار بودن — کارت بدون عکس در اسلایدر یک قاب خالی است و کل ریل را
      *    بی‌ریخت می‌کند؛ اینجا از همه‌جا مهم‌تر است چون بالای صفحه‌ی اصلی است.
      *
-     * ۳) ترتیب بر اساس مجموع بازدیدِ SPECIAL_OFFER_VIEW_DAYS روز اخیر —
-     *    یعنی همان قطعه‌هایی که این روزها دنبالشان هستند، نه قدیمی‌ترین
-     *    تخفیف‌های ثبت‌شده. محصولی که در این بازه بازدید ندارد حذف نمی‌شود،
-     *    فقط ته صف می‌رود (مجموعِ خالی در MySQL نال است و در ORDER BY DESC
-     *    آخر می‌نشیند)؛ وگرنه ریل تا انباشته‌شدن آمار بازدید خالی می‌ماند.
+     * ۳) ترتیب بر اساس مجموع بازدیدِ روزهای اخیر — یعنی همان قطعه‌هایی که این
+     *    روزها دنبالشان هستند، نه قدیمی‌ترین تخفیف‌های ثبت‌شده.
+     *
+     * پنجره‌ی بازدید کشسان است: اول دو روز اخیر، و اگر در آن بازه کمتر از
+     * ظرفیتِ ریل قطعه‌ی بازدیدشده پیدا شود، همان کوئری روی یک هفته‌ی اخیر
+     * تکرار می‌شود. بدون این عقب‌نشینی، ریل در روزهای کم‌ترافیک عملا فقط با
+     * درصد تخفیف مرتب می‌شد و هفته‌ها بی‌حرکت می‌ماند.
+     *
+     * محصولِ بدون بازدید حتی در پنجره‌ی هفتگی هم حذف نمی‌شود، فقط ته صف
+     * می‌رود (مجموعِ خالی نال است و در ORDER BY DESC آخر می‌نشیند)؛ وگرنه
+     * ریل تا انباشته‌شدن آمار بازدید خالی می‌ماند.
+     *
+     * هیچ‌کدام از این کوئری‌ها کش نمی‌شوند: ریل باید هر بار وضعیت لحظه‌ای
+     * جدول بازدید را نشان بدهد.
      */
     public function getSpecialOfferProducts($count)
     {
-        $since = today()->subDays(self::SPECIAL_OFFER_VIEW_DAYS - 1)->toDateString();
+        $days = self::SPECIAL_OFFER_VIEW_DAYS;
 
-        return Product::with(['images', 'categories'])
-            ->where('is_active', 1)
-            ->where('discount_percent', '>', self::SPECIAL_OFFER_MIN_DISCOUNT)
-            ->withImage()
-            ->withSum(
-                ['dailyViews as recent_views' => fn ($q) => $q->where('viewed_on', '>=', $since)],
-                'hits'
-            )
+        if ($this->countViewedSpecialOffers($days) < $count) {
+            $days = self::SPECIAL_OFFER_WIDE_VIEW_DAYS;
+        }
+
+        return $this->specialOfferCandidates($this->viewWindowStart($days))
+            ->with(['images', 'categories'])
             ->orderByDesc('recent_views')
             // تساوی بازدید (مثلا وقتی همه صفر هستند) نباید ترتیب تصادفی بدهد؛
             // تخفیف بیشتر جلوتر، و بعد تازه‌ترین تغییر.
@@ -146,6 +156,49 @@ class HomeController extends Controller
             ->latest('updated_at')
             ->take($count)
             ->get();
+    }
+
+    /** نخستین روزِ پنجره‌ی بازدید؛ خودِ امروز یکی از $days روز است. */
+    private function viewWindowStart(int $days): string
+    {
+        return today()->subDays($days - 1)->toDateString();
+    }
+
+    /**
+     * چند قطعه‌ی واجد شرایط در این پنجره واقعا بازدید خورده‌اند؟
+     *
+     * ملاکِ کشسان‌شدن پنجره همین عدد است، نه تعداد کلِ قطعه‌های تخفیف‌دار:
+     * تعداد کل به بازه‌ی زمانی ربطی ندارد و اگر ملاک می‌شد، پنجره‌ی دو روزه
+     * هیچ‌وقت به کار نمی‌افتاد.
+     */
+    private function countViewedSpecialOffers(int $days): int
+    {
+        return $this->specialOfferCandidates()
+            ->whereHas('dailyViews', fn ($q) => $q
+                ->where('viewed_on', '>=', $this->viewWindowStart($days))
+                ->where('hits', '>', 0))
+            ->count();
+    }
+
+    /**
+     * قطعه‌های واجد شرایطِ ریل، بدون ترتیب.
+     *
+     * با $since، مجموع بازدیدِ همان پنجره هم زیر نام recent_views می‌آید.
+     */
+    private function specialOfferCandidates(?string $since = null)
+    {
+        $query = Product::where('is_active', 1)
+            ->where('discount_percent', '>', self::SPECIAL_OFFER_MIN_DISCOUNT)
+            ->withImage();
+
+        if ($since !== null) {
+            $query->withSum(
+                ['dailyViews as recent_views' => fn ($q) => $q->where('viewed_on', '>=', $since)],
+                'hits'
+            );
+        }
+
+        return $query;
     }
 
     public function getProduct($count)

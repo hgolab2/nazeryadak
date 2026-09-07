@@ -138,41 +138,73 @@ class ProductViewCountTest extends TestCase
         $this->assertSame(0, (int) $product->fresh()->views_count);
     }
 
-    public function test_special_offer_rail_ranks_by_views_of_the_last_two_days(): void
+    public function test_the_two_day_window_is_used_while_it_can_fill_the_rail(): void
     {
-        $cold   = $this->product(['title' => 'بی‌بازدید', 'discount_percent' => 40]);
-        $stale  = $this->product(['title' => 'پربازدید قدیمی', 'discount_percent' => 30]);
-        $recent = $this->product(['title' => 'پربازدید تازه', 'discount_percent' => 10]);
+        $top    = $this->product(['title' => 'صدر', 'discount_percent' => 5]);
+        $middle = $this->product(['title' => 'وسط', 'discount_percent' => 5]);
+        $bottom = $this->product(['title' => 'ته', 'discount_percent' => 5]);
+        $stale  = $this->product(['title' => 'پربازدید قدیمی', 'discount_percent' => 50]);
 
-        // بازدید سه‌روزِ‌پیش نباید به حساب بیاید، حتی با عدد بزرگ
+        $this->seedViews($top, today()->toDateString(), 30);
+        $this->seedViews($middle, today()->subDay()->toDateString(), 20);
+        $this->seedViews($bottom, today()->toDateString(), 5);
+
+        // بازدید سه‌روزِ‌پیش، حتی با عدد بزرگ، در پنجره‌ی دو روزه دیده نمی‌شود
         $this->seedViews($stale, today()->subDays(3)->toDateString(), 900);
-        $this->seedViews($recent, today()->subDay()->toDateString(), 20);
-        $this->seedViews($recent, today()->toDateString(), 5);
 
-        $rail = (new HomeController())->getSpecialOfferProducts(12);
+        // سه قطعه در دو روز اخیر بازدید خورده‌اند و ریلِ سه‌تایی را پر می‌کنند،
+        // پس پنجره باز نمی‌شود و $stale بیرون می‌ماند.
+        $rail = (new HomeController())->getSpecialOfferProducts(3);
 
-        $this->assertSame(
-            [$recent->id, $cold->id, $stale->id],
-            $rail->pluck('id')->all()
-        );
+        $this->assertSame([$top->id, $middle->id, $bottom->id], $rail->pluck('id')->all());
     }
 
-    public function test_rail_skips_small_discounts_and_products_without_a_picture(): void
+    public function test_the_window_widens_to_a_week_when_two_days_do_not_fill_the_rail(): void
     {
-        $ok       = $this->product(['discount_percent' => 4]);
-        $exactly3 = $this->product(['discount_percent' => 3]);
-        $noPhoto  = $this->product(['discount_percent' => 40, 'file_path' => '']);
-        $inactive = $this->product(['discount_percent' => 40, 'is_active' => false]);
-        $this->product(['discount_percent' => 40, 'file_path' => '/images/no-image.svg']);
+        $recent   = $this->product(['title' => 'بازدید دیروز', 'discount_percent' => 5]);
+        $lastWeek = $this->product(['title' => 'بازدید پنج روز پیش', 'discount_percent' => 5]);
 
-        // پربازدیدترین‌ها هم اگر شرط‌ها را نداشته باشند نمی‌آیند
-        $this->seedViews($exactly3, today()->toDateString(), 500);
-        $this->seedViews($noPhoto, today()->toDateString(), 500);
-        $this->seedViews($inactive, today()->toDateString(), 500);
+        $this->seedViews($recent, today()->subDay()->toDateString(), 10);
+        $this->seedViews($lastWeek, today()->subDays(5)->toDateString(), 800);
 
         $rail = (new HomeController())->getSpecialOfferProducts(12);
 
-        $this->assertSame([$ok->id], $rail->pluck('id')->all());
+        // در دو روز اخیر فقط یک قطعه بازدید دارد و ریلِ ۱۲تایی پر نمی‌شود؛
+        // بازه به یک هفته می‌رود و قطعه‌ی پنج‌روزِ‌پیش صدر را می‌گیرد.
+        $this->assertSame([$lastWeek->id, $recent->id], $rail->pluck('id')->all());
+    }
+
+    public function test_views_older_than_a_week_are_never_counted(): void
+    {
+        $fresh   = $this->product(['title' => 'بازدید امروز', 'discount_percent' => 5]);
+        $ancient = $this->product(['title' => 'بازدید ده روز پیش', 'discount_percent' => 5]);
+
+        $this->seedViews($fresh, today()->toDateString(), 3);
+        $this->seedViews($ancient, today()->subDays(10)->toDateString(), 5000);
+
+        $rail = (new HomeController())->getSpecialOfferProducts(12);
+
+        // حتی بعد از باز شدنِ پنجره تا یک هفته، ۵۰۰۰ بازدیدِ ده‌روزِ‌پیش
+        // به حساب نمی‌آید و آن قطعه ته صف می‌ماند.
+        $this->assertSame([$fresh->id, $ancient->id], $rail->pluck('id')->all());
+    }
+
+    public function test_rail_accepts_any_discount_but_needs_a_picture_and_an_active_product(): void
+    {
+        $onePercent  = $this->product(['discount_percent' => 1]);
+        $noDiscount  = $this->product(['discount_percent' => 0]);
+        $noPhoto     = $this->product(['discount_percent' => 40, 'file_path' => '']);
+        $inactive    = $this->product(['discount_percent' => 40, 'is_active' => false]);
+        $placeholder = $this->product(['discount_percent' => 40, 'file_path' => '/images/no-image.svg']);
+
+        // پربازدیدترین‌ها هم اگر شرط‌ها را نداشته باشند نمی‌آیند
+        foreach ([$noDiscount, $noPhoto, $inactive, $placeholder] as $rejected) {
+            $this->seedViews($rejected, today()->toDateString(), 500);
+        }
+
+        $rail = (new HomeController())->getSpecialOfferProducts(12);
+
+        $this->assertSame([$onePercent->id], $rail->pluck('id')->all());
     }
 
     public function test_a_product_whose_photo_comes_from_the_panel_still_qualifies(): void
