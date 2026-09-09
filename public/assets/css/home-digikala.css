@@ -253,19 +253,27 @@ body {
     color: var(--nx-ink) !important;
 }
 
-.mobile-search input {
+/* رنگ‌های تم روی قاب می‌نشیند نه روی خودِ فیلد؛ ساختار پیل در style.css است.
+   نسخه‌ی قبلی زمینه و کادر را روی input می‌گذاشت که حالا شفاف است و داخل
+   قاب می‌نشیند — همان قاعده‌ها یک جعبه‌ی دوم وسط قاب می‌کشیدند. */
+.mobile-search {
     background: var(--nx-soft) !important;
-    border: 1px solid transparent !important;
-    color: var(--nx-ink) !important;
+    border-color: transparent !important;
 }
 
+.mobile-search:focus-within {
+    background: #fff !important;
+    border-color: var(--nx-red) !important;
+}
+
+.mobile-search__icon,
 .mobile-search input::placeholder {
     color: var(--nx-muted) !important;
 }
 
-.mobile-search input:focus {
-    background: var(--nx-soft) !important;
-    border-color: var(--nx-red) !important;
+.mobile-search input {
+    background: transparent !important;
+    border: 0 !important;
     color: var(--nx-ink) !important;
 }
 

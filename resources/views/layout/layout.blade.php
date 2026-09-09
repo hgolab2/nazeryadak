@@ -419,9 +419,14 @@
          عملا هم برنمی‌گشت — فقط اسکرول می‌کرد و می‌رفت. --}}
     <div class="mobile-search-bar d-lg-none">
         <div class="container">
-            <form method="get" action="/shop" class="mobile-search">
+            {{-- یک «پیل» یکپارچه: ذره‌بین، فیلد و دکمه سه آیتمِ کنار هم در یک
+                 قاب. دکمه قبلا با position:absolute روی فیلد می‌نشست و جایش
+                 را یک padding دستی باز می‌کرد؛ آن عدد به عرض متنِ دکمه و فونت
+                 وابسته بود و روی گوشی واقعی، دکمه از قاب می‌زد بیرون. --}}
+            <form method="get" action="/shop" class="mobile-search" role="search">
+                <i class="fa fa-search mobile-search__icon" aria-hidden="true"></i>
                 <input type="search" name="title" value="{{ request('title') }}" aria-label="جستجو در محصولات" placeholder="نام قطعه، خودرو یا کد فنی..." data-search-suggest>
-                <button type="submit" aria-label="جستجو"><i class="fa fa-search"></i> جستجو</button>
+                <button type="submit">جستجو</button>
             </form>
         </div>
     </div>
