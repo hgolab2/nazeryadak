@@ -74,8 +74,15 @@ return [
         'enamad'   => env('SEO_VERIFY_ENAMAD', ''),
     ],
 
+    // استریم گوگل آنالیتیکس سایت:
+    //   Stream Name: nazeryadak.ir | Stream URL: https://nazeryadak.ir
+    //   Stream ID: 15468243460     | Measurement ID: G-5HXK3920GK
+    // شناسه‌ی اندازه‌گیری مقدار پیش‌فرض همین فایل است تا روی سرور بدون ویرایش
+    // .env کار کند (این شناسه محرمانه نیست و در HTML صفحه دیده می‌شود). روی
+    // لوکال SEO_GA4_ID را خالی بگذارید تا بازدید توسعه در آمار ثبت نشود.
+    // مدیر می‌تواند همین مقدار را از پنل سئو هم بازنویسی کند.
     'analytics' => [
-        'ga4'   => env('SEO_GA4_ID', ''),          // G-XXXXXXX
+        'ga4'   => env('SEO_GA4_ID', 'G-5HXK3920GK'),  // G-XXXXXXX
         'gtm'   => env('SEO_GTM_ID', ''),          // GTM-XXXXXX
         'clarity' => env('SEO_CLARITY_ID', ''),
     ],
