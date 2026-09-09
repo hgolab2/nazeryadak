@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\EshopCategory;
 use App\Models\ProductReview;
 use App\Models\ProductView;
+use App\Models\SearchTerm;
 use App\Support\CarModels;
 use App\Support\PartTypes;
 use Illuminate\Support\Facades\Auth;
@@ -265,7 +266,7 @@ class ProductController extends Controller
         */
         $model = $query->paginate($perPage)->appends($request->except(['page', 'ajaxi']));
         $totalCount = $model->total();
-        $this->reportSearch($request, $title, $totalCount);
+        $this->recordSearch($request, $title, $totalCount);
         if ($request->ajax() || $request->ajaxi) {
             $view = view('product.list_type', compact('model', 'totalCount' ))->render();
             return response()->json([
@@ -382,33 +383,53 @@ class ProductController extends Controller
     }
 
     /**
+     * ثبت جستجو: هم در جدول عبارت‌ها، هم گزارش به بله.
+     *
+     * سه شرطِ مشترک اینجاست چون هر دو مصرف به هر سه نیاز دارند:
+     *
+     * ۱) فقط درخواست غیرایجکسی — صفحه‌بندی و فیلترهای سایدبار ایجکسی‌اند و
+     *    هر کدامشان همان عبارت را دوباره می‌فرستند.
+     * ۲) فقط صفحه‌ی اول — رفتن به صفحه‌ی دو جستجوی تازه نیست.
+     * ۳) خزنده نه — لینک‌های «جستجوهای پرتکرار» خودشان به /shop?title= اشاره
+     *    می‌کنند و بدون این فیلتر، گوگل با خزیدنشان همان چند عبارت را
+     *    برای همیشه در صدر نگه می‌داشت.
+     */
+    private function recordSearch(Request $request, string $title, int $totalCount): void
+    {
+        $term = trim($title);
+
+        if ($term === '' || $request->ajax() || $request->filled('ajaxi')) {
+            return;
+        }
+
+        if ((int) $request->get('page', 1) > 1) {
+            return;
+        }
+
+        if (ProductView::isBot((string) $request->userAgent())) {
+            return;
+        }
+
+        SearchTerm::record($term, $totalCount);
+
+        $this->reportSearch($request, $term, $totalCount);
+    }
+
+    /**
      * گزارش جستجوی کاربر به بله.
      *
      * چیزی که کاربرها در جعبه‌ی جستجو می‌نویسند، مستقیم‌ترین فهرستِ «چه
      * قطعه‌ای را باید بیاوریم» است؛ مخصوصا جستجوهای بی‌نتیجه که تا امروز
      * هیچ‌جا دیده نمی‌شدند و کاربرشان بی‌صدا از سایت می‌رفت.
      *
-     * سه محافظ دارد تا ربات پر نشود:
-     *
-     * ۱) فقط درخواست غیرایجکسی — صفحه‌بندی و فیلترهای سایدبار ایجکسی‌اند و
-     *    هر کدامشان همان عبارت را دوباره می‌فرستند.
-     * ۲) فقط صفحه‌ی اول — رفتن به صفحه‌ی دو جستجوی تازه نیست.
-     * ۳) یک عبارت در بازه‌ی throttle فقط یک بار — Cache::add اتمیک است، پس
-     *    دو درخواست هم‌زمان هم دو پیام نمی‌سازند.
+     * جدا از محافظ‌های recordSearch، یک عبارت در بازه‌ی throttle فقط یک بار
+     * فرستاده می‌شود — Cache::add اتمیک است، پس دو درخواست هم‌زمان هم دو
+     * پیام نمی‌سازند. ثبت در جدول اما throttle ندارد: شمارنده باید همه‌ی
+     * جستجوها را بشمارد وگرنه «پرتکرار» معنایش را از دست می‌دهد.
      */
-    private function reportSearch(Request $request, string $title, int $totalCount): void
+    private function reportSearch(Request $request, string $term, int $totalCount): void
     {
         try {
-            $term = trim($title);
-
-            if ($term === '' || $request->ajax() || $request->filled('ajaxi')) {
-                return;
-            }
-
-            if ((int) $request->get('page', 1) > 1) {
-                return;
-            }
-
             if (! BaleNotifier::enabled('product_search')) {
                 return;
             }

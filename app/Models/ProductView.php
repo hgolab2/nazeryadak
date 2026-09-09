@@ -138,7 +138,13 @@ class ProductView extends Model
         return true;
     }
 
-    private static function isBot(string $userAgent): bool
+    /**
+     * آیا این User-Agent خزنده است؟
+     *
+     * عمومی است چون ثبت عبارت‌های جستجو هم به همین تشخیص نیاز دارد و دو
+     * فهرستِ جدا از امضای خزنده‌ها، همیشه یکی‌شان عقب می‌ماند.
+     */
+    public static function isBot(string $userAgent): bool
     {
         if ($userAgent === '') {
             // مرورگر واقعی User-Agent می‌فرستد؛ درخواست بی‌امضا شمرده نمی‌شود.

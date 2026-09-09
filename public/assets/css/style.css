@@ -5607,21 +5607,33 @@ bdi.sku-code {
     box-shadow: 0 2px 8px rgba(15, 23, 42, .05);
 }
 
+/* ردیف flex، نه دکمه‌ی absolute روی فیلد.
+
+   دکمه قبلا با position:absolute روی فیلد می‌نشست و جایش را یک padding
+   دستی روی input باز می‌کرد. تا وقتی دکمه فقط یک ذره‌بین بود مشکلی نداشت،
+   ولی با برچسب متنی، عرض دکمه به فونت و متن وابسته می‌شود و هر عددی که
+   اینجا بنویسیم روی یک گوشیِ باریک‌تر یا با فونت جانشین غلط از آب درمی‌آید؛
+   نتیجه‌اش رفتنِ متن placeholder زیر دکمه بود. با flex، عرض دکمه را خودش
+   تعیین می‌کند و فیلد دقیقا باقی‌مانده را می‌گیرد. */
 .mobile-search {
     position: relative;
     display: none;
+    align-items: center;
+    gap: 8px;
 }
 
 .mobile-search input {
-    width: 100%;
+    /* min-width: 0 لازم است وگرنه آیتم flex زیر عرضِ محتوایش کوچک نمی‌شود
+       و روی گوشی باریک، دکمه را از نوار بیرون می‌راند. */
+    flex: 1 1 auto;
+    min-width: 0;
     height: 44px;
     border-radius: 10px;
     border: 1px solid rgba(255,255,255,.22);
     background: rgba(255,255,255,.14);
     color: #fff;
     font-size: .88rem;
-    /* جای دکمه‌ی برچسب‌دار؛ با دکمه‌ی فقط-آیکون متن زیرش می‌رفت */
-    padding: 0 92px 0 14px;
+    padding: 0 14px;
 }
 
 .mobile-search input::placeholder {
@@ -5641,25 +5653,24 @@ bdi.sku-code {
 /* دکمه برچسب متنی دارد نه فقط ذره‌بین: روی زمینه‌ی روشنِ هدر، آیکون تنها
    بیشتر شبیه تزیین دیده می‌شد تا دکمه‌ای که باید زد. */
 .mobile-search button {
-    position: absolute;
-    top: 4px;
-    right: 4px;
+    flex: 0 0 auto;
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    height: 36px;
-    padding: 0 12px;
+    height: 44px;
+    padding: 0 14px;
     border: 0;
-    border-radius: 8px;
+    border-radius: 10px;
     background: linear-gradient(135deg, var(--joy-orange), var(--accent-light));
     color: #fff;
-    font-size: .82rem;
+    font-size: .85rem;
     font-weight: 700;
+    white-space: nowrap;
 }
 
 @media (max-width: 991px) {
     .mobile-search {
-        display: block;
+        display: flex;
     }
 }
 

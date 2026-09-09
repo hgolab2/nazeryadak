@@ -605,6 +605,8 @@
             ['title' => 'مجله یدکی',            'icon' => 'fas fa-newspaper',    'url' => '/blog'],
         ];
     @endphp
+    @php($popularSearches = popular_search_terms(6))
+
     <nav class="mobile-appbar" id="mobileAppbar" aria-label="منوی اصلی موبایل">
         <a href="/" class="mobile-appbar__item {{ $isHomeTab ? 'is-active' : '' }}" @if($isHomeTab) aria-current="page" @endif>
             <span class="mobile-appbar__icon"><i class="fas fa-home"></i></span>
@@ -665,20 +667,25 @@
                     <button type="submit">جستجو</button>
                 </div>
             </form>
+            {{-- چیپ‌ها از جستجوهای واقعی کاربرها می‌آیند، نه از فهرستی دستی؛
+                 تا وقتی آمار جمع نشده، همان فهرست پیش‌فرض برمی‌گردد. --}}
             <p class="app-sheet__hint">جستجوهای پرتکرار</p>
             <div class="app-sheet__chips">
-                <a href="/shop?title=لنت ترمز">لنت ترمز</a>
-                <a href="/shop?title=فیلتر روغن">فیلتر روغن</a>
-                <a href="/shop?title=تسمه تایم">تسمه تایم</a>
-                <a href="/shop?title=شمع">شمع</a>
-                <a href="/shop?title=دیسک و صفحه">دیسک و صفحه</a>
-                <a href="/shop?title=کمک فنر">کمک فنر</a>
+                @foreach($popularSearches as $popularSearch)
+                    <a href="/shop?title={{ urlencode($popularSearch) }}">{{ $popularSearch }}</a>
+                @endforeach
             </div>
         </div>
     </div>
 
 @include('layout.partials.scripts')
 <script src="{{ asset_v('/assets/js/combobox.js') }}" defer></script>
+{{-- همان جستجوهای پرتکرار، این بار برای پنل پیشنهادِ جعبه‌ی جستجو. داخل
+     صفحه می‌آید نه با یک درخواست جدا: فهرست کوچک است و یک رفت‌وبرگشت اضافه
+     به‌ازای هر بار فوکوس روی فیلد، برای شش کلمه ارزشش را ندارد. --}}
+{{-- بدون پرچم دلخواه: پیش‌فرضِ ‎@json‎ نشانه‌های < و & را هگز می‌کند و
+     عبارتی که کاربر تایپ کرده نمی‌تواند از این بلوک بیرون بزند. --}}
+<script type="application/json" id="nx-popular-searches">@json($popularSearches)</script>
 <script src="{{ asset_v('/assets/js/search-suggest.js') }}" defer></script>
 <script>
 const toast = Swal.mixin({

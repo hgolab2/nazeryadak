@@ -15,6 +15,7 @@
     var DEBOUNCE_MS = 220;
     var RECENT_KEY = 'nx_recent_searches';
     var RECENT_MAX = 6;
+    var POPULAR_MAX = 6;
 
     /* پاسخ‌های سرور در همین صفحه کش می‌شوند؛ پاک کردن یک حرف و تایپ دوباره‌ی
        آن نباید درخواست تازه بزند. */
@@ -118,6 +119,37 @@
 
     function clearRecent() {
         try { localStorage.removeItem(RECENT_KEY); } catch (e) { /* بی‌اهمیت */ }
+    }
+
+    /**
+     * جستجوهای پرتکرارِ بقیه‌ی کاربرها؛ سرور آن را داخل صفحه گذاشته است.
+     *
+     * وقتی کاربر روی فیلد می‌زند ولی هنوز چیزی ننوشته، پنل تا امروز فقط
+     * تاریخچه‌ی خودش را داشت — یعنی برای کسی که اولین بار آمده، خالی بود و
+     * بسته می‌شد. حالا همان لحظه شش عبارتی را می‌بیند که بقیه دنبالش هستند.
+     */
+    function readPopular() {
+        try {
+            var node = document.getElementById('nx-popular-searches');
+            if (!node) {
+                return [];
+            }
+            var list = JSON.parse(node.textContent || '[]');
+
+            return Array.isArray(list)
+                ? list.filter(function (item) { return typeof item === 'string' && item.trim(); })
+                : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function termRow(item, icon) {
+        var url = '/shop?title=' + encodeURIComponent(item);
+
+        return '<a class="nx-suggest__term" data-url="' + url + '" href="' + url + '"'
+            + ' data-term="' + escapeHtml(item) + '" role="option">'
+            + '<i class="fas ' + icon + '"></i><span>' + escapeHtml(item) + '</span></a>';
     }
 
     function Suggest(input) {
@@ -254,23 +286,40 @@
         }, DEBOUNCE_MS);
     };
 
+    /** پنل وقتی فیلد خالی است: تاریخچه‌ی خودِ کاربر، و بعد جستجوهای پرتکرار. */
     Suggest.prototype.renderRecent = function () {
         var recent = readRecent();
-        if (!recent.length) {
+
+        /* عبارتی که همین حالا در تاریخچه‌ی کاربر هست، دو بار نشان داده نشود. */
+        var popular = readPopular().filter(function (item) {
+            return !recent.some(function (seen) { return normalize(seen) === normalize(item); });
+        }).slice(0, POPULAR_MAX);
+
+        if (!recent.length && !popular.length) {
             this.close();
             return;
         }
 
-        var html = '<div class="nx-suggest__head">'
-            + '<span>جستجوهای اخیر</span>'
-            + '<button type="button" data-clear-recent>پاک کردن</button>'
-            + '</div>';
+        var html = '';
 
-        recent.forEach(function (item) {
-            html += '<a class="nx-suggest__term" data-url="/shop?title=' + encodeURIComponent(item) + '"'
-                + ' href="/shop?title=' + encodeURIComponent(item) + '" data-term="' + escapeHtml(item) + '" role="option">'
-                + '<i class="fas fa-history"></i><span>' + escapeHtml(item) + '</span></a>';
-        });
+        if (recent.length) {
+            html += '<div class="nx-suggest__head">'
+                + '<span>جستجوهای اخیر</span>'
+                + '<button type="button" data-clear-recent>پاک کردن</button>'
+                + '</div>';
+
+            recent.forEach(function (item) {
+                html += termRow(item, 'fa-history');
+            });
+        }
+
+        if (popular.length) {
+            html += '<div class="nx-suggest__head"><span>جستجوهای پرتکرار</span></div>';
+
+            popular.forEach(function (item) {
+                html += termRow(item, 'fa-fire');
+            });
+        }
 
         this.show(html);
     };

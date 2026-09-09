@@ -2091,3 +2091,35 @@ function article_shop_links($article, int $limit = 6): array
 
     return array_values($links);
 }
+
+/**
+ * جستجوهای پرتکرارِ کاربرها، برای پیشنهاد به بقیه.
+ *
+ * تا وقتی آمار واقعی جمع نشده (سایت تازه، یا بعد از پاک شدن جدول) فهرستِ
+ * پیش‌فرض برمی‌گردد و جای خالی در قالب نمی‌ماند؛ عبارت‌های واقعی که برسند،
+ * جای پیش‌فرض‌ها را از بالا می‌گیرند و باقیِ جاها با پیش‌فرض پر می‌شود.
+ *
+ * @return string[]
+ */
+function popular_search_terms(int $limit = 6): array
+{
+    $fallback = ['لنت ترمز', 'فیلتر روغن', 'تسمه تایم', 'شمع', 'دیسک و صفحه', 'کمک فنر'];
+
+    $terms = \App\Models\SearchTerm::popular($limit);
+
+    foreach ($fallback as $term) {
+        if (count($terms) >= $limit) {
+            break;
+        }
+
+        // مقایسه روی شکل یکسان‌سازی‌شده، وگرنه «فيلتر روغن» و «فیلتر روغن»
+        // دو چیپِ ظاهرا یکسان می‌شدند.
+        $known = array_map(fn ($item) => \App\Models\Product::normalizeTerm($item), $terms);
+
+        if (! in_array(\App\Models\Product::normalizeTerm($term), $known, true)) {
+            $terms[] = $term;
+        }
+    }
+
+    return $terms;
+}
