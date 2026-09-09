@@ -409,13 +409,22 @@
                 </div>
             </div>
 
-            {{-- جستجوی موبایل: همیشه دیده می‌شود، نه پنهان در منو --}}
-            <form method="get" action="/shop" class="mobile-search">
-                <input type="search" name="title" value="{{ request('title') }}" aria-label="جستجو در محصولات" placeholder="نام قطعه، خودرو یا کد فنی..." data-search-suggest>
-                <button type="submit" aria-label="جستجو"><i class="fa fa-search"></i></button>
-            </form>
         </div>
     </header>
+
+    {{-- نوار جستجوی موبایل.
+         بیرون از <header> و چسبان است، نه داخل آن: وقتی داخل هدر بود، با
+         اولین اسکرول از صفحه بیرون می‌رفت و کاربری که وسط فهرست محصولات
+         تصمیم می‌گرفت چیزی را جستجو کند، باید تا بالای صفحه برمی‌گشت.
+         عملا هم برنمی‌گشت — فقط اسکرول می‌کرد و می‌رفت. --}}
+    <div class="mobile-search-bar d-lg-none">
+        <div class="container">
+            <form method="get" action="/shop" class="mobile-search">
+                <input type="search" name="title" value="{{ request('title') }}" aria-label="جستجو در محصولات" placeholder="نام قطعه، خودرو یا کد فنی..." data-search-suggest>
+                <button type="submit" aria-label="جستجو"><i class="fa fa-search"></i> جستجو</button>
+            </form>
+        </div>
+    </div>
 
     {{-- منوی اصلی --}}
     <nav class="d-none d-lg-block navigation">

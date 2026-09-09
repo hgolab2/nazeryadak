@@ -338,6 +338,60 @@ class Product extends Model
         });
     }
 
+    /**
+     * کمینه‌ی بازدید در یک روز برای «نردبان» شدن محصول.
+     *
+     * قطعه‌ای که در یک روز به این عدد بازدید برسد، در فهرست‌ها و نتیجه‌ی
+     * جستجو بالا کشیده می‌شود. عدد عمدا پایین است: هدف نشان‌دادنِ همان
+     * چیزی است که این روزها دنبالش هستند، نه ساختن یک جدولِ پرفروش‌ها.
+     */
+    public const PROMOTION_MIN_DAILY_HITS = 5;
+
+    /** نردبان چند روز اعتبار دارد؛ بعدش محصول به ترتیب عادی برمی‌گردد. */
+    public const PROMOTION_WINDOW_DAYS = 7;
+
+    /**
+     * مجموع بازدیدِ روزهای «نردبان‌دار» را زیر نام promotion_hits می‌آورد.
+     *
+     * فقط روزهایی شمرده می‌شوند که خودشان به آستانه رسیده باشند؛ ۴ بازدید
+     * در هفت روز پشت‌سرهم نباید همان اثر یک روزِ واقعا پربازدید را داشته
+     * باشد. محصولِ بدون چنین روزی مقدارش نال می‌شود و در ORDER BY DESC ته
+     * فهرست می‌نشیند — یعنی ترتیب عادی برایش دست‌نخورده می‌ماند.
+     */
+    public function scopeWithPromotion($query)
+    {
+        return $query->withSum(
+            ['dailyViews as promotion_hits' => fn ($q) => $q
+                ->where('viewed_on', '>=', now()->startOfDay()->subDays(self::PROMOTION_WINDOW_DAYS - 1)->toDateString())
+                ->where('hits', '>=', self::PROMOTION_MIN_DAILY_HITS)],
+            'hits'
+        );
+    }
+
+    /**
+     * نردبان‌شده‌ها اول فهرست.
+     *
+     * عمدا خودش orderBy نهایی را نمی‌گذارد: صدا زننده باید بعدش ترتیب
+     * عادی‌اش را هم اضافه کند تا محصول‌های بدون نردبان ترتیب قبلی را
+     * داشته باشند.
+     */
+    public function scopeOrderByPromotion($query)
+    {
+        return $query->withPromotion()->orderByDesc('promotion_hits');
+    }
+
+    /**
+     * زمان آخرین بازدید، زیر نام last_viewed_at.
+     *
+     * ریل «داغ‌ترین قطعات» صفحه‌ی اصلی با همین مرتب می‌شود؛ محصولی که همین
+     * الان دیده شده باید بالای ریل بیاید، نه محصولی که مجموع بازدید بیشتری
+     * دارد ولی هفته‌ی پیش دیده شده.
+     */
+    public function scopeWithLastViewedAt($query)
+    {
+        return $query->withMax('dailyViews as last_viewed_at', 'updated_at');
+    }
+
     /** تاریخچه‌ی قیمت، از قدیم به جدید — همان ترتیبی که نمودار لازم دارد. */
     public function priceHistory()
     {

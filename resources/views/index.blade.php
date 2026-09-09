@@ -166,10 +166,11 @@
              که موضوع صفحه را برای گوگل و صفحه‌خوان‌ها مشخص کند. --}}
         <h1 class="nx-page-title">خرید لوازم یدکی خودرو و قطعات اصلی ایساکو</h1>
 
-        {{-- جدیدترین قطعات --}}
+        {{-- قطعاتی که همین روزها دیده می‌شوند؛ ترتیبش از زمان آخرین بازدید
+             می‌آید، پس قطعه‌ای که همین حالا باز شده در رفرش بعدی اینجاست. --}}
         <section class="nx-card">
             <div class="nx-card-head">
-                <h2><i class="fas fa-star"></i> جدیدترین قطعات خودرو</h2>
+                <h2><i class="fas fa-fire"></i> داغ‌ترین قطعات این روزها</h2>
                 <a href="/shop">مشاهده همه <i class="fas fa-chevron-left"></i></a>
             </div>
             <div class="nx-rail owl-carousel owl-theme nx-slider">

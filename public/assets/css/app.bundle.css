@@ -16807,10 +16807,28 @@ bdi.sku-code {
 
 /* ---------- جستجوی موبایل: همیشه دیده می‌شود ---------- */
 
+/* نوار جستجوی چسبان موبایل.
+
+   جعبه‌ی جستجو داخل هدر بود و با اولین اسکرول از صفحه بیرون می‌رفت؛ روی
+   موبایل یعنی دقیقا وقتی کاربر وسط فهرست محصولات به این نتیجه می‌رسید که
+   باید چیزی را جستجو کند، راهی به جعبه‌ی جستجو نداشت. حالا نوار به بالای
+   صفحه می‌چسبد و همیشه یک ضربه فاصله دارد.
+
+   z-index زیر ۱۰۴۵ می‌ماند تا آفکنواس‌های بوت‌استرپ (منو، سبد، شیت جستجو)
+   همچنان روی آن بیایند. */
+.mobile-search-bar {
+    position: sticky;
+    top: 0;
+    z-index: 1035;
+    padding: 8px 0;
+    background: #fff;
+    border-bottom: 1px solid #e6e8ec;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, .05);
+}
+
 .mobile-search {
     position: relative;
     display: none;
-    padding-bottom: 10px;
 }
 
 .mobile-search input {
@@ -16821,7 +16839,8 @@ bdi.sku-code {
     background: rgba(255,255,255,.14);
     color: #fff;
     font-size: .88rem;
-    padding: 0 44px 0 14px;
+    /* جای دکمه‌ی برچسب‌دار؛ با دکمه‌ی فقط-آیکون متن زیرش می‌رفت */
+    padding: 0 92px 0 14px;
 }
 
 .mobile-search input::placeholder {
@@ -16838,16 +16857,23 @@ bdi.sku-code {
     color: var(--text-light);
 }
 
+/* دکمه برچسب متنی دارد نه فقط ذره‌بین: روی زمینه‌ی روشنِ هدر، آیکون تنها
+   بیشتر شبیه تزیین دیده می‌شد تا دکمه‌ای که باید زد. */
 .mobile-search button {
     position: absolute;
     top: 4px;
     right: 4px;
-    width: 36px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     height: 36px;
+    padding: 0 12px;
     border: 0;
     border-radius: 8px;
     background: linear-gradient(135deg, var(--joy-orange), var(--accent-light));
     color: #fff;
+    font-size: .82rem;
+    font-weight: 700;
 }
 
 @media (max-width: 991px) {

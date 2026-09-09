@@ -9,6 +9,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
 use Illuminate\Session\ArraySessionHandler;
 use Illuminate\Session\Store;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
@@ -65,6 +66,17 @@ class ProductViewCountTest extends TestCase
             $table->timestamps();
             $table->unique(['product_id', 'viewed_on']);
         });
+
+        Schema::create('special_offer_features', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('product_id');
+            $table->date('featured_on');
+            $table->timestamps();
+            $table->unique(['product_id', 'featured_on']);
+        });
+
+        // ثبتِ ترکیب ریل با کش نگه داشته می‌شود؛ بین تست‌ها نباید نشت کند.
+        Cache::flush();
     }
 
     private function product(array $attributes = []): Product
@@ -156,7 +168,9 @@ class ProductViewCountTest extends TestCase
         // پس پنجره باز نمی‌شود و $stale بیرون می‌ماند.
         $rail = (new HomeController())->getSpecialOfferProducts(3);
 
-        $this->assertSame([$top->id, $middle->id, $bottom->id], $rail->pluck('id')->all());
+        // دو جای اول به بازدیدشده‌های امروز می‌رسد؛ قطعه‌ای که فقط دیروز بازدید
+        // خورده، هرچه عددش بزرگ‌تر باشد، در تکه‌ی دومِ ریل می‌نشیند.
+        $this->assertSame([$top->id, $bottom->id, $middle->id], $rail->pluck('id')->all());
     }
 
     public function test_the_window_widens_to_a_week_when_two_days_do_not_fill_the_rail(): void
@@ -221,14 +235,107 @@ class ProductViewCountTest extends TestCase
         $this->assertSame([$product->id], $rail->pluck('id')->all());
     }
 
-    private function seedViews(Product $product, string $day, int $hits): void
+    public function test_a_product_viewed_today_takes_the_lead_from_yesterdays_rail(): void
+    {
+        $yesterdayStar = $this->product(['title' => 'ستاره دیروز', 'discount_percent' => 30]);
+        $newcomer      = $this->product(['title' => 'تازه وارد', 'discount_percent' => 5]);
+
+        // ستاره‌ی دیروز امروز هم بازدید دارد و ده برابرِ تازه‌وارد است؛ با
+        // قاعده‌ی قبلی هیچ‌وقت صدر ریل را رها نمی‌کرد.
+        $this->seedViews($yesterdayStar, today()->toDateString(), 100);
+        $this->seedViews($newcomer, today()->toDateString(), 10);
+
+        $this->seedFeature($yesterdayStar, today()->subDay()->toDateString());
+
+        $rail = (new HomeController())->getSpecialOfferProducts(2);
+
+        $this->assertSame([$newcomer->id, $yesterdayStar->id], $rail->pluck('id')->all());
+    }
+
+    public function test_newcomers_take_at_most_half_the_rail(): void
+    {
+        $star   = $this->product(['title' => 'ستاره دیروز', 'discount_percent' => 30]);
+        $first  = $this->product(['title' => 'تازه وارد یک', 'discount_percent' => 5]);
+        $second = $this->product(['title' => 'تازه وارد دو', 'discount_percent' => 5]);
+        $third  = $this->product(['title' => 'تازه وارد سه', 'discount_percent' => 5]);
+
+        $this->seedViews($star, today()->toDateString(), 999);
+        $this->seedViews($first, today()->toDateString(), 30);
+        $this->seedViews($second, today()->toDateString(), 20);
+        $this->seedViews($third, today()->toDateString(), 10);
+
+        $this->seedFeature($star, today()->subDay()->toDateString());
+
+        $rail = (new HomeController())->getSpecialOfferProducts(4);
+
+        // فقط دو جای اولِ ریلِ چهارتایی به تازه‌واردها می‌رسد؛ جای سوم دوباره
+        // به قاعده‌ی همیشگی برمی‌گردد و پربازدیدترین قطعه آن را می‌گیرد.
+        $this->assertSame(
+            [$first->id, $second->id, $star->id, $third->id],
+            $rail->pluck('id')->all()
+        );
+    }
+
+    public function test_todays_rail_is_recorded_so_tomorrow_can_rotate(): void
+    {
+        $product = $this->product(['discount_percent' => 10]);
+        $this->seedViews($product, today()->toDateString(), 5);
+
+        (new HomeController())->getSpecialOfferProducts(12);
+
+        $this->assertSame(1, DB::table('special_offer_features')
+            ->where('product_id', $product->id)
+            ->where('featured_on', today()->toDateString())
+            ->count());
+    }
+
+    public function test_the_hot_rail_puts_the_most_recently_viewed_part_first(): void
+    {
+        $oldest = $this->product(['title' => 'دیده شده صبح']);
+        $newest = $this->product(['title' => 'دیده شده الان']);
+        $never  = $this->product(['title' => 'هرگز دیده نشده']);
+
+        $this->seedViews($oldest, today()->toDateString(), 900, now()->subHours(6));
+        $this->seedViews($newest, today()->toDateString(), 1, now());
+
+        $rail = (new HomeController())->getRecentlyViewedProducts(12);
+
+        // یک بازدیدِ همین‌الان از ۹۰۰ بازدیدِ صبح جلو می‌زند؛ ملاک تازگی است نه
+        // تعداد. قطعه‌ی هرگز دیده‌نشده حذف نمی‌شود، فقط ته صف می‌رود.
+        $this->assertSame([$newest->id, $oldest->id, $never->id], $rail->pluck('id')->all());
+    }
+
+    public function test_the_hot_rail_skips_what_the_special_rail_already_shows(): void
+    {
+        $shownAbove = $this->product(['title' => 'در ریل ویژه']);
+        $other      = $this->product(['title' => 'قطعه دیگر']);
+
+        $this->seedViews($shownAbove, today()->toDateString(), 50, now());
+
+        $rail = (new HomeController())->getRecentlyViewedProducts(12, [$shownAbove->id]);
+
+        $this->assertSame([$other->id], $rail->pluck('id')->all());
+    }
+
+    private function seedFeature(Product $product, string $day): void
+    {
+        DB::table('special_offer_features')->insert([
+            'product_id'  => $product->id,
+            'featured_on' => $day,
+            'created_at'  => now(),
+            'updated_at'  => now(),
+        ]);
+    }
+
+    /** $seenAt زمان آخرین بازدیدِ همان روز است؛ ریل «داغ» با همین مرتب می‌شود. */
+    private function seedViews(Product $product, string $day, int $hits, $seenAt = null): void
     {
         DB::table('product_views')->insert([
             'product_id' => $product->id,
             'viewed_on'  => $day,
             'hits'       => $hits,
             'created_at' => now(),
-            'updated_at' => now(),
+            'updated_at' => $seenAt ?: now(),
         ]);
     }
 }

@@ -241,6 +241,17 @@ class ProductController extends Controller
         // مرتب‌سازی را انتخاب کرده باشد، دخالتی نمی‌کنیم.
         if ($orderColumn === 'id') {
             $query->orderByRaw("CASE WHEN file_path IS NULL OR file_path = '' OR file_path = '/images/no-image.svg' THEN 1 ELSE 0 END");
+
+            /*
+            | نردبانِ بازدید: قطعه‌ای که در یک روز به آستانه‌ی بازدید رسیده،
+            | بالای فهرست می‌نشیند. مرتب‌سازی پیش‌فرض فروشگاه «جدیدترین» بود و
+            | قطعه‌ای که همین روزها دنبالش هستند، اگر ماه پیش ثبت شده بود، در
+            | صفحه‌ی پنجم نتیجه‌ی جستجو می‌ماند.
+            |
+            | بعد از ترتیبِ عکس‌دار می‌آید نه قبلش: کارتِ بی‌عکس در صدر فهرست،
+            | حتی اگر پربازدید باشد، صفحه را بی‌اعتبار نشان می‌دهد.
+            */
+            $query->orderByPromotion();
         }
 
         $query->orderBy($orderColumn, $orderDirection);
@@ -254,6 +265,7 @@ class ProductController extends Controller
         */
         $model = $query->paginate($perPage)->appends($request->except(['page', 'ajaxi']));
         $totalCount = $model->total();
+        $this->reportSearch($request, $title, $totalCount);
         if ($request->ajax() || $request->ajaxi) {
             $view = view('product.list_type', compact('model', 'totalCount' ))->render();
             return response()->json([
@@ -305,6 +317,9 @@ class ProductController extends Controller
                 // مثل صفحه‌ی فروشگاه، محصولات عکس‌دار جلوتر می‌آیند؛ ردیف
                 // بدون تصویر در یک لیست کوچک بیشتر به چشم می‌آید.
                 ->orderByRaw("CASE WHEN file_path IS NULL OR file_path = '' OR file_path = '/images/no-image.svg' THEN 1 ELSE 0 END")
+                // همان نردبانِ فهرست فروشگاه؛ هفت ردیفِ این لیست باید همان
+                // چیزی را نشان بدهد که صفحه‌ی نتیجه هم اول می‌آورد.
+                ->orderByPromotion()
                 ->orderByDesc('id')
                 ->limit(7)
                 ->get()
@@ -364,6 +379,58 @@ class ProductController extends Controller
             'q'   => $raw,
             'url' => '/shop?title=' . urlencode($raw),
         ]);
+    }
+
+    /**
+     * گزارش جستجوی کاربر به بله.
+     *
+     * چیزی که کاربرها در جعبه‌ی جستجو می‌نویسند، مستقیم‌ترین فهرستِ «چه
+     * قطعه‌ای را باید بیاوریم» است؛ مخصوصا جستجوهای بی‌نتیجه که تا امروز
+     * هیچ‌جا دیده نمی‌شدند و کاربرشان بی‌صدا از سایت می‌رفت.
+     *
+     * سه محافظ دارد تا ربات پر نشود:
+     *
+     * ۱) فقط درخواست غیرایجکسی — صفحه‌بندی و فیلترهای سایدبار ایجکسی‌اند و
+     *    هر کدامشان همان عبارت را دوباره می‌فرستند.
+     * ۲) فقط صفحه‌ی اول — رفتن به صفحه‌ی دو جستجوی تازه نیست.
+     * ۳) یک عبارت در بازه‌ی throttle فقط یک بار — Cache::add اتمیک است، پس
+     *    دو درخواست هم‌زمان هم دو پیام نمی‌سازند.
+     */
+    private function reportSearch(Request $request, string $title, int $totalCount): void
+    {
+        try {
+            $term = trim($title);
+
+            if ($term === '' || $request->ajax() || $request->filled('ajaxi')) {
+                return;
+            }
+
+            if ((int) $request->get('page', 1) > 1) {
+                return;
+            }
+
+            if (! BaleNotifier::enabled('product_search')) {
+                return;
+            }
+
+            $ttl = (int) config('bale.search_throttle', 900);
+            $key = 'bale_search:' . md5(Product::normalizeTerm($term));
+
+            if ($ttl > 0 && ! \Cache::add($key, true, $ttl)) {
+                return;
+            }
+
+            $customer = Auth::guard('customer')->user();
+
+            BaleNotifier::send('product_search', [
+                'عبارت'  => $term,
+                'نتیجه'  => $totalCount > 0 ? $totalCount . ' قطعه' : 'هیچ نتیجه‌ای نداشت',
+                'مشتری'  => $customer ? trim(($customer->fullName() ?: '') . ' ' . ($customer->phone ?? '')) : '',
+                'آدرس'   => url('/shop?title=' . urlencode($term)),
+            ]);
+        } catch (\Throwable $e) {
+            // اطلاع‌رسانی نباید صفحه‌ی نتیجه‌ی جستجو را بشکند.
+        }
     }
 
     private function suggestResponse(array $payload)

@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Models\SpecialOfferFeature;
 use App\Models\Order;
 use App\Models\Category;
 use App\Models\Customer;
@@ -26,6 +27,15 @@ class HomeController extends Controller
 
     /** پنجره‌ی جایگزین، وقتی دو روز اخیر ریل را پر نمی‌کند: یک هفته. */
     private const SPECIAL_OFFER_WIDE_VIEW_DAYS = 7;
+
+    /**
+     * سهم «تازه‌واردها» از ریل: نصف جاها.
+     *
+     * تمامِ ریل به تازه‌واردها نمی‌رسد چون آن‌وقت تخفیف‌دارِ واقعا پربازدید
+     * با یک روز کم‌ترافیک از صفحه بیرون می‌افتاد؛ نصف، هم چرخش روزانه را
+     * تضمین می‌کند و هم صدرِ ریل را دست‌نخورده نگه می‌دارد.
+     */
+    private const SPECIAL_OFFER_NEWCOMER_SHARE = 2;
 
     public function fetchPage($url)
     {
@@ -63,19 +73,25 @@ class HomeController extends Controller
             ->where('showdate', '<', date('Y-m-d H:i:s'))
             ->take(4)
             ->get();
-        $products = $this->getProduct(12);
         $specialProducts = $this->getSpecialOfferProducts(12);
         $specialHasDiscount = $specialProducts->isNotEmpty();
         if (!$specialHasDiscount) {
             // تا وقتی تخفیفی ثبت نشده، ریل «پیشنهاد ویژه» با منتخب قطعات پر می‌شود
             $specialProducts = Product::with(['images', 'categories'])
                 ->where('is_active', 1)
-                ->where('file_path', '!=', '')
+                ->withImage()
                 ->orderByDesc('id')
-                ->skip(12)
                 ->take(12)
                 ->get();
         }
+
+        /*
+        | ریل دوم بعد از ریل ویژه ساخته می‌شود و محصول‌های آن را کنار
+        | می‌گذارد؛ وگرنه یک کارت دو بار در یک صفحه دیده می‌شد. قبلا این کار
+        | با skip(12) روی ریل ویژه انجام می‌شد که فقط تا وقتی درست بود که هر
+        | دو ریل با «جدیدترین» مرتب می‌شدند.
+        */
+        $products = $this->getRecentlyViewedProducts(12, $specialProducts->pluck('id')->all());
         /*
         | علاقه‌مندی‌های کاربر واردشده، بالای صفحه‌ی اصلی.
         |
@@ -127,10 +143,15 @@ class HomeController extends Controller
      * ۳) ترتیب بر اساس مجموع بازدیدِ روزهای اخیر — یعنی همان قطعه‌هایی که این
      *    روزها دنبالشان هستند، نه قدیمی‌ترین تخفیف‌های ثبت‌شده.
      *
-     * پنجره‌ی بازدید کشسان است: اول دو روز اخیر، و اگر در آن بازه کمتر از
-     * ظرفیتِ ریل قطعه‌ی بازدیدشده پیدا شود، همان کوئری روی یک هفته‌ی اخیر
-     * تکرار می‌شود. بدون این عقب‌نشینی، ریل در روزهای کم‌ترافیک عملا فقط با
-     * درصد تخفیف مرتب می‌شد و هفته‌ها بی‌حرکت می‌ماند.
+     * ریل دو تکه است و همین تکه‌شدن است که هر روز عوضش می‌کند:
+     *
+     *   • نصف بالایی، تازه‌واردها — پربازدیدهای امروز که دیروز در ریل نبودند.
+     *   • نصف پایینی، قاعده‌ی همیشگی — پربازدیدهای پنجره‌ی چندروزه.
+     *
+     * پنجره‌ی بازدیدِ تکه‌ی دوم کشسان است: اول دو روز اخیر، و اگر در آن بازه
+     * کمتر از ظرفیتِ ریل قطعه‌ی بازدیدشده پیدا شود، همان کوئری روی یک هفته‌ی
+     * اخیر تکرار می‌شود. بدون این عقب‌نشینی، ریل در روزهای کم‌ترافیک عملا فقط
+     * با درصد تخفیف مرتب می‌شد.
      *
      * محصولِ بدون بازدید حتی در پنجره‌ی هفتگی هم حذف نمی‌شود، فقط ته صف
      * می‌رود (مجموعِ خالی نال است و در ORDER BY DESC آخر می‌نشیند)؛ وگرنه
@@ -141,6 +162,65 @@ class HomeController extends Controller
      */
     public function getSpecialOfferProducts($count)
     {
+        $newcomers = $this->specialOfferNewcomers(
+            (int) ceil($count / self::SPECIAL_OFFER_NEWCOMER_SHARE)
+        );
+
+        $rail = $newcomers->concat(
+            $this->specialOfferRegulars($count - $newcomers->count(), $newcomers->pluck('id')->all())
+        );
+
+        // ترکیب امروز ثبت می‌شود تا فردا بشود پرسید «دیروز چه کسانی اینجا بودند».
+        SpecialOfferFeature::remember($rail->pluck('id')->all());
+
+        return $rail;
+    }
+
+    /**
+     * تازه‌واردهای ریل: پربازدیدهای امروز که دیروز در ریل نبوده‌اند.
+     *
+     * این بخش همان چیزی است که ریل را می‌چرخاند. با قاعده‌ی قبلی، ترتیبْ
+     * فقط از مجموع بازدید و درصد تخفیف می‌آمد و هر دو کند تغییر می‌کنند؛
+     * نتیجه این بود که همان چند قطعه هفته‌ها بالای صفحه‌ی اصلی می‌ماندند و
+     * کاربرِ برگشته دقیقا همان ریل دیروز را می‌دید.
+     *
+     * «پربازدید امروز» یعنی دست‌کم یک بازدیدِ واقعی در همین روز؛ آستانه‌ی
+     * بالاتر روی سایتی با ترافیک متوسط عملا هیچ‌وقت برآورده نمی‌شد و ریل
+     * باز هم بی‌حرکت می‌ماند.
+     */
+    private function specialOfferNewcomers(int $limit)
+    {
+        if ($limit < 1) {
+            return collect();
+        }
+
+        $today = today()->toDateString();
+        $featuredYesterday = SpecialOfferFeature::idsFeaturedOn(today()->subDay()->toDateString());
+
+        return $this->specialOfferCandidates($today)
+            ->with(['images', 'categories'])
+            ->when($featuredYesterday !== [], fn ($q) => $q->whereNotIn('id', $featuredYesterday))
+            ->whereHas('dailyViews', fn ($q) => $q
+                ->where('viewed_on', '>=', $today)
+                ->where('hits', '>', 0))
+            ->orderByDesc('recent_views')
+            ->orderByDesc('discount_percent')
+            ->latest('updated_at')
+            ->take($limit)
+            ->get();
+    }
+
+    /**
+     * باقی ریل، با همان قاعده‌ی همیشگی: پربازدیدترین تخفیف‌دارهای روزهای اخیر.
+     *
+     * @param  int[]  $exclude  شناسه‌ی تازه‌واردهایی که جایشان گرفته شده
+     */
+    private function specialOfferRegulars(int $count, array $exclude = [])
+    {
+        if ($count < 1) {
+            return collect();
+        }
+
         $days = self::SPECIAL_OFFER_VIEW_DAYS;
 
         if ($this->countViewedSpecialOffers($days) < $count) {
@@ -149,11 +229,39 @@ class HomeController extends Controller
 
         return $this->specialOfferCandidates($this->viewWindowStart($days))
             ->with(['images', 'categories'])
+            ->when($exclude !== [], fn ($q) => $q->whereNotIn('id', $exclude))
             ->orderByDesc('recent_views')
             // تساوی بازدید (مثلا وقتی همه صفر هستند) نباید ترتیب تصادفی بدهد؛
             // تخفیف بیشتر جلوتر، و بعد تازه‌ترین تغییر.
             ->orderByDesc('discount_percent')
             ->latest('updated_at')
+            ->take($count)
+            ->get();
+    }
+
+    /**
+     * ریل «داغ‌ترین قطعات»: هرچه تازه‌تر دیده شده، جلوتر.
+     *
+     * قبلا اینجا دوازده محصول آخرِ ثبت‌شده بود؛ ریلی که فقط با افزودن
+     * محصول تازه عوض می‌شد و به رفتار امروزِ کاربرها هیچ ربطی نداشت. حالا
+     * ملاک زمانِ آخرین بازدید است: قطعه‌ای که همین حالا دیده شد، در رفرش
+     * بعدی صفحه‌ی اصلی بالای ریل است.
+     *
+     * محصولِ هرگز دیده‌نشده حذف نمی‌شود، فقط ته صف می‌رود (بیشینه‌ی خالی نال
+     * است و در ORDER BY DESC آخر می‌نشیند) و بینشان جدیدترین‌ها جلوترند؛
+     * پس ریل روی سایتِ تازه هم پر است.
+     *
+     * @param  int[]  $exclude  شناسه‌هایی که ریل بالاتر گرفته است
+     */
+    public function getRecentlyViewedProducts($count, array $exclude = [])
+    {
+        return Product::with(['images', 'categories'])
+            ->where('is_active', 1)
+            ->withImage()
+            ->when($exclude !== [], fn ($q) => $q->whereNotIn('id', $exclude))
+            ->withLastViewedAt()
+            ->orderByDesc('last_viewed_at')
+            ->orderByDesc('id')
             ->take($count)
             ->get();
     }
