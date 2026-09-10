@@ -203,6 +203,9 @@ class CheckoutController extends Controller
 
         session()->forget('cart');
 
+        // این مرورگر سفارش را ثبت کرد، پس حق دارد کد تأیید شماره را وارد کند.
+        PhoneVerificationController::allow($order->id);
+
         try {
             (new OrderNotifier())->orderPlaced($order->fresh('customer'));
         } catch (\Throwable $e) {

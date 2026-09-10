@@ -76,6 +76,13 @@
                         </div>
                     </div>
 
+                    {{-- تأیید شماره: فقط برای شماره‌ی تأییدنشده و فقط وقتی
+                         سفارش واقعا ثبت شده؛ در پرداخت ناموفق هنوز چیزی
+                         برای ذخیره‌کردن وجود ندارد. --}}
+                    @if($paymentStatus === 'paid')
+                        @include('order._verify-phone', ['order' => $order])
+                    @endif
+
                     {{-- دکمه‌ها --}}
                     <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
                         @if($paymentStatus === 'paid')

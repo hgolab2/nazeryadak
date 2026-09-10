@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\RateLimiter;
  */
 class OtpService
 {
-    /** اعتبار کد */
+    /** اعتبار پیش‌فرض کد */
     public const TTL = 120;
 
     /** فاصله‌ی لازم تا ارسال مجدد */
@@ -29,6 +29,31 @@ class OtpService
 
     public const PURPOSE_LOGIN = 'login';
     public const PURPOSE_RESET = 'reset';
+
+    /**
+     * کدی که همراه پیامک ثبت سفارش می‌رود.
+     *
+     * مشتری بعد از پرداخت گوشی را کنار می‌گذارد و شاید ساعت‌ها بعد
+     * پیامک را بخواند؛ دو دقیقه‌ی کد ورود اینجا فقط یک پیام
+     * «کد منقضی شده» تولید می‌کرد که از نفرستادن کد بدتر است.
+     */
+    public const PURPOSE_ORDER = 'order';
+
+    /**
+     * عمر کد برای هدف‌هایی که با پیش‌فرض فرق دارند.
+     *
+     * کد ورود و بازیابی رمز باید کوتاه بماند چون کلید ورودند؛
+     * کد سفارش در عوض فقط می‌گوید «این شماره دست همین خریدار است».
+     */
+    private const TTLS = [
+        self::PURPOSE_ORDER => 86400,
+    ];
+
+    /** عمر کد این هدف، بر حسب ثانیه */
+    public static function ttlFor(string $purpose): int
+    {
+        return self::TTLS[$purpose] ?? self::TTL;
+    }
 
     private static function key(string $mobile, string $purpose): string
     {
@@ -54,6 +79,27 @@ class OtpService
      * ارسال کد. خروجی: ['ok' => bool, 'wait' => int, 'message' => ?string, 'code' => ?string]
      * فیلد code فقط در محیط توسعه پر می‌شود تا بدون درگاه پیامک هم بتوان تست کرد.
      */
+    /**
+     * ساخت و ذخیره‌ی کد، بدون فرستادن پیامک.
+     *
+     * کد ثبت سفارش پیامک جداگانه نمی‌گیرد؛ سوار همان پیامکی
+     * می‌شود که به‌هرحال برای مشتری می‌رود، پس تولید کد باید از
+     * ارسال جدا باشد. صدا زدن دوباره، کد قبلی را باطل می‌کند.
+     */
+    public static function issue(string $mobile, string $purpose): string
+    {
+        $code = (string) random_int(100000, 999999);
+        $ttl  = self::ttlFor($purpose);
+
+        Cache::put(
+            self::key($mobile, $purpose),
+            ['code' => $code, 'tries' => 0, 'expires' => time() + $ttl],
+            $ttl
+        );
+
+        return $code;
+    }
+
     public static function send(string $mobile, string $purpose, string $ip = ''): array
     {
         if ($wait = self::cooldown($mobile, $purpose)) {
@@ -73,13 +119,8 @@ class OtpService
             RateLimiter::hit($key, 3600);
         }
 
-        $code = (string) random_int(100000, 999999);
+        $code = self::issue($mobile, $purpose);
 
-        Cache::put(
-            self::key($mobile, $purpose),
-            ['code' => $code, 'tries' => 0, 'expires' => time() + self::TTL],
-            self::TTL
-        );
         Cache::put(self::waitKey($mobile, $purpose), time() + self::RESEND_WAIT, self::RESEND_WAIT);
 
         $text = $purpose === self::PURPOSE_RESET

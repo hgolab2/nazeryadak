@@ -217,6 +217,10 @@
                     </div>
 
                     <div class="no-print">
+                        {{-- تأیید شماره؛ داخل no-print چون در نسخه‌ی چاپی
+                             فرم معنایی ندارد --}}
+                        @include('order._verify-phone', ['order' => $order])
+
                         <a href="tel:{{ shopContactPhone() }}" class="btn add-cart-btn2 text-center d-block font-13 fw-bold mb-2">
                             <i class="fas fa-headset me-1"></i> تماس با کارشناس
                         </a>

@@ -6,6 +6,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\OrderTrackingController;
+use App\Http\Controllers\PhoneVerificationController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\DiscountController;
 use App\Http\Controllers\UserController;
@@ -217,6 +218,12 @@ Route::group(['namespace' => 'Frontend', 'middleware' => [ShareDataInFrontend::c
     // مسیر بدون پرداخت آنلاین: ثبت سفارش و صدور پیش‌فاکتور
     Route::post('/order/place/{id}', [CheckoutController::class, 'place'])->name('order.place');
     Route::get('/order/invoice/{id}', [CheckoutController::class, 'invoice'])->name('order.invoice');
+
+    /*
+    | تأیید شماره با کدی که همراه پیامک ثبت سفارش رفته است. اختیاری است و
+    | سفارش بدون آن هم ثبت‌شده باقی می‌ماند؛ فقط حساب را به مشتری می‌دهد.
+    */
+    Route::post('/order/verify-phone', [PhoneVerificationController::class, 'verify'])->name('order.verifyPhone');
 
     /*
     | پیگیری سفارش بدون ورود به حساب: شماره سفارش + شماره موبایل.

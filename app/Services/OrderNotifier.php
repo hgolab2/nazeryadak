@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\CustomerNotification;
 use App\Models\Order;
 use App\Models\Setting;
+use App\Services\OtpService;
 use App\Support\OrderSummary;
 use Illuminate\Support\Facades\Log;
 
@@ -27,7 +28,16 @@ class OrderNotifier
         '{name}'   => 'نام مشتری',
         '{shop}'   => 'نام فروشگاه',
         '{phone}'  => 'شماره تماس پشتیبانی',
+        '{code}'   => 'کد تأیید شماره (فقط پیامک ثبت سفارش، و فقط برای شماره‌ی تأییدنشده)',
     ];
+
+    /**
+     * رویدادهایی که در لحظه‌ی ثبت سفارش می‌افتند.
+     *
+     * کد تأیید فقط به همین‌ها می‌چسبد؛ پیامک «ارسال شد» یا «تحویل شد»
+     * روزها بعد می‌رود و کد داخلش معنایی ندارد.
+     */
+    private const CODE_EVENTS = ['order_placed', 'awaiting_call'];
 
     /**
      * کلید تنظیمات، عنوان اعلان، آیکن و متن پیش‌فرض هر رویداد.
@@ -38,13 +48,13 @@ class OrderNotifier
             'label'   => 'ثبت سفارش (پرداخت آنلاین)',
             'title'   => 'سفارش شما ثبت شد',
             'icon'    => 'fa-receipt',
-            'default' => "{shop}\nسفارش {order} با مبلغ {amount} تومان ثبت شد. وضعیت آن را از حساب کاربری پیگیری کنید.",
+            'default' => "{shop}\nسفارش {order} با مبلغ {amount} تومان ثبت شد. وضعیت آن را از حساب کاربری پیگیری کنید.{code}",
         ],
         'awaiting_call' => [
             'label'   => 'ثبت سفارش (در انتظار تماس کارشناس)',
             'title'   => 'سفارش شما ثبت شد؛ منتظر تماس ما باشید',
             'icon'    => 'fa-phone-volume',
-            'default' => "{shop}\nسفارش {order} ثبت شد و پیش‌فاکتور آن صادر شد. کارشناسان ما به‌زودی برای تأیید و هماهنگی پرداخت با شما تماس می‌گیرند.",
+            'default' => "{shop}\nسفارش {order} ثبت شد و پیش‌فاکتور آن صادر شد. کارشناسان ما به‌زودی برای تأیید و هماهنگی پرداخت با شما تماس می‌گیرند.{code}",
         ],
         'paid' => [
             'label'   => 'تأیید پرداخت',
@@ -121,23 +131,76 @@ class OrderNotifier
 
     private function dispatch(Order $order, string $event): void
     {
-        $config  = self::EVENTS[$event];
-        $message = trim($this->render(self::template($event), $order));
+        $config   = self::EVENTS[$event];
+        $template = self::template($event);
+
+        /*
+        | کد تأیید فقط در پیامک معنا دارد.
+        |
+        | اعلان داخل سایت را کسی می‌بیند که از قبل وارد شده، پس نشان‌دادن کد
+        | به او هم بی‌فایده است و هم کد را بی‌دلیل در جای دومی تکرار می‌کند.
+        */
+        $smsMessage    = trim($this->render($template, $order, $this->verificationBlock($order, $event)));
+        $notifyMessage = trim($this->render($template, $order, ''));
 
         // اطلاع‌رسانی بله برای مدیر است و به متن پیامکِ مشتری وابسته نیست؛
         // اگر ادمین متن پیامک را خالی کرده باشد هم باید از سفارش باخبر شود.
         BaleNotifier::send($event, OrderSummary::baleFields($order));
 
-        if ($message === '') {
+        if ($notifyMessage === '' && $smsMessage === '') {
             // ادمین متن را خالی گذاشته یعنی این اطلاع‌رسانی را نمی‌خواهد
             return;
         }
 
-        $this->push($order, $config['title'], $message, $config['icon']);
+        $this->push($order, $config['title'], $notifyMessage, $smsMessage, $config['icon']);
+    }
+
+    /**
+     * بلوک کد تأیید، یا رشته‌ی خالی.
+     *
+     * بلوک عمداً کامل و خودایستا است: اگر جای کد فقط عدد می‌آمد، متنِ قالب
+     * باید برچسب «کد تأیید:» را خودش می‌داشت و آن وقت برای مشتریِ تأییدشده
+     * یک برچسب بی‌مقدار ته پیامک می‌ماند.
+     */
+    private function verificationBlock(Order $order, string $event): string
+    {
+        if (! in_array($event, self::CODE_EVENTS, true)) {
+            return '';
+        }
+
+        $customer = $order->customer;
+
+        if (! $customer || empty($customer->phone) || $customer->hasVerifiedPhone()) {
+            return '';
+        }
+
+        try {
+            $code = OtpService::issue($customer->phone, OtpService::PURPOSE_ORDER);
+        } catch (\Throwable $e) {
+            // نبودن کد نباید جلوی پیامک ثبت سفارش را بگیرد؛ آن پیام اصلی است.
+            Log::error('ساخت کد تأیید سفارش ناموفق بود', ['order' => $order->id, 'message' => $e->getMessage()]);
+
+            return '';
+        }
+
+        /*
+        | خط آخر برای WebOTP است: کروم اندروید با دیدن همین الگو کد را خودش
+        | در فرم می‌گذارد. صفحه‌ی نتیجه‌ی سفارش دقیقاً همین لحظه باز است، پس
+        | بهترین حالت ممکن برای این قابلیت است.
+        */
+        return "\nکد تأیید شماره: {$code}"
+            . "\nبا زدن این کد در سایت، سابقه‌ی سفارش‌ها و آدرستان ذخیره می‌شود."
+            . "\n@" . self::webOtpHost() . " #{$code}";
+    }
+
+    /** دامنه‌ی سایت بدون پروتکل؛ WebOTP دقیقاً همین را می‌خواهد. */
+    private static function webOtpHost(): string
+    {
+        return (string) (parse_url((string) seo_url(), PHP_URL_HOST) ?: request()->getHost());
     }
 
     /** جایگذاری جانگهدارها در متن */
-    private function render(string $template, Order $order): string
+    private function render(string $template, Order $order, string $code = ''): string
     {
         $customer = $order->customer;
 
@@ -148,10 +211,11 @@ class OrderNotifier
             '{name}'   => $customer?->fullName() ?: '',
             '{shop}'   => seo_site_name(),
             '{phone}'  => shopContactPhoneDisplay(),
+            '{code}'   => $code,
         ]);
     }
 
-    private function push(Order $order, string $title, string $message, string $icon): void
+    private function push(Order $order, string $title, string $message, string $smsMessage, string $icon): void
     {
         $customer = $order->customer;
 
@@ -161,6 +225,11 @@ class OrderNotifier
 
         // اعلان داخل سایت اول ساخته می‌شود تا خطای درگاه پیامک آن را از بین نبرد.
         try {
+            if ($message === '') {
+                // ادمین متن این رویداد را خالی کرده؛ فقط اعلان ساخته نمی‌شود
+                throw new \DomainException('empty');
+            }
+
             CustomerNotification::create([
                 'customer_id' => $customer->id,
                 'type'        => 'order',
@@ -169,13 +238,15 @@ class OrderNotifier
                 'url'         => '/profile/orderDetail/' . $order->id,
                 'icon'        => $icon,
             ]);
+        } catch (\DomainException $e) {
+            // متن خالی، خطا نیست
         } catch (\Throwable $e) {
             Log::error('ساخت اعلان سفارش ناموفق بود', ['order' => $order->id, 'message' => $e->getMessage()]);
         }
 
-        if (! empty($customer->phone)) {
+        if (! empty($customer->phone) && $smsMessage !== '') {
             try {
-                sendSms($customer->phone, $message);
+                sendSms($customer->phone, $smsMessage);
             } catch (\Throwable $e) {
                 Log::error('ارسال پیامک سفارش ناموفق بود', ['order' => $order->id, 'message' => $e->getMessage()]);
             }

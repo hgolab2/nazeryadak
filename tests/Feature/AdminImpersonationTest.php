@@ -32,6 +32,7 @@ class AdminImpersonationTest extends TestCase
             $table->string('otp_code', 6)->nullable();
             $table->timestamp('otp_expires_at')->nullable();
             $table->timestamp('last_login_at')->nullable();
+            $table->timestamp('phone_verified_at')->nullable();
             $table->string('remember_token')->nullable();
             $table->timestamps();
         });

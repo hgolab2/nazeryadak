@@ -18166,6 +18166,118 @@ footer .container { width: min(1320px, calc(100% - 32px)); max-width: none; }
     color: #626a71 !important;
 }
 
+/* ------------------------------------------------------------------
+   جعبه‌ی تأیید شماره بعد از ثبت سفارش.
+
+   عمدا رنگ هشدار ندارد: این یک خطا یا کار عقب‌افتاده نیست، یک پیشنهاد
+   است. اگر مثل اخطار دیده شود، مشتریِ تازه‌خریدکرده فکر می‌کند سفارشش
+   مشکلی دارد.
+   ------------------------------------------------------------------ */
+.nx-verify {
+    margin-top: 20px;
+    padding: 16px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: #f8f9fa;
+}
+
+.nx-verify-head {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.nx-verify-head > i {
+    flex: 0 0 auto;
+    font-size: 1.25rem;
+    color: var(--primary);
+    margin-top: 2px;
+}
+
+.nx-verify-head b {
+    display: block;
+    font-size: .95rem;
+    margin-bottom: 4px;
+}
+
+.nx-verify-head p {
+    margin: 0;
+    font-size: .8rem;
+    line-height: 1.9;
+    color: var(--text-muted, #6c757d);
+}
+
+.nx-verify-phone {
+    font-weight: 700;
+    direction: ltr;
+    unicode-bidi: isolate;
+}
+
+.nx-verify-form {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+}
+
+.nx-verify-form input {
+    flex: 1 1 140px;
+    min-width: 0;
+    height: 44px;
+    padding: 0 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: #fff;
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: .4em;
+    direction: ltr;
+}
+
+.nx-verify-form input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.nx-verify-btn {
+    flex: 0 0 auto;
+    min-width: 96px;
+    height: 44px;
+    padding: 0 20px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: var(--primary);
+    color: #fff;
+    font-size: .9rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.nx-verify-msg {
+    margin: 10px 0 0;
+    font-size: .8rem;
+    line-height: 1.8;
+    min-height: 1em;
+}
+
+.nx-verify-msg.is-error { color: var(--danger, #d33); }
+.nx-verify-msg.is-ok    { color: var(--success, #1a9c4c); }
+
+.nx-verify-skip {
+    margin: 10px 0 0;
+    font-size: .75rem;
+    line-height: 1.9;
+    color: var(--text-muted, #6c757d);
+}
+
+.nx-verify.is-done .nx-verify-skip { display: none; }
+
+@media (max-width: 575.98px) {
+    .nx-verify-form input,
+    .nx-verify-btn { flex: 1 1 100%; }
+}
+
 /* /assets/css/home-digikala.css */
 /* ==========================================================================
    قالب دیجی‌کالایی: هدر سایت + چیدمان و رنگ‌بندی صفحه اصلی

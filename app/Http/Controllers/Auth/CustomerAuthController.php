@@ -150,6 +150,11 @@ class CustomerAuthController extends Controller
             ], 403);
         }
 
+        // کد پیامکی درست وارد شده، پس شماره در دسترس همین آدم است. این
+        // همان چیزی است که بعداً تصمیم می‌گیرد پیامک ثبت سفارش کد تأیید
+        // داشته باشد یا نه.
+        $customer->markPhoneVerified();
+
         $this->startSession($request, $customer);
 
         BaleNotifier::send($isNew ? 'customer_register' : 'customer_login', [

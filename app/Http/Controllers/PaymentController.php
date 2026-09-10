@@ -230,6 +230,9 @@ class PaymentController extends Controller
      */
     private function markPaid(Order $order): void
     {
+        // همان مرورگری که پرداخت را تمام کرد، حق تأیید شماره را دارد.
+        PhoneVerificationController::allow($order->id);
+
         if ($order->status === 'paid') {
             return;
         }

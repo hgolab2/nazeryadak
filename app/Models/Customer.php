@@ -28,7 +28,29 @@ class Customer extends Authenticatable
         'status' => 'boolean',
         'last_login_at' => 'datetime',
         'otp_expires_at' => 'datetime',
+        'phone_verified_at' => 'datetime',
     ];
+
+    /**
+     * آیا شماره‌ی این حساب با کد پیامکی تأیید شده؟
+     *
+     * داشتن حساب دلیل تأیید نیست: حسابی که ادمین از پنل می‌سازد هم
+     * شماره دارد، ولی هیچ‌کس بررسی نکرده که آن شماره دست همین آدم است.
+     */
+    public function hasVerifiedPhone(): bool
+    {
+        return $this->phone_verified_at !== null;
+    }
+
+    /** ثبت تأیید شماره؛ تأییدِ قبلی دوباره تاریخ‌خوردن ندارد. */
+    public function markPhoneVerified(): void
+    {
+        if ($this->hasVerifiedPhone()) {
+            return;
+        }
+
+        $this->forceFill(['phone_verified_at' => now()])->save();
+    }
 
     public function address()
     {
