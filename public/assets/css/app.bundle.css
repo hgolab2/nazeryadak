@@ -18169,46 +18169,71 @@ footer .container { width: min(1320px, calc(100% - 32px)); max-width: none; }
 /* ------------------------------------------------------------------
    جعبه‌ی تأیید شماره بعد از ثبت سفارش.
 
-   عمدا رنگ هشدار ندارد: این یک خطا یا کار عقب‌افتاده نیست، یک پیشنهاد
-   است. اگر مثل اخطار دیده شود، مشتریِ تازه‌خریدکرده فکر می‌کند سفارشش
-   مشکلی دارد.
+   نسخه‌ی اول خاکستری و بی‌صدا بود تا شبیه خطا نباشد؛ نتیجه این شد که
+   مشتری اصلا پیدایش نمی‌کرد. حالا در چشم است ولی با رنگ برند، نه رنگ
+   هشدار: قابِ پررنگ، نوار رنگی بالا، و کادر کد به‌اندازه‌ای بزرگ که
+   خودش بگوید «اینجا باید چیزی بنویسی».
    ------------------------------------------------------------------ */
 .nx-verify {
-    margin-top: 20px;
-    padding: 16px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    background: #f8f9fa;
+    position: relative;
+    margin: 0 0 22px;
+    padding: 18px 18px 16px;
+    border: 2px solid var(--primary);
+    border-radius: var(--radius);
+    background: #fff;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .07);
+    overflow: hidden;
 }
 
-.nx-verify-head {
+/* نوار رنگی بالای قاب: از فاصله‌ی دور هم چشم را می‌گیرد */
+.nx-verify::before {
+    content: "";
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 0;
+    height: 4px;
+    background: var(--primary);
+}
+
+.nx-verify-top {
     display: flex;
     gap: 12px;
     align-items: flex-start;
+    margin-top: 4px;
 }
 
-.nx-verify-head > i {
+.nx-verify-icon {
     flex: 0 0 auto;
-    font-size: 1.25rem;
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--primary-lighter, #eef2ff);
     color: var(--primary);
-    margin-top: 2px;
+    font-size: 1.15rem;
 }
 
-.nx-verify-head b {
-    display: block;
-    font-size: .95rem;
-    margin-bottom: 4px;
+.nx-verify-titles { min-width: 0; }
+
+.nx-verify-titles h3 {
+    margin: 0 0 4px;
+    font-size: 1.02rem;
+    font-weight: 800;
+    color: var(--text-dark);
 }
 
-.nx-verify-head p {
+.nx-verify-titles p {
     margin: 0;
-    font-size: .8rem;
+    font-size: .82rem;
     line-height: 1.9;
     color: var(--text-muted, #6c757d);
 }
 
 .nx-verify-phone {
-    font-weight: 700;
+    font-weight: 800;
+    color: var(--text-dark);
     direction: ltr;
     unicode-bidi: isolate;
 }
@@ -18220,43 +18245,56 @@ footer .container { width: min(1320px, calc(100% - 32px)); max-width: none; }
     flex-wrap: wrap;
 }
 
+/* کادر کد عمدا بزرگ و با فاصله‌ی زیاد بین ارقام است: از نظر بصری
+   «شش خانه» خوانده می‌شود و مشتری می‌فهمد شش رقم می‌خواهد */
 .nx-verify-form input {
-    flex: 1 1 140px;
+    flex: 1 1 170px;
     min-width: 0;
-    height: 44px;
+    height: 54px;
     padding: 0 12px;
-    border: 1px solid var(--border-color);
+    border: 2px solid var(--border-color);
     border-radius: var(--radius-sm);
     background: #fff;
-    font-size: 1.1rem;
-    font-weight: 700;
+    font-size: 1.4rem;
+    font-weight: 800;
     text-align: center;
-    letter-spacing: .4em;
+    letter-spacing: .55em;
+    text-indent: .55em;
     direction: ltr;
+}
+
+.nx-verify-form input::placeholder {
+    font-weight: 400;
+    letter-spacing: .25em;
+    color: #c4c4c4;
 }
 
 .nx-verify-form input:focus {
     outline: none;
     border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-lighter, rgba(0, 0, 0, .06));
 }
 
 .nx-verify-btn {
     flex: 0 0 auto;
-    min-width: 96px;
-    height: 44px;
-    padding: 0 20px;
+    min-width: 120px;
+    height: 54px;
+    padding: 0 22px;
     border: none;
     border-radius: var(--radius-sm);
     background: var(--primary);
     color: #fff;
-    font-size: .9rem;
-    font-weight: 600;
+    font-size: .95rem;
+    font-weight: 700;
     cursor: pointer;
 }
 
+.nx-verify-btn:hover { filter: brightness(1.07); }
+
 .nx-verify-msg {
     margin: 10px 0 0;
-    font-size: .8rem;
+    font-size: .82rem;
+    font-weight: 600;
     line-height: 1.8;
     min-height: 1em;
 }
@@ -18264,13 +18302,32 @@ footer .container { width: min(1320px, calc(100% - 32px)); max-width: none; }
 .nx-verify-msg.is-error { color: var(--danger, #d33); }
 .nx-verify-msg.is-ok    { color: var(--success, #1a9c4c); }
 
+.nx-verify-why {
+    margin: 12px 0 0;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border-color);
+    font-size: .8rem;
+    line-height: 1.9;
+    color: var(--text-dark);
+}
+
+.nx-verify-why i { color: var(--primary); margin-inline-end: 4px; }
+
 .nx-verify-skip {
-    margin: 10px 0 0;
+    margin: 6px 0 0;
     font-size: .75rem;
     line-height: 1.9;
     color: var(--text-muted, #6c757d);
 }
 
+/* بعد از تأیید، جعبه آرام می‌شود: کار تمام شده و دیگر نباید چشم بگیرد */
+.nx-verify.is-done {
+    border-color: var(--success, #1a9c4c);
+    box-shadow: none;
+}
+
+.nx-verify.is-done::before { background: var(--success, #1a9c4c); }
+.nx-verify.is-done .nx-verify-why,
 .nx-verify.is-done .nx-verify-skip { display: none; }
 
 @media (max-width: 575.98px) {

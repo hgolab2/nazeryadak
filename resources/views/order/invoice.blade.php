@@ -50,6 +50,14 @@
                 </span>
             </p>
 
+            {{-- کد تأیید پیش از توضیح «مرحله بعد» می‌آید و نه بعد از آن.
+                 پیامک دقیقا همین لحظه رسیده و کار مشتری همین است؛ توضیحِ
+                 روند بعدی می‌تواند چند ثانیه صبر کند. بیرون از #invoice-print
+                 هم هست تا روی کاغذ چاپ نشود. --}}
+            <div class="no-print mx-auto text-start" style="max-width:640px;">
+                @include('order._verify-phone', ['order' => $order])
+            </div>
+
             <div class="mx-auto p-3 text-start" style="max-width:640px; background:var(--primary-lighter); border-radius:var(--radius-sm);">
                 <p class="font-13 fw-bold mb-2" style="color:var(--primary);">
                     <i class="fas fa-phone-volume me-1"></i> مرحله بعد: کارشناسان ما با شما تماس می‌گیرند
@@ -217,10 +225,6 @@
                     </div>
 
                     <div class="no-print">
-                        {{-- تأیید شماره؛ داخل no-print چون در نسخه‌ی چاپی
-                             فرم معنایی ندارد --}}
-                        @include('order._verify-phone', ['order' => $order])
-
                         <a href="tel:{{ shopContactPhone() }}" class="btn add-cart-btn2 text-center d-block font-13 fw-bold mb-2">
                             <i class="fas fa-headset me-1"></i> تماس با کارشناس
                         </a>

@@ -1,28 +1,29 @@
 {{--
     جعبه‌ی تأیید شماره، بعد از ثبت سفارش.
 
-    عمدا با لحن «سود» نوشته شده نه «وظیفه»: مشتری همین الان پول داده و
-    دلیلی ندارد یک کار اداریِ دیگر انجام دهد. چیزی که او را وادار می‌کند
-    کد را بزند، نه امنیت ماست، بلکه «دفعه‌ی بعد آدرس را دوباره وارد نکن».
+    نسخه‌ی اول عمدا کم‌رنگ بود تا شبیه «خطا» نباشد، ولی آن‌قدر کم‌رنگ شد که
+    مشتری باید دنبالش می‌گشت — و کدی که کسی وارد نکند بی‌ارزش است.
 
-    اگر کد را نزند هیچ‌چیز خراب نمی‌شود؛ سفارش ثبت است و کارشناس تماس می‌گیرد.
+    راه‌حل، رنگ هشدار نیست: جعبه پررنگ و در چشم است ولی با رنگ برند، و متنش
+    اول می‌گوید «چه کار کن» و بعد «چرا». جمله‌ی پایین هم صریح می‌گوید سفارش
+    ثبت شده، تا این برجستگی به‌معنای «مشکلی پیش آمده» خوانده نشود.
 --}}
 @if(\App\Http\Controllers\PhoneVerificationController::needed($order))
     @php
         $verifyPhone = optional($order->address)->receiver_phone ?: $order->customer->phone;
     @endphp
-    <div class="nx-verify" id="nx-verify" data-order="{{ $order->id }}">
-        <div class="nx-verify-head">
-            <i class="fas fa-mobile-screen-button"></i>
-            <div>
-                <b>دفعه‌ی بعد، آدرس را دوباره وارد نکنید</b>
+    <section class="nx-verify" id="nx-verify" data-order="{{ $order->id }}" aria-labelledby="nx-verify-title">
+        <header class="nx-verify-top">
+            <span class="nx-verify-icon"><i class="fas fa-comment-sms"></i></span>
+            <div class="nx-verify-titles">
+                <h3 id="nx-verify-title">کد پیامک‌شده را وارد کنید</h3>
                 <p>
-                    کد ۶ رقمی که همراه پیامک سفارش به
+                    یک کد ۶ رقمی به شماره‌ی
                     <bdi class="nx-verify-phone">{{ toPersianNumbers($verifyPhone, false) }}</bdi>
-                    فرستادیم را بزنید تا سابقه‌ی سفارش‌ها و آدرستان ذخیره شود.
+                    فرستادیم.
                 </p>
             </div>
-        </div>
+        </header>
 
         <form class="nx-verify-form" id="nx-verify-form" autocomplete="off">
             @csrf
@@ -32,17 +33,25 @@
                  خوب، مشتری اصلا چیزی تایپ نمی‌کند. --}}
             <input type="text" id="nx-verify-code" name="code" class="is-num is-code"
                    inputmode="numeric" autocomplete="one-time-code" maxlength="6"
-                   placeholder="——————" enterkeyhint="go" aria-describedby="nx-verify-msg">
-            <button type="submit" class="nx-verify-btn">تأیید</button>
+                   placeholder="- - - - - -" enterkeyhint="go" aria-describedby="nx-verify-msg">
+            <button type="submit" class="nx-verify-btn">
+                <i class="fas fa-check me-1"></i> تأیید
+            </button>
         </form>
 
         <p class="nx-verify-msg" id="nx-verify-msg" role="status" aria-live="polite"></p>
 
-        <p class="nx-verify-skip">
-            وارد نکردن این کد مشکلی ایجاد نمی‌کند؛ سفارش شما ثبت است و
-            کارشناسان ما برای هماهنگی با شما تماس می‌گیرند.
+        <p class="nx-verify-why">
+            <i class="fas fa-circle-info"></i>
+            با وارد کردن این کد، سابقه‌ی سفارش‌ها و آدرستان ذخیره می‌شود و
+            دفعه‌ی بعد لازم نیست دوباره آدرس بنویسید.
         </p>
-    </div>
+
+        <p class="nx-verify-skip">
+            سفارش شما ثبت شده است و این کد اجباری نیست؛ اگر واردش نکنید،
+            کارشناسان ما همچنان برای هماهنگی با شما تماس می‌گیرند.
+        </p>
+    </section>
 
     <script>
     (function () {

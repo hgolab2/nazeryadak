@@ -51,6 +51,14 @@
                         @endif
                     </div>
 
+                    {{-- تأیید شماره بلافاصله زیر پیام موفقیت می‌آید، نه بعد از
+                         جدول مشخصات: مشتری تا انتهای جدول اسکرول نمی‌کند و کدی
+                         که دیده نشود وارد هم نمی‌شود. در پرداخت ناموفق نمی‌آید،
+                         چون هنوز چیزی برای ذخیره‌کردن نیست. --}}
+                    @if($paymentStatus === 'paid')
+                        @include('order._verify-phone', ['order' => $order])
+                    @endif
+
                     {{-- اطلاعات سفارش --}}
                     <div class="row font-13 mx-0 mt-3" style="background:#f8f9fa; border-radius:var(--radius-sm);">
                         <div class="col-md-6 py-3 {{ $paymentStatus === 'paid' ? '' : 'border-bottom' }}">
@@ -83,13 +91,6 @@
                             {{ optional($successAddress)->address_line ?? '—' }}
                         </div>
                     </div>
-
-                    {{-- تأیید شماره: فقط برای شماره‌ی تأییدنشده و فقط وقتی
-                         سفارش واقعا ثبت شده؛ در پرداخت ناموفق هنوز چیزی
-                         برای ذخیره‌کردن وجود ندارد. --}}
-                    @if($paymentStatus === 'paid')
-                        @include('order._verify-phone', ['order' => $order])
-                    @endif
 
                     {{-- دکمه‌ها --}}
                     <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
