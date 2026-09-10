@@ -224,7 +224,9 @@
                         <a href="tel:{{ shopContactPhone() }}" class="btn add-cart-btn2 text-center d-block font-13 fw-bold mb-2">
                             <i class="fas fa-headset me-1"></i> تماس با کارشناس
                         </a>
-                        @if($order->canReceiveReceipt())
+                        {{-- ثبت رسید زیر /profile است و ورود می‌خواهد؛ مهمان
+                             رسیدش را تلفنی به کارشناس می‌دهد --}}
+                        @if($order->canReceiveReceipt() && auth()->guard('customer')->check())
                         {{-- مشتری بعد از کارت‌به‌کارت، رسیدش را همین‌جا ثبت می‌کند --}}
                         <a href="/profile/order/{{ $order->id }}/payment-receipt" class="btn w-100 font-13 mb-2"
                            style="border:1px solid var(--success); color:var(--success); border-radius:var(--radius-sm); background:#fff;">
@@ -235,7 +237,8 @@
                                 style="border:1px solid var(--border-color); color:var(--text-dark); border-radius:var(--radius-sm); background:#fff;">
                             <i class="fas fa-print me-1"></i> چاپ پیش‌فاکتور
                         </button>
-                        <a href="/profile/orderDetail/{{ $order->id }}" class="btn w-100 font-13"
+                        <a href="{{ auth()->guard('customer')->check() ? '/profile/orderDetail/' . $order->id : '/order-tracking?order=' . $order->id }}"
+                           class="btn w-100 font-13"
                            style="border:1px solid var(--primary); color:var(--primary); border-radius:var(--radius-sm);">
                             <i class="fas fa-box me-1"></i> پیگیری سفارش
                         </a>
