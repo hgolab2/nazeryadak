@@ -263,6 +263,17 @@
         $shopFaqs && $shopIndexable && $shopPage === 1 ? seo_faq_schema($shopFaqs) : null,
     ])),
 ])
+@section('preload')
+    @php
+        /* تصویر LCP فهرست فروشگاه: نخستین کارت گرید. */
+        $lcpListImage = $model->first() ? $model->first()->image() : null;
+        $lcpListSrcset = $lcpListImage ? thumb_srcset($lcpListImage, 300, 600) : null;
+    @endphp
+    @if($lcpListSrcset)
+    <link rel="preload" as="image" type="image/webp" imagesrcset="{{ $lcpListSrcset }}" fetchpriority="high">
+    @endif
+@endsection
+
 @section('main_content')
 <main class="nx-home nx-shop">
     <div class="nx-wrap">
@@ -378,7 +389,7 @@
                         <div class="nx-sort">
                             <span>مرتب‌سازی:</span>
                             <div class="nx-field nx-field-select nx-sort-field">
-                                <select id="sort-select">
+                                <select id="sort-select" aria-label="مرتب‌سازی نتایج">
                                     <option value="id-desc">جدیدترین</option>
                                     <option value="price-asc">ارزان‌ترین</option>
                                     <option value="price-desc">گران‌ترین</option>

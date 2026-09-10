@@ -138,9 +138,12 @@ async function handleNavigation(request) {
         const response = await fetch(request);
 
         if (response && response.ok && response.type === 'basic') {
-            const cache = await caches.open(PAGES_CACHE);
-            await cache.put(request, response.clone());
-            trimCache(cache, MAX_CACHED_PAGES);
+            // بدون await: نوشتن در کش نباید تحویل پاسخ به صفحه را عقب بیندازد.
+            const copy = response.clone();
+            caches.open(PAGES_CACHE).then(async (cache) => {
+                await cache.put(request, copy);
+                trimCache(cache, MAX_CACHED_PAGES);
+            });
         }
 
         return response;

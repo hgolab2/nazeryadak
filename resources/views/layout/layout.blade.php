@@ -38,11 +38,10 @@
     {{-- منابع بحرانی زودتر از موعد درخواست می‌شوند؛ مستقیم روی LCP اثر دارد --}}
     <link rel="dns-prefetch" href="//www.googletagmanager.com">
     <link rel="preload" as="style" href="{{ asset_v(asset_bundle_is_fresh('css') ? config('assets.css.bundle') : '/assets/css/style.css') }}">
-    {{-- فایل woff2 این فونت هرگز ساخته نشده بود؛ preload کردنش یعنی هر
-         بازدیدکننده یک ۴۰۴ روی مسیر بحرانی رندر می‌گرفت و بعد woff را
-         دانلود می‌کرد. تا وقتی woff2 ساخته شود، همان woff پیش‌بارگذاری
-         می‌شود — دقیقا همان چیزی که @font-face اول صدا می‌زند. --}}
-    <link rel="preload" as="font" type="font/woff" href="/assets/font/IRANSans/IRANSansWeb(FaNum).woff" crossorigin>
+    {{-- woff2 این فونت کنار woff موجود بود ولی نه @font-face صدایش می‌زد و نه
+         preload؛ هر بازدیدکننده ۳۵ کیلوبایت woff می‌گرفت به‌جای ۲۹ کیلوبایت
+         woff2. هر دو جا حالا woff2 را اول می‌آورند و woff فقط پشتیبان است. --}}
+    <link rel="preload" as="font" type="font/woff2" href="/assets/font/IRANSans/IRANSansWeb(FaNum).woff2" crossorigin>
 
     {{-- لوگو دیگر preload نمی‌شود: در صفحه‌ی محصول و فهرست، تصویر LCP عکس
          کالاست نه لوگو. لوگوی ۱۲۲ کیلوبایتی با اولویت بالا جلوتر از تصویر
@@ -147,11 +146,47 @@
 
     @include('layout.partials.styles')
 
+    {{--
+        آنالیتیکس بعد از بارگذاری صفحه می‌آید، نه همراه آن.
+
+        فایل gtag حدود ۱۷۰ کیلوبایت است و وقتی هم‌زمان با CSS و تصویر اصلی
+        دانلود می‌شد، پهنای باند موبایل را با همان چیزی که کاربر منتظرش است
+        قسمت می‌کرد. صفِ dataLayer از همان ابتدا ساخته می‌شود، پس رویدادهای
+        قبل از رسیدن کتابخانه گم نمی‌شوند و بازدید همان صفحه ثبت می‌شود.
+
+        اولین تعامل کاربر هم آن را زودتر می‌آورد تا بازدید کوتاه از دست نرود.
+    --}}
+    @php $analyticsSrc = !empty($seoAnalytics['gtm'])
+        ? 'https://www.googletagmanager.com/gtm.js?id=' . $seoAnalytics['gtm']
+        : (!empty($seoAnalytics['ga4']) ? 'https://www.googletagmanager.com/gtag/js?id=' . $seoAnalytics['ga4'] : null); @endphp
+    @if($analyticsSrc)
+    <script>
+    window.dataLayer = window.dataLayer || [];
     @if(!empty($seoAnalytics['gtm']))
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','{{ $seoAnalytics['gtm'] }}');</script>
-    @elseif(!empty($seoAnalytics['ga4']))
-    <script async src="https://www.googletagmanager.com/gtag/js?id={{ $seoAnalytics['ga4'] }}"></script>
-    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ $seoAnalytics['ga4'] }}');</script>
+    dataLayer.push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
+    @else
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', '{{ $seoAnalytics['ga4'] }}');
+    @endif
+    (function () {
+        var done = false;
+        function load() {
+            if (done) return;
+            done = true;
+            var s = document.createElement('script');
+            s.async = true;
+            s.src = '{{ $analyticsSrc }}';
+            document.head.appendChild(s);
+        }
+        function schedule() { setTimeout(load, 1500); }
+        if (document.readyState === 'complete') schedule();
+        else window.addEventListener('load', schedule);
+        ['pointerdown', 'keydown', 'touchstart', 'scroll'].forEach(function (evt) {
+            window.addEventListener(evt, load, { once: true, passive: true });
+        });
+    })();
+    </script>
     @endif
 </head>
 {{-- صفحه‌هایی که نوار عمل چسبان موبایل دارند این کلاس را می‌فرستند تا
@@ -291,7 +326,7 @@
         <div class="container">
             <div class="row py-2 align-items-center">
                 <div class="col-3">
-                    <a href="#mobile-menu" data-bs-toggle="offcanvas"><i class="fa fa-bars mobile-menu-icon"></i></a>
+                    <a href="#mobile-menu" data-bs-toggle="offcanvas" aria-label="منوی اصلی"><i class="fa fa-bars mobile-menu-icon" aria-hidden="true"></i></a>
                     <div class="offcanvas offcanvas-start" tabindex="-1" data-bs-scroll="true" id="mobile-menu">
                         <div class="offcanvas-header" style="background: var(--primary); padding: 15px;">
                             <span class="site-logo site-logo-mobile">
@@ -328,7 +363,7 @@
                                 <li><a href="/order-tracking"><i class="fas fa-map-marked-alt me-2" style="color:var(--primary);"></i> پیگیری سفارش</a></li>
                                 <li><a href="/about-us"><i class="fas fa-info-circle me-2" style="color:var(--primary);"></i> درباره ما</a></li>
                                 <li><a href="/contact-us"><i class="fas fa-envelope me-2" style="color:var(--primary);"></i> تماس با ما</a></li>
-                                <li><a href="https://www.instagram.com/nazeryadak.ir" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram me-2" style="color:#e1306c;"></i> اینستاگرام ما</a></li>
+                                <li><a href="https://www.instagram.com/nazeryadak.ir" target="_blank" rel="noopener noreferrer"><x-brand-icon name="instagram" class="me-2" style="color:#e1306c;" /> اینستاگرام ما</a></li>
                             </ul>
                             @if(!empty(Auth::guard('customer')->user()))
                             <div class="mobile-menu-divider"></div>
@@ -353,9 +388,9 @@
                 <div class="col-2 d-flex align-items-center justify-content-end">
                     <div class="dropdown">
                         @if(empty(Auth::guard('customer')->user()))
-                        <a href="/login"><i class="fa fa-user signup-login-icon"></i></a>
+                        <a href="/login" aria-label="ورود یا ثبت‌نام"><i class="fa fa-user signup-login-icon" aria-hidden="true"></i></a>
                         @else
-                        <a href="#" data-bs-toggle="dropdown"><i class="fa fa-user signup-login-icon"></i></a>
+                        <a href="#" data-bs-toggle="dropdown" aria-label="حساب کاربری"><i class="fa fa-user signup-login-icon" aria-hidden="true"></i></a>
                         <ul class="dropdown-menu dropdown-menu-custom">
                             <li class="dropdown-user-header">
                                 <div class="dropdown-user-avatar">
@@ -469,21 +504,21 @@
                     <div class="col-6 col-lg-4 mb-3 mb-lg-0">
                         <div class="footer-feature-item">
                             <div class="footer-feature-icon"><i class="fas fa-truck"></i></div>
-                            <h6>ارسال رایگان</h6>
+                            <p class="footer-feature-title">ارسال رایگان</p>
                             <span>{{ $footerShipping['local_province_name'] }} +{{ shippingAmountShort($footerShipping['local_free_threshold']) }} | سایر شهرها +{{ shippingAmountShort($footerShipping['national_free_threshold']) }}</span>
                         </div>
                     </div>
                     <div class="col-6 col-lg-4 mb-3 mb-lg-0">
                         <div class="footer-feature-item">
                             <div class="footer-feature-icon"><i class="fas fa-shield-alt"></i></div>
-                            <h6>ضمانت اصالت</h6>
+                            <p class="footer-feature-title">ضمانت اصالت</p>
                             <span>کالای ۱۰۰٪ اصل</span>
                         </div>
                     </div>
                     <div class="col-12 col-lg-4">
                         <div class="footer-feature-item">
                             <div class="footer-feature-icon"><i class="fas fa-headset"></i></div>
-                            <h6>پشتیبانی</h6>
+                            <p class="footer-feature-title">پشتیبانی</p>
                             <span>پاسخگویی ۷ روز هفته</span>
                         </div>
                     </div>
@@ -507,7 +542,7 @@
                             <div class="footer-contact-info">
                                 <div><i class="fas fa-phone-alt"></i> <span>۰۹۱۲۷۴۷۱۶۳۱</span></div>
                                 <div><i class="fas fa-clock"></i> <span>شنبه تا پنج‌شنبه ۹ الی ۱۸</span></div>
-                                <div><i class="fab fa-instagram"></i> <a href="https://www.instagram.com/nazeryadak.ir" target="_blank" rel="noopener noreferrer">nazeryadak.ir</a></div>
+                                <div><x-brand-icon name="instagram" /> <a href="https://www.instagram.com/nazeryadak.ir" target="_blank" rel="noopener noreferrer">nazeryadak.ir</a></div>
                             </div>
                         </div>
                     </div>
@@ -539,8 +574,8 @@
                         </div>
                         <p class="footer-title mt-4">ما را دنبال کنید</p>
                         <div class="footer-social">
-                            <a href="https://wa.me/989127471631" class="footer-social-btn" title="واتساپ" target="_blank" rel="noopener noreferrer"><i class="fab fa-whatsapp"></i></a>
-                            <a href="https://www.instagram.com/nazeryadak.ir" class="footer-social-btn footer-social-instagram" title="اینستاگرام ناظر یدک" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a>
+                            <a href="https://wa.me/989127471631" class="footer-social-btn" title="واتساپ" target="_blank" rel="noopener noreferrer"><x-brand-icon name="whatsapp" /></a>
+                            <a href="https://www.instagram.com/nazeryadak.ir" class="footer-social-btn footer-social-instagram" title="اینستاگرام ناظر یدک" target="_blank" rel="noopener noreferrer"><x-brand-icon name="instagram" /></a>
                             <a href="tel:09127471631" class="footer-social-btn" title="تماس تلفنی"><i class="fas fa-phone-alt"></i></a>
                         </div>
                     </div>
@@ -589,7 +624,7 @@
                 </div>
             </div>
         </div>
-        <a href="#" class="topbutton"><i class="fa fa-chevron-up"></i></a>
+        <a href="#" class="topbutton" aria-label="بازگشت به بالای صفحه"><i class="fa fa-chevron-up" aria-hidden="true"></i></a>
     </footer>
 
     {{-- ================= نوار پایین چسبان موبایل ================= --}}
@@ -1016,10 +1051,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // با فعال شدن سرویس‌ورکر جدید، صفحه یک بار تازه می‌شود تا فایل‌های قدیمی نمانند
+    /*
+     * با فعال شدن سرویس‌ورکر *جدید*، صفحه یک بار تازه می‌شود تا فایل‌های
+     * قدیمی نمانند.
+     *
+     * شرط hadController حیاتی است: sw.js موقع نصب skipWaiting و بعد
+     * clients.claim() صدا می‌زند، پس در همان اولین بازدیدِ هر کاربر —
+     * جایی که هنوز هیچ سرویس‌ورکری کنترل صفحه را ندارد — controllerchange
+     * شلیک می‌شد و کل صفحه دوباره از نو بارگذاری می‌شد. یعنی هر بازدیدکننده‌ی
+     * تازه، صفحه‌ی اصلی را دو بار می‌گرفت. اینجا چیزی برای تازه‌کردن نیست؛
+     * محتوای صفحه همین حالا از شبکه آمده است.
+     */
     var refreshing = false;
+    var hadController = !!navigator.serviceWorker.controller;
+
     navigator.serviceWorker.addEventListener('controllerchange', function () {
-        if (refreshing) return;
+        if (refreshing || !hadController) return;
         refreshing = true;
         window.location.reload();
     });

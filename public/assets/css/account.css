@@ -55,7 +55,7 @@
     height: 46px;
     border-radius: 50%;
     background: var(--nx-red-soft, #fff1f3);
-    color: var(--nx-red, #ef4056);
+    color: var(--nx-red, #d33449);
     font-size: 19px;
 }
 
@@ -69,7 +69,7 @@
 .nx-account-user span {
     display: block;
     margin-top: 3px;
-    color: var(--nx-muted, #81858b);
+    color: var(--nx-muted, #666a70);
     font-size: 12px;
 }
 
@@ -96,28 +96,28 @@
 .nx-account-nav a i {
     width: 20px;
     text-align: center;
-    color: var(--nx-muted, #81858b);
+    color: var(--nx-muted, #666a70);
     font-size: 14px;
 }
 
 .nx-account-nav a:hover {
     background: #fafafa;
-    color: var(--nx-red, #ef4056);
+    color: var(--nx-red, #d33449);
 }
 
 .nx-account-nav a:hover i {
-    color: var(--nx-red, #ef4056);
+    color: var(--nx-red, #d33449);
 }
 
 .nx-account-nav a.is-active {
     background: var(--nx-red-soft, #fff1f3);
-    border-right-color: var(--nx-red, #ef4056);
-    color: var(--nx-red, #ef4056);
+    border-right-color: var(--nx-red, #d33449);
+    color: var(--nx-red, #d33449);
     font-weight: 800;
 }
 
 .nx-account-nav a.is-active i {
-    color: var(--nx-red, #ef4056);
+    color: var(--nx-red, #d33449);
 }
 
 .nx-account-nav a.is-logout {
@@ -135,7 +135,7 @@
     height: 20px;
     padding: 0 6px;
     border-radius: 10px;
-    background: var(--nx-red, #ef4056);
+    background: var(--nx-red, #d33449);
     color: #fff;
     font-size: 11px;
     font-weight: 700;
@@ -181,13 +181,13 @@
     height: 72px;
     border-radius: 50%;
     background: var(--nx-soft, #f0f0f1);
-    color: var(--nx-muted, #81858b);
+    color: var(--nx-muted, #666a70);
     font-size: 26px;
 }
 
 .nx-empty-state p {
     margin: 0;
-    color: var(--nx-muted, #81858b);
+    color: var(--nx-muted, #666a70);
     font-size: 13px;
 }
 
@@ -198,9 +198,9 @@
     gap: 7px;
     height: 40px;
     padding: 0 20px;
-    border: 1px solid var(--nx-red, #ef4056);
+    border: 1px solid var(--nx-red, #d33449);
     border-radius: var(--nx-radius, 8px);
-    background: var(--nx-red, #ef4056);
+    background: var(--nx-red, #d33449);
     color: #fff !important;
     font-size: 13px;
     font-weight: 800;
@@ -229,8 +229,8 @@
 }
 
 .nx-btn-ghost:hover {
-    border-color: var(--nx-red, #ef4056);
-    color: var(--nx-red, #ef4056) !important;
+    border-color: var(--nx-red, #d33449);
+    color: var(--nx-red, #d33449) !important;
 }
 
 /* ---------- کارت سفارش (جایگزین جدول) ---------- */
@@ -271,7 +271,7 @@
 }
 
 .nx-order-date {
-    color: var(--nx-muted, #81858b);
+    color: var(--nx-muted, #666a70);
     font-size: 12px;
 }
 
@@ -297,7 +297,7 @@
 .nx-st-pending   { background: #fff5e6; color: #b26a00; }
 /* سفارش ثبت‌شده‌ی بدون پرداخت آنلاین که منتظر تماس کارشناس است */
 .nx-st-awaitingcall { background: #fff8e1; color: #7a5c00; }
-.nx-st-paid      { background: #e9f7ef; color: #17a566; }
+.nx-st-paid      { background: #e9f7ef; color: #0f7d4c; }
 .nx-st-processing{ background: #e6f8fb; color: #0f8b9a; }
 .nx-st-shipped   { background: #eef0ff; color: #4a4fce; }
 .nx-st-delivered { background: #e9f7ef; color: #12784c; }
@@ -314,7 +314,7 @@
 .nx-order-cell span {
     display: block;
     margin-bottom: 4px;
-    color: var(--nx-muted, #81858b);
+    color: var(--nx-muted, #666a70);
     font-size: 11.5px;
 }
 
@@ -326,7 +326,7 @@
 
 .nx-order-cell b small {
     margin-right: 3px;
-    color: var(--nx-muted, #81858b);
+    color: var(--nx-muted, #666a70);
     font-size: 11px;
     font-weight: 600;
 }
@@ -391,12 +391,12 @@
 }
 
 .nx-item-info a:hover {
-    color: var(--nx-red, #ef4056);
+    color: var(--nx-red, #d33449);
 }
 
 .nx-item-meta {
     margin-top: 4px;
-    color: var(--nx-muted, #81858b);
+    color: var(--nx-muted, #666a70);
     font-size: 11.5px;
 }
 
@@ -433,7 +433,7 @@
 }
 
 .nx-datalist li > span {
-    color: var(--nx-muted, #81858b);
+    color: var(--nx-muted, #666a70);
     font-size: 12px;
 }
 
@@ -475,7 +475,7 @@
 .nx-form input:focus,
 .nx-form select:focus,
 .nx-form textarea:focus {
-    border-color: var(--nx-red, #ef4056);
+    border-color: var(--nx-red, #d33449);
     outline: none;
 }
 
@@ -517,7 +517,7 @@
     height: 38px;
     border-radius: 50%;
     background: #fff;
-    color: var(--nx-red, #ef4056);
+    color: var(--nx-red, #d33449);
     font-size: 15px;
 }
 
@@ -541,7 +541,7 @@
 
 .nx-notif-time {
     flex-shrink: 0;
-    color: var(--nx-muted, #81858b);
+    color: var(--nx-muted, #666a70);
     font-size: 11.5px;
     white-space: nowrap;
 }
@@ -562,8 +562,8 @@
 }
 
 .nx-bell:hover {
-    border-color: var(--nx-red, #ef4056);
-    color: var(--nx-red, #ef4056) !important;
+    border-color: var(--nx-red, #d33449);
+    color: var(--nx-red, #d33449) !important;
 }
 
 .nx-bell-count {
@@ -577,7 +577,7 @@
     height: 19px;
     padding: 0 5px;
     border-radius: 10px;
-    background: var(--nx-red, #ef4056);
+    background: var(--nx-red, #d33449);
     color: #fff;
     font-size: 11px;
     font-weight: 700;
@@ -621,7 +621,7 @@
     height: 40px;
     border-radius: 50%;
     background: #e9f7ef;
-    color: #17a566;
+    color: #0f7d4c;
     font-size: 17px;
 }
 
@@ -646,7 +646,7 @@
     /* عنوان‌های بلند قطعات گاهی سه خط می‌شوند؛ max-height تضمین دو خط است */
     max-height: 3.6em;
     overflow: hidden;
-    color: var(--nx-muted, #81858b);
+    color: var(--nx-muted, #666a70);
     font-size: 12px;
     line-height: 1.8;
 }
@@ -677,8 +677,8 @@
 }
 
 .nx-cart-toast-actions .is-primary {
-    border-color: var(--nx-red, #ef4056);
-    background: var(--nx-red, #ef4056);
+    border-color: var(--nx-red, #d33449);
+    background: var(--nx-red, #d33449);
     color: #fff;
 }
 
@@ -690,7 +690,7 @@
     border: 0;
     border-radius: 50%;
     background: transparent;
-    color: var(--nx-muted, #81858b);
+    color: var(--nx-muted, #666a70);
     font-size: 15px;
     line-height: 24px;
     cursor: pointer;
@@ -746,12 +746,12 @@
 }
 
 .nx-combo.is-open .nx-combo-control {
-    border-color: var(--nx-red, #ef4056);
+    border-color: var(--nx-red, #d33449);
 }
 
 .nx-combo-control > i {
     flex-shrink: 0;
-    color: var(--nx-muted, #81858b);
+    color: var(--nx-muted, #666a70);
     font-size: 13px;
 }
 
@@ -771,7 +771,7 @@
 }
 
 .nx-combo-input::placeholder {
-    color: var(--nx-muted, #81858b);
+    color: var(--nx-muted, #666a70);
 }
 
 .nx-combo-clear {
@@ -783,7 +783,7 @@
     border: 0;
     border-radius: 50%;
     background: var(--nx-soft, #f0f0f1);
-    color: var(--nx-muted, #81858b);
+    color: var(--nx-muted, #666a70);
     font-size: 11px;
     line-height: 22px;
     cursor: pointer;
@@ -794,7 +794,7 @@
 }
 
 .nx-combo-clear:hover {
-    background: var(--nx-red, #ef4056);
+    background: var(--nx-red, #d33449);
     color: #fff;
 }
 
@@ -831,23 +831,23 @@
 .nx-combo-list li:hover,
 .nx-combo-list li.is-highlighted {
     background: var(--nx-red-soft, #fff1f3);
-    color: var(--nx-red, #ef4056);
+    color: var(--nx-red, #d33449);
 }
 
 .nx-combo-list li.is-selected {
-    color: var(--nx-red, #ef4056);
+    color: var(--nx-red, #d33449);
     font-weight: 800;
 }
 
 .nx-combo-list li.is-empty {
-    color: var(--nx-muted, #81858b);
+    color: var(--nx-muted, #666a70);
     text-align: center;
     cursor: default;
 }
 
 .nx-combo-list li.is-empty:hover {
     background: transparent;
-    color: var(--nx-muted, #81858b);
+    color: var(--nx-muted, #666a70);
 }
 
 /* ==========================================================================
@@ -893,7 +893,7 @@
     }
 
     .nx-account-nav a.is-active {
-        border-color: var(--nx-red, #ef4056);
+        border-color: var(--nx-red, #d33449);
     }
 
     .nx-account-nav a.is-logout {
@@ -988,7 +988,7 @@
 
 .nx-track-hint {
     margin: 0;
-    color: var(--nx-muted, #81858b);
+    color: var(--nx-muted, #666a70);
     font-size: 12.5px;
     line-height: 2.1;
 }
@@ -1068,7 +1068,7 @@
 
 .nx-track-step + .nx-track-step.is-done::before,
 .nx-track-step + .nx-track-step.is-current::before {
-    background: var(--nx-red, #ef4056);
+    background: var(--nx-red, #d33449);
 }
 
 .nx-track-dot {
@@ -1083,25 +1083,25 @@
     border: 2px solid var(--nx-line, #e0e0e2);
     border-radius: 50%;
     background: #fff;
-    color: var(--nx-muted, #81858b);
+    color: var(--nx-muted, #666a70);
     font-size: 15px;
 }
 
 .nx-track-step.is-done .nx-track-dot {
-    border-color: var(--nx-red, #ef4056);
-    color: var(--nx-red, #ef4056);
+    border-color: var(--nx-red, #d33449);
+    color: var(--nx-red, #d33449);
 }
 
 .nx-track-step.is-current .nx-track-dot {
-    border-color: var(--nx-red, #ef4056);
-    background: var(--nx-red, #ef4056);
+    border-color: var(--nx-red, #d33449);
+    background: var(--nx-red, #d33449);
     box-shadow: 0 0 0 4px var(--nx-red-soft, #fff1f3);
     color: #fff;
 }
 
 .nx-track-label {
     display: block;
-    color: var(--nx-muted, #81858b);
+    color: var(--nx-muted, #666a70);
     font-size: 12px;
     font-weight: 700;
 }

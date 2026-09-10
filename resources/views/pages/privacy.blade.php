@@ -34,14 +34,14 @@
 
                     <p>فروشگاه ناظر یدک (NazerYadak) به حفظ حریم خصوصی کاربران خود متعهد است. این سند نحوه جمع‌آوری، استفاده و محافظت از اطلاعات شما را شرح می‌دهد.</p>
 
-                    <h5 style="font-size:.95rem; color:var(--primary); font-weight:700;">اطلاعاتی که جمع‌آوری می‌کنیم</h5>
+                    <h2 style="font-size:.95rem; color:var(--primary); font-weight:700;">اطلاعاتی که جمع‌آوری می‌کنیم</h2>
                     <ul class="font-13 ps-3" style="line-height:2.5; list-style:disc;">
                         <li><strong>اطلاعات هویتی:</strong> نام، شماره تلفن و آدرس که هنگام ثبت‌نام و ثبت سفارش دریافت می‌شود</li>
                         <li><strong>اطلاعات سفارش:</strong> تاریخچه خرید، محصولات سفارش‌داده‌شده و اطلاعات پرداخت</li>
                         <li><strong>اطلاعات فنی:</strong> آدرس IP، نوع مرورگر و سیستم‌عامل برای بهبود تجربه کاربری</li>
                     </ul>
 
-                    <h5 style="font-size:.95rem; color:var(--primary); font-weight:700;">نحوه استفاده از اطلاعات</h5>
+                    <h2 style="font-size:.95rem; color:var(--primary); font-weight:700;">نحوه استفاده از اطلاعات</h2>
                     <ul class="font-13 ps-3" style="line-height:2.5; list-style:disc;">
                         <li>پردازش و ارسال سفارشات</li>
                         <li>ارتباط با مشتری در خصوص وضعیت سفارش</li>
@@ -49,13 +49,13 @@
                         <li>ارسال اطلاعیه‌ها و تخفیف‌ها (با رضایت کاربر)</li>
                     </ul>
 
-                    <h5 style="font-size:.95rem; color:var(--primary); font-weight:700;">حفاظت از اطلاعات</h5>
+                    <h2 style="font-size:.95rem; color:var(--primary); font-weight:700;">حفاظت از اطلاعات</h2>
                     <p>اطلاعات شخصی شما با استفاده از پروتکل‌های امنیتی SSL رمزنگاری شده و در سرورهای امن نگهداری می‌شود. اطلاعات بانکی شما نزد ما ذخیره نمی‌شود و تراکنش‌ها مستقیماً از طریق درگاه بانکی انجام می‌پذیرد.</p>
 
-                    <h5 style="font-size:.95rem; color:var(--primary); font-weight:700;">عدم افشای اطلاعات</h5>
+                    <h2 style="font-size:.95rem; color:var(--primary); font-weight:700;">عدم افشای اطلاعات</h2>
                     <p>ناظر یدک متعهد است اطلاعات شخصی کاربران را به هیچ شخص یا سازمان ثالثی ارائه ندهد، مگر در موارد قانونی یا با رضایت صریح کاربر.</p>
 
-                    <h5 style="font-size:.95rem; color:var(--primary); font-weight:700;">حقوق کاربر</h5>
+                    <h2 style="font-size:.95rem; color:var(--primary); font-weight:700;">حقوق کاربر</h2>
                     <p>شما حق دسترسی، اصلاح و حذف اطلاعات شخصی خود را دارید. برای اعمال این حقوق با پشتیبانی ما تماس بگیرید.</p>
 
                     <div class="mt-4 p-3 font-12 text-muted" style="background:#f8f9fa; border-radius:var(--radius-sm);">

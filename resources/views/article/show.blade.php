@@ -126,10 +126,10 @@
                     <div class="blog-article-share">
                         <span class="blog-share-label"><i class="fas fa-share-alt"></i> اشتراک‌گذاری:</span>
                         <a href="https://t.me/share/url?url={{ urlencode(url()->current()) }}&text={{ urlencode($info->titr) }}" target="_blank" class="blog-share-btn" style="background:#0088cc;">
-                            <i class="fab fa-telegram-plane"></i>
+                            <x-brand-icon name="telegram" />
                         </a>
                         <a href="https://api.whatsapp.com/send?text={{ urlencode($info->titr . ' ' . url()->current()) }}" target="_blank" class="blog-share-btn" style="background:#25d366;">
-                            <i class="fab fa-whatsapp"></i>
+                            <x-brand-icon name="whatsapp" />
                         </a>
                         <button onclick="navigator.clipboard.writeText('{{ url()->current() }}');toast.fire({icon:'success',title:'لینک کپی شد'});" class="blog-share-btn" style="background:var(--text-light); border:none;">
                             <i class="fas fa-copy"></i>

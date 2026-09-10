@@ -1,4 +1,4 @@
-﻿@php
+@php
     $fa = fn($s) => urldecode($s);
     $discountPercent = $product->discountPercent();
     $hasDiscount = $discountPercent > 0;
@@ -8,6 +8,9 @@
     $cardStock = (int) $product->stock;
     // قطعات شاسی و بدنه قیمت ثابت ندارند؛ به‌جای عدد، دعوت به تماس نشان داده می‌شود.
     $contactPrice = $product->isContactPrice();
+    /* کارت‌های نخستین نمای صفحه (ریل اول) تصویرشان lazy نباشد؛ تصویر LCP
+       با loading=lazy دیر کشف می‌شود و کل LCP را عقب می‌اندازد. */
+    $cardEager = ! empty($eager);
 @endphp
 <div class="item">
     <article class="card custom-card dk-product-card position-relative">
@@ -26,7 +29,9 @@
                 @if($cardSrcset)<source srcset="{{ $cardSrcset }}" type="image/webp">@endif
                 <img src="{{$mainImage}}" class="slider-pic lazy-img"
                      onerror="this.onerror=null;this.src='/images/no-image.svg';this.classList.add('is-placeholder');"
-                     loading="lazy" decoding="async" width="300" height="300"
+                     loading="{{ $cardEager ? 'eager' : 'lazy' }}"
+                     @if($cardEager) fetchpriority="high" @endif
+                     decoding="async" width="300" height="300"
                      alt="{{ $product->title }}{{ $product->car_model ? ' مناسب ' . $product->car_model : '' }} - خرید از ناظر یدک">
             </picture>
             @if($galleryCount > 1)

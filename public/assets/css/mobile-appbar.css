@@ -5,9 +5,9 @@
 
 :root {
     --appbar-h: 58px;
-    --appbar-accent: #ef394e;
+    --appbar-accent: #d33449;
     --appbar-ink: #3f4064;
-    --appbar-muted: #81858b;
+    --appbar-muted: #666a70;
     --appbar-line: #e6e6ea;
 }
 
@@ -212,7 +212,7 @@
 
     .app-sheet__tile i {
         font-size: 19px;
-        color: #19bfd3;
+        color: #11808d;
     }
 
     .app-sheet__tile span {

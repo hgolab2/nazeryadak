@@ -41,9 +41,13 @@
         @endphp
         <picture>
             @if($listSrcset)<source srcset="{{ $listSrcset }}" type="image/webp">@endif
+            {{-- دو کارت اول در نخستین نمای موبایل‌اند و یکی از آن‌ها تصویر LCP
+                 صفحه است؛ با loading=lazy دیر کشف می‌شد و LCP را عقب می‌انداخت. --}}
             <img src="{{ $listImage }}" class="slider-pic lazy-img"
                  onerror="this.onerror=null;this.src='/images/no-image.svg';this.classList.add('is-placeholder');"
-                 loading="lazy" decoding="async" width="300" height="300"
+                 loading="{{ $loop->index < 2 ? 'eager' : 'lazy' }}"
+                 @if($loop->index < 2) fetchpriority="high" @endif
+                 decoding="async" width="300" height="300"
                  alt="{{ $product->title }}{{ $product->car_model ? ' مناسب ' . $product->car_model : '' }} - خرید از ناظر یدک">
         </picture>
     </a>

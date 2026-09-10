@@ -34,25 +34,25 @@
                         <h1 class="section-title" style="font-size:1.1rem;">رویه ارسال سفارش</h1>
                     </div>
 
-                    <h5 style="font-size:.95rem; color:var(--primary); font-weight:700;"><i class="fas fa-shipping-fast me-1"></i> روش‌های ارسال</h5>
+                    <h2 style="font-size:.95rem; color:var(--primary); font-weight:700;"><i class="fas fa-shipping-fast me-1"></i> روش‌های ارسال</h2>
                     <div class="row mb-4">
                         <div class="col-md-6 mb-3">
                             <div class="text-center p-3" style="background:var(--primary-lighter); border-radius:var(--radius); height:100%;">
                                 <i class="fas fa-motorcycle mb-2" style="font-size:1.5rem; color:var(--accent);"></i>
-                                <h6 class="font-13 fw-bold">پیک در {{ $shippingRules['local_province_name'] }}</h6>
+                                <h3 class="font-13 fw-bold">پیک در {{ $shippingRules['local_province_name'] }}</h3>
                                 <p class="font-12 text-muted mb-0">تحویل درب منزل در شهر {{ $shippingRules['local_province_name'] }}</p>
                             </div>
                         </div>
                         <div class="col-md-6 mb-3">
                             <div class="text-center p-3" style="background:var(--primary-lighter); border-radius:var(--radius); height:100%;">
                                 <i class="fas fa-truck mb-2" style="font-size:1.5rem; color:var(--primary);"></i>
-                                <h6 class="font-13 fw-bold">تیپاکس</h6>
+                                <h3 class="font-13 fw-bold">تیپاکس</h3>
                                 <p class="font-12 text-muted mb-0">ارسال به سراسر کشور</p>
                             </div>
                         </div>
                     </div>
 
-                    <h5 style="font-size:.95rem; color:var(--primary); font-weight:700;"><i class="fas fa-money-bill-wave me-1"></i> هزینه ارسال</h5>
+                    <h2 style="font-size:.95rem; color:var(--primary); font-weight:700;"><i class="fas fa-money-bill-wave me-1"></i> هزینه ارسال</h2>
                     {{-- روی موبایل به‌جای شکستن صفحه، خودِ جدول افقی اسکرول می‌شود --}}
                     <div class="table-responsive mb-4">
                     <table class="table table-bordered font-13 text-center mb-0" style="border-radius:8px; overflow:hidden;">
@@ -88,13 +88,13 @@
                     </table>
                     </div>
 
-                    <h5 style="font-size:.95rem; color:var(--primary); font-weight:700;"><i class="fas fa-clock me-1"></i> زمان پردازش سفارش</h5>
+                    <h2 style="font-size:.95rem; color:var(--primary); font-weight:700;"><i class="fas fa-clock me-1"></i> زمان پردازش سفارش</h2>
                     <p>سفارش‌هایی که تا ساعت ۱۴:۰۰ ثبت و پرداخت شوند، همان روز کاری پردازش و آماده ارسال می‌شوند. سفارش‌های بعد از این ساعت، روز کاری بعد پردازش خواهند شد.</p>
 
-                    <h5 style="font-size:.95rem; color:var(--primary); font-weight:700;"><i class="fas fa-box-open me-1"></i> بسته‌بندی</h5>
+                    <h2 style="font-size:.95rem; color:var(--primary); font-weight:700;"><i class="fas fa-box-open me-1"></i> بسته‌بندی</h2>
                     <p>تمامی قطعات با بسته‌بندی اصلی کارخانه و لایه محافظ اضافی ارسال می‌شوند تا از آسیب در حمل‌ونقل جلوگیری شود. برای قطعات حساس مانند سنسورها و قطعات الکتریکی، بسته‌بندی ویژه انجام می‌شود.</p>
 
-                    <h5 style="font-size:.95rem; color:var(--primary); font-weight:700;"><i class="fas fa-map-pin me-1"></i> پیگیری سفارش</h5>
+                    <h2 style="font-size:.95rem; color:var(--primary); font-weight:700;"><i class="fas fa-map-pin me-1"></i> پیگیری سفارش</h2>
                     <p>پس از ارسال سفارش، کد رهگیری پستی از طریق پیامک برای شما ارسال می‌شود. همچنین از بخش «سفارش‌های من» در حساب کاربری می‌توانید وضعیت سفارش خود را پیگیری کنید.</p>
                 </div>
             </div>

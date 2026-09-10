@@ -4,13 +4,13 @@
    ========================================================================== */
 
 :root {
-    --nx-red: #ef4056;
-    --nx-red-dark: #d33449;
+    --nx-red: #d33449;
+    --nx-red-dark: #b32b3d;
     --nx-red-soft: #fff1f3;
-    --nx-teal: #19bfd3;
+    --nx-teal: #11808d;
     --nx-ink: #23254e;
     --nx-text: #3f4064;
-    --nx-muted: #81858b;
+    --nx-muted: #666a70;
     --nx-line: #e0e0e2;
     --nx-soft: #f0f0f1;
     --nx-bg: #f5f5f5;
@@ -429,7 +429,16 @@ body {
     opacity: .16;
 }
 
-/* حالت پیش از راه‌اندازی اسلایدر: فقط اسلاید اول */
+/* حالت پیش از راه‌اندازی اسلایدر: فقط اسلاید اول.
+
+   owl.carousel.min.css روی .owl-carousel یک display:none می‌گذارد و تا اجرای
+   JS برنمی‌دارد؛ یعنی جای ۲۳۰ پیکسلی اسلایدر تا آن لحظه خالی می‌ماند و بعد
+   یک‌باره باز می‌شود و کل صفحه را پایین می‌برد. بزرگ‌ترین سهم CLS صفحه‌ی
+   اصلی همین بود. */
+.nx-hero-slider:not(.owl-loaded) {
+    display: block;
+}
+
 .nx-hero-slider:not(.owl-loaded) .nx-slide {
     display: none;
 }
@@ -529,11 +538,11 @@ body {
     transform: translateY(-3px);
 }
 
-.nx-t1 i { background: #ffeef0; color: #ef4056; }
+.nx-t1 i { background: #ffeef0; color: #d33449; }
 .nx-t2 i { background: #e6f8fb; color: #109cae; }
 .nx-t3 i { background: #eef0ff; color: #5a5fd8; }
 .nx-t4 i { background: #fff6e5; color: #d38b06; }
-.nx-t5 i { background: #e9f7ef; color: #17a566; }
+.nx-t5 i { background: #e9f7ef; color: #0f7d4c; }
 .nx-t6 i { background: #fdeef8; color: #c4479b; }
 .nx-t7 i { background: #eaf2ff; color: #2f6fd0; }
 .nx-t8 i { background: #f1f0ea; color: #7d7a5c; }
@@ -853,63 +862,88 @@ body {
     padding: 6px 0 12px;
 }
 
-.nx-rail .owl-stage {
+/* نوار اسکرول‌شونده. جای owl carousel را گرفته است: owl بعد از بارگذاری
+   DOM ریل را بازچینی می‌کرد و مرورگر همان لحظه یک layout shift به اندازه‌ی
+   کل صفحه ثبت می‌کرد. اسکرول بومی از اولین رندر نهایی است، روی لمس نرم‌تر
+   کار می‌کند و بدون جاوااسکریپت هم می‌چرخد. */
+.nx-rail-track {
     display: flex;
     align-items: stretch;
-}
-
-.nx-rail .owl-item {
-    display: flex;
     min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    scroll-behavior: smooth;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
-.nx-rail .owl-item > .item {
-    display: flex;
-    width: 100%;
+.nx-rail-track::-webkit-scrollbar {
+    display: none;
+}
+
+/* عرض کارت‌ها همان نردبان قبلی owl است: ۰→۲، 768→۳، 992→۴، 1200→۵، 1400→۶ */
+.nx-rail-track > .item {
+    flex: 0 0 50%;
     min-width: 0;
-    padding: 0;
+    padding: 0 6px;
+    scroll-snap-align: start;
 }
 
-/* پیش از راه‌اندازی owl، کارت‌ها به‌جای ستون عمودی کنار هم بمانند */
-.nx-rail:not(.owl-loaded) {
-    display: flex;
-    overflow: hidden;
+@media (min-width: 768px) {
+    .nx-rail-track > .item { flex-basis: 33.3333%; }
 }
 
-.nx-rail:not(.owl-loaded) > .item {
-    flex: 0 0 20%;
-    min-width: 0;
+@media (min-width: 992px) {
+    .nx-rail-track > .item { flex-basis: 25%; }
 }
 
-.nx-rail .owl-nav button.owl-prev,
-.nx-rail .owl-nav button.owl-next {
+@media (min-width: 1200px) {
+    .nx-rail-track > .item { flex-basis: 20%; }
+}
+
+@media (min-width: 1400px) {
+    .nx-rail-track > .item { flex-basis: 16.6666%; }
+}
+
+.nx-rail-nav {
     position: absolute;
     top: 74px;
     z-index: 4;
-    display: flex !important;
+    display: flex;
     align-items: center;
     justify-content: center;
     width: 34px;
     height: 34px;
-    margin: 0 !important;
-    border-radius: 50% !important;
-    background: #fff !important;
-    color: var(--nx-ink) !important;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: #fff;
+    color: var(--nx-ink);
     box-shadow: 0 2px 10px rgba(35, 37, 78, .2);
-    font-size: 15px !important;
+    font-size: 15px;
+    cursor: pointer;
+    transition: opacity .2s;
 }
 
-.nx-rail .owl-nav button.owl-prev {
+.nx-rail-prev {
     right: 6px;
 }
 
-.nx-rail .owl-nav button.owl-next {
+.nx-rail-next {
     left: 6px;
 }
 
-.nx-rail .owl-nav button.disabled {
-    opacity: 0 !important;
+.nx-rail-nav.is-disabled {
+    opacity: 0;
     pointer-events: none;
+}
+
+/* روی دستگاه لمسی، کاربر خودش ریل را می‌کشد و این دکمه‌ها فقط جلوی کارت را
+   می‌گیرند */
+@media (hover: none) {
+    .nx-rail-nav { display: none; }
 }
 
 .nx-home .nx-rail .dk-product-card {
@@ -1965,7 +1999,7 @@ body {
     padding: 3px 9px;
     border-radius: 999px;
     background: #e8f6ef;
-    color: #17a566;
+    color: #0f7d4c;
     font-size: 11.5px;
     font-weight: 900;
     vertical-align: middle;
@@ -1988,7 +2022,7 @@ body {
     align-items: center;
     gap: 8px;
     margin-bottom: 8px;
-    color: #0f8a5f;
+    color: #0c7a53;
     font-size: 13.5px;
     font-weight: 900;
 }
@@ -2001,7 +2035,7 @@ body {
     margin-right: auto;
     padding: 3px 9px;
     border-radius: 999px;
-    background: #17a566;
+    background: #0f7d4c;
     color: #fff;
     font-size: 11.5px;
     font-weight: 900;
@@ -2016,7 +2050,7 @@ body {
 }
 
 .dk-wholesale-main b {
-    color: #0f8a5f;
+    color: #0c7a53;
     font-weight: 900;
 }
 
@@ -2024,7 +2058,7 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    color: #0f8a5f;
+    color: #0c7a53;
     font-size: 10.5px;
     font-weight: 800;
 }
@@ -2047,7 +2081,7 @@ body {
 
 /* حالت فعال: کاربر تعداد را به آستانه رسانده است */
 .dk-wholesale.is-active {
-    border-color: #17a566;
+    border-color: #0f7d4c;
     box-shadow: 0 0 0 3px rgba(23, 165, 102, .12);
 }
 
@@ -2076,20 +2110,20 @@ body {
 }
 
 .dk-wholesale-remain.is-done {
-    color: #0f8a5f;
+    color: #0c7a53;
 }
 
 .dk-wholesale-remain.is-done i {
-    color: #17a566;
+    color: #0f7d4c;
 }
 
 .dk-wholesale-jump {
     margin-right: auto;
     padding: 5px 12px;
-    border: 1px solid #17a566;
+    border: 1px solid #0f7d4c;
     border-radius: 999px;
     background: #fff;
-    color: #0f8a5f;
+    color: #0c7a53;
     font-family: inherit;
     font-size: 12px;
     font-weight: 800;
@@ -2097,7 +2131,7 @@ body {
 }
 
 .dk-wholesale-jump:hover {
-    background: #17a566;
+    background: #0f7d4c;
     color: #fff;
 }
 
@@ -2114,7 +2148,7 @@ body {
     padding: 2px 8px;
     border-radius: 999px;
     background: #e8f6ef;
-    color: #0f8a5f;
+    color: #0c7a53;
     font-size: 10.5px;
     font-weight: 800;
 }
@@ -2180,10 +2214,6 @@ body {
 
     .nx-posts {
         grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
-    .nx-rail:not(.owl-loaded) > .item {
-        flex-basis: 25%;
     }
 
     .nx-shop-layout {
@@ -2284,10 +2314,6 @@ body {
 
     .nx-posts {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .nx-rail:not(.owl-loaded) > .item {
-        flex-basis: 33.333%;
     }
 
     /* در تبلت و موبایل، فیلترها زیر نتایج می‌روند تا کاربر مستقیم به کارت‌ها برسد */
@@ -2428,10 +2454,6 @@ body {
         display: none;
     }
 
-    .nx-rail:not(.owl-loaded) > .item {
-        flex-basis: 50%;
-    }
-
     .nx-results-head {
         height: auto;
         flex-wrap: wrap;
@@ -2505,8 +2527,7 @@ body {
         height: 122px !important;
     }
 
-    .nx-rail .owl-nav button.owl-prev,
-    .nx-rail .owl-nav button.owl-next {
+    .nx-rail-nav {
         top: 62px;
         width: 30px;
         height: 30px;
@@ -2557,7 +2578,7 @@ body {
     font-weight: 900;
 }
 
-.nx-pc-stat b.is-low  { color: #0f8a5f; }
+.nx-pc-stat b.is-low  { color: #0c7a53; }
 .nx-pc-stat b.is-high { color: var(--nx-red); }
 
 /* نشانگر گران/ارزان‌شدن، کنار عنوان کارت */
@@ -2572,7 +2593,7 @@ body {
 }
 
 .nx-pc-change.is-up   { background: #fdecef; color: var(--nx-red); }
-.nx-pc-change.is-down { background: #e9f8f1; color: #0f8a5f; }
+.nx-pc-change.is-down { background: #e9f8f1; color: #0c7a53; }
 .nx-pc-change.is-flat { background: var(--nx-soft); color: var(--nx-muted); }
 
 .nx-pc-canvas svg {
@@ -2596,8 +2617,8 @@ body {
     stroke-linecap: round;
 }
 
-.nx-pc-stop-top    { stop-color: #ef4056; stop-opacity: .22; }
-.nx-pc-stop-bottom { stop-color: #ef4056; stop-opacity: 0; }
+.nx-pc-stop-top    { stop-color: #d33449; stop-opacity: .22; }
+.nx-pc-stop-bottom { stop-color: #d33449; stop-opacity: 0; }
 
 .nx-pc-dot {
     fill: #fff;
@@ -2771,4 +2792,14 @@ body {
     }
 
     .nx-pc-stat span { margin-bottom: 0; }
+}
+
+
+/* لینک‌های داخل متن توضیح محصول فقط با رنگ از متن جدا می‌شدند؛ برای کسی که
+   رنگ‌ها را متفاوت می‌بیند هیچ نشانه‌ای نمی‌ماند. زیرخط، همان نشانه‌ی همیشگی. */
+.product-description-html a,
+.nx-article-body a,
+.cart-content a:not([class]) {
+    color: var(--nx-teal);
+    text-decoration: underline;
 }

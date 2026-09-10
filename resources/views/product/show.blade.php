@@ -379,7 +379,7 @@
                         <div class="dk-rating-score">
                             <b>{{ toPersianNumbers(number_format($ratingSummary['avg'], 1)) }}</b>
                             <span>از ۵</span>
-                            <span class="dk-review-stars" aria-label="میانگین {{ $ratingSummary['avg'] }} از ۵">
+                            <span class="dk-review-stars" role="img" aria-label="میانگین {{ $ratingSummary['avg'] }} از ۵">
                                 @for($i = 1; $i <= 5; $i++)<i class="fa{{ $i <= round($ratingSummary['avg']) ? 's' : 'r' }} fa-star"></i>@endfor
                             </span>
                             <small>از {{ toPersianNumbers($ratingSummary['count']) }} نظر ثبت‌شده</small>
@@ -419,7 +419,7 @@
                             <div class="dk-review-head">
                                 <b>{{ $review->name }}</b>
                                 @if($review->is_buyer)<span class="dk-review-buyer">خریدار</span>@endif
-                                <span class="dk-review-stars" aria-label="{{ $review->rating }} از ۵">
+                                <span class="dk-review-stars" role="img" aria-label="{{ $review->rating }} از ۵">
                                     @for($i = 1; $i <= 5; $i++)<i class="fa{{ $i <= $review->rating ? 's' : 'r' }} fa-star"></i>@endfor
                                 </span>
                             </div>
@@ -513,9 +513,7 @@
                 <h2><i class="fas fa-layer-group"></i> {{ $fa('%D9%82%D8%B7%D8%B9%D8%A7%D8%AA%20%D9%85%D8%B1%D8%AA%D8%A8%D8%B7') }}</h2>
                 <a href="/shop">{{ $fa('%D9%85%D8%B4%D8%A7%D9%87%D8%AF%D9%87%20%D9%87%D9%85%D9%87') }} <i class="fas fa-chevron-left"></i></a>
             </div>
-            <div class="nx-rail owl-carousel owl-theme nx-slider">
-                @foreach($products as $product) @include('product.product_card', ['product' => $product]) @endforeach
-            </div>
+            @include('product._rail', ['railProducts' => $products])
         </section>
         @endif
     </div>
@@ -551,9 +549,9 @@
 @media(max-width:900px){.dk-rating-panel{grid-template-columns:1fr;gap:14px}}
 .dk-rating-score{text-align:center}
 .dk-rating-score b{display:block;font-size:2rem;line-height:1.2;color:#f5a623}
-.dk-rating-score>span{font-size:.75rem;color:#888}
+.dk-rating-score>span{font-size:.75rem;color:#6f6f6f}
 .dk-rating-score .dk-review-stars{display:block;margin:4px 0;font-size:.9rem}
-.dk-rating-score small{display:block;font-size:.72rem;color:#888}
+.dk-rating-score small{display:block;font-size:.72rem;color:#6f6f6f}
 .dk-rating-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:.75rem;color:#666}
 .dk-rating-bar-star{white-space:nowrap;min-width:34px}
 .dk-rating-bar-star i{color:#f5a623;font-size:.65rem}
@@ -581,7 +579,7 @@
 /* ورودی امتیاز معیارها در فرم */
 .dk-crit-input{border:1px solid #eef2f7;border-radius:10px;padding:12px 14px;margin-bottom:12px}
 .dk-crit-input-title{display:block;font-size:.82rem;font-weight:700;margin-bottom:8px}
-.dk-crit-input-title small{font-weight:400;color:#888;font-size:.72rem}
+.dk-crit-input-title small{font-weight:400;color:#6f6f6f;font-size:.72rem}
 .dk-crit-input-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 0}
 .dk-crit-input-label{font-size:.8rem;color:#555}
 .dk-crit-input .dk-stars-pick label{font-size:1.05rem}
@@ -714,28 +712,6 @@ document.addEventListener('click', function (e) {
     }
     document.querySelectorAll('.dk-product-thumbs .product-thumb').forEach(x => x.classList.remove('active'));
     t.classList.add('active');
-});
-</script>
-<script>
-$(function () {
-    var $rail = $('.nx-slider');
-    if (!$rail.length || $rail.hasClass('owl-loaded')) {
-        return;
-    }
-    $rail.owlCarousel({
-        rtl: true,
-        nav: true,
-        dots: false,
-        margin: 0,
-        loop: false,
-        navText: ['<i class="fas fa-chevron-right"></i>', '<i class="fas fa-chevron-left"></i>'],
-        responsive: {
-            0: { items: 2 },
-            768: { items: 3 },
-            992: { items: 4 },
-            1200: { items: 5 }
-        }
-    });
 });
 </script>
 @endsection

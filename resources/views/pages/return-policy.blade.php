@@ -52,7 +52,7 @@
                         </p>
                     </div>
 
-                    <h5 style="font-size:.95rem; color:var(--primary); font-weight:700;">شرایط بازگشت کالا</h5>
+                    <h2 style="font-size:.95rem; color:var(--primary); font-weight:700;">شرایط بازگشت کالا</h2>
                     <ul class="font-13 ps-3" style="line-height:2.5; list-style:disc;">
                         <li>بازگشت فقط در صورت <strong>عیب فنی</strong> یا <strong>مغایرت با سفارش</strong> پذیرفته می‌شود</li>
                         <li>قطعه باید <strong>استفاده نشده</strong> و در بسته‌بندی اصلی باشد</li>
@@ -60,7 +60,7 @@
                         <li>فاکتور یا رسید خرید باید همراه کالا ارسال شود</li>
                     </ul>
 
-                    <h5 style="font-size:.95rem; color:var(--primary); font-weight:700;">قطعاتی که قابل بازگشت نیستند</h5>
+                    <h2 style="font-size:.95rem; color:var(--primary); font-weight:700;">قطعاتی که قابل بازگشت نیستند</h2>
                     <ul class="font-13 ps-3" style="line-height:2.5; list-style:disc;">
                         <li>قطعات الکتریکی و سنسورها پس از نصب</li>
                         <li>قطعاتی که بسته‌بندی آنها باز شده و آسیب دیده</li>
@@ -68,7 +68,7 @@
                         <li>روغن، فیلتر و سایر مواد مصرفی پس از باز شدن بسته‌بندی</li>
                     </ul>
 
-                    <h5 style="font-size:.95rem; color:var(--primary); font-weight:700;">مراحل بازگشت</h5>
+                    <h2 style="font-size:.95rem; color:var(--primary); font-weight:700;">مراحل بازگشت</h2>
                     <div class="row mb-3">
                         <div class="col-md-3 text-center mb-3">
                             <div class="p-3" style="background:#f8f9fa; border-radius:var(--radius);">
@@ -96,7 +96,7 @@
                         </div>
                     </div>
 
-                    <h5 style="font-size:.95rem; color:var(--primary); font-weight:700;">نحوه بازگشت وجه</h5>
+                    <h2 style="font-size:.95rem; color:var(--primary); font-weight:700;">نحوه بازگشت وجه</h2>
                     <p>پس از دریافت و بررسی کالای مرجوعی، مبلغ خرید به همان روش پرداخت اولیه (حساب بانکی یا کیف پول) بازگردانده می‌شود. هزینه ارسال مرجوعی بر عهده خریدار است مگر اینکه کالا معیوب بوده باشد.</p>
 
                     <div class="text-center p-3 mt-3" style="background:var(--primary-lighter); border-radius:var(--radius);">

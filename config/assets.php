@@ -53,9 +53,13 @@ return [
             '/assets/js/jquery.min.js',
             '/assets/js/bootstrap.bundle.min.js',
             '/assets/js/owl.carousel.min.js',
-            '/assets/js/jquery.simple.timer.js',
             '/assets/js/script.js',
-            '/js/sweetalert2.all.js',
+            /*
+            | sweetalert2 اینجا نیست: حدود ۷۸ کیلوبایت است و صفحه‌ای که فقط
+            | دیده می‌شود هیچ‌وقت به آن نیاز پیدا نمی‌کند. script.js یک
+            | جایگزینِ سبک به نام Swal تعریف می‌کند که در اولین استفاده — یا
+            | کمی بعد از بارگذاری صفحه — فایل اصلی را می‌آورد.
+            */
         ],
     ],
 ];

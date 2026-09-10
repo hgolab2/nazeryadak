@@ -30,6 +30,30 @@
     ],
 ])
 
+@section('preload')
+    @php
+        /* تصویر LCP صفحه‌ی اصلی: نخستین کارت از نخستین ریل.
+
+           همان بندانگشتی‌ای که کارت می‌سازد اینجا هم پیش‌بارگذاری می‌شود تا
+           مرورگر منتظر رسیدن نوبتش پشت CSS و JS نماند؛ بدون این، بیش از نیمی
+           از LCP فقط «تأخیر شروع دانلود» بود. */
+        $lcpProduct = (isset($favoriteProducts) && $favoriteProducts->count())
+            ? $favoriteProducts->first()
+            : (isset($specialProducts) ? $specialProducts->first() : null);
+
+        $lcpImage = null;
+        if ($lcpProduct) {
+            $lcpImages = $lcpProduct->relationLoaded('images') ? $lcpProduct->images : collect();
+            $lcpImage = $lcpImages->count() ? $lcpImages->first()->path : $lcpProduct->image();
+        }
+
+        $lcpSrcset = $lcpImage ? thumb_srcset($lcpImage, 300, 600) : null;
+    @endphp
+    @if($lcpSrcset)
+    <link rel="preload" as="image" type="image/webp" imagesrcset="{{ $lcpSrcset }}" fetchpriority="high">
+    @endif
+@endsection
+
 @section('main_content')
 <main class="nx-home">
     <div class="nx-wrap">
@@ -117,11 +141,7 @@
                     <h2><i class="fas fa-heart"></i> علاقه‌مندی‌های شما</h2>
                     <a href="/favorite">مشاهده همه <i class="fas fa-chevron-left"></i></a>
                 </div>
-                <div class="nx-rail owl-carousel owl-theme nx-slider">
-                    @foreach($favoriteProducts as $product)
-                        @include('product.product_card', ['product' => $product])
-                    @endforeach
-                </div>
+                @include('product._rail', ['railProducts' => $favoriteProducts, 'railEager' => 2])
             </section>
         @endif
 
@@ -134,18 +154,24 @@
                     <span>{{ !empty($specialHasDiscount) ? 'تخفیف‌های امروز ناظر یدک' : 'منتخب قطعات اصلی و پرفروش' }}</span>
                     <a href="/shop">مشاهده همه <i class="fas fa-chevron-left"></i></a>
                 </div>
-                <div class="nx-rail owl-carousel owl-theme nx-slider">
-                    @foreach($specialProducts as $product)
-                        @include('product.product_card', ['product' => $product])
-                    @endforeach
-                </div>
+                @include('product._rail', [
+                    'railProducts' => $specialProducts,
+                    // اگر ریل علاقه‌مندی‌ها بالای این آمده باشد، تصویر نخستین نما
+                    // آنجاست و این ریل دیگر لازم نیست eager بارگذاری شود.
+                    'railEager' => (isset($favoriteProducts) && $favoriteProducts->count()) ? 0 : 2,
+                ])
             </section>
         @endif
 
         {{-- بنرهای میانی --}}
         <section class="nx-banners">
             <a href="/shop" class="nx-banner nx-banner-isaco">
-                <img src="/assets/images/isaco-logo.png" alt="قطعات اصلی ایساکو - ناظر یدک" width="120" height="120" loading="lazy" decoding="async">
+                {{-- نشان ۱۲۰ پیکسلی دیده می‌شود؛ فایل اصلی ۸۴ کیلوبایت PNG بود --}}
+                @php $isacoThumb = thumb_url('/assets/images/isaco-logo.png', 300); @endphp
+                <picture>
+                    @if($isacoThumb)<source srcset="{{ $isacoThumb }}" type="image/webp">@endif
+                    <img src="/assets/images/isaco-logo.png" alt="قطعات اصلی ایساکو - ناظر یدک" width="120" height="120" loading="lazy" decoding="async">
+                </picture>
                 <span>
                     <strong>قطعات اصلی ایساکو</strong>
                     <p>اصالت کالا، موجودی لحظه‌ای و خرید سریع</p>
@@ -173,11 +199,7 @@
                 <h2><i class="fas fa-fire"></i> داغ‌ترین قطعات این روزها</h2>
                 <a href="/shop">مشاهده همه <i class="fas fa-chevron-left"></i></a>
             </div>
-            <div class="nx-rail owl-carousel owl-theme nx-slider">
-                @foreach($products as $product)
-                    @include('product.product_card', ['product' => $product])
-                @endforeach
-            </div>
+            @include('product._rail', ['railProducts' => $products])
         </section>
 
         {{-- خرید بر اساس خودرو --}}
@@ -227,7 +249,8 @@
                             @endphp
                             <picture>
                                 @if($coverThumb)<source srcset="{{ $coverThumb }}" type="image/webp">@endif
-                                <img src="{{ $cover }}" alt="{{ $article->titr }}" class="nx-post-img" loading="lazy" width="600" height="340">
+                                {{-- alt خالی: همین لینک در h3 زیرش عین همین متن را دارد و صفحه‌خوان دو بار عنوان را می‌خواند --}}
+                                <img src="{{ $cover }}" alt="" class="nx-post-img" loading="lazy" width="600" height="340">
                             </picture>
                             <span class="nx-post-body">
                                 <h3>{{ $article->titr }}</h3>
@@ -267,28 +290,6 @@ $(function () {
             autoplayHoverPause: true
         });
     }
-
-    $('.nx-slider').each(function () {
-        var $rail = $(this);
-        if ($rail.hasClass('owl-loaded')) {
-            return;
-        }
-        $rail.owlCarousel({
-            rtl: true,
-            nav: true,
-            dots: false,
-            margin: 0,
-            loop: false,
-            navText: navText,
-            responsive: {
-                0: { items: 2 },
-                768: { items: 3 },
-                992: { items: 4 },
-                1200: { items: 5 },
-                1400: { items: 6 }
-            }
-        });
-    });
 });
 </script>
 @endsection

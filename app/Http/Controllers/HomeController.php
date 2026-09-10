@@ -65,25 +65,26 @@ class HomeController extends Controller
 
         return $html;
     }
+    /**
+     * طول عمر کش بخش‌های مشترک صفحه‌ی اصلی، برحسب ثانیه.
+     *
+     * دو ریل صفحه‌ی اصلی روی جدول چندهزارتایی محصولات، با زیرکوئری
+     * همبسته روی بازدیدها، مرتب می‌شوند. خروجیِ هر دو برای همه‌ی
+     * بازدیدکننده‌ها یکسان است، ولی بدون کش برای هر بازدید از نو اجرا می‌شدند و
+     * بیشترین سهم را در زمان پاسخ داشتند.
+     *
+     * پنج دقیقه آن‌قدر کوتاه هست که چرخش ریل‌ها را از بین نبرد.
+     */
+    private const HOME_RAILS_TTL = 300;
+
     public function home(Request $request)
 	{
-        $articles = Article1::orderBy('showdate', 'desc')
+        $articles = Cache::remember('home:articles', self::HOME_RAILS_TTL, fn () => Article1::orderBy('showdate', 'desc')
             ->where('hidden', '0')
             ->where('deleted', '0')
             ->where('showdate', '<', date('Y-m-d H:i:s'))
             ->take(4)
-            ->get();
-        $specialProducts = $this->getSpecialOfferProducts(12);
-        $specialHasDiscount = $specialProducts->isNotEmpty();
-        if (!$specialHasDiscount) {
-            // تا وقتی تخفیفی ثبت نشده، ریل «پیشنهاد ویژه» با منتخب قطعات پر می‌شود
-            $specialProducts = Product::with(['images', 'categories'])
-                ->where('is_active', 1)
-                ->withImage()
-                ->orderByDesc('id')
-                ->take(12)
-                ->get();
-        }
+            ->get());
 
         /*
         | ریل دوم بعد از ریل ویژه ساخته می‌شود و محصول‌های آن را کنار
@@ -91,7 +92,27 @@ class HomeController extends Controller
         | با skip(12) روی ریل ویژه انجام می‌شد که فقط تا وقتی درست بود که هر
         | دو ریل با «جدیدترین» مرتب می‌شدند.
         */
-        $products = $this->getRecentlyViewedProducts(12, $specialProducts->pluck('id')->all());
+        ['special' => $specialProducts, 'hasDiscount' => $specialHasDiscount, 'recent' => $products]
+            = Cache::remember('home:rails', self::HOME_RAILS_TTL, function () {
+                $special = $this->getSpecialOfferProducts(12);
+                $hasDiscount = $special->isNotEmpty();
+
+                if (! $hasDiscount) {
+                    // تا وقتی تخفیفی ثبت نشده، ریل «پیشنهاد ویژه» با منتخب قطعات پر می‌شود
+                    $special = Product::with(['images', 'categories'])
+                        ->where('is_active', 1)
+                        ->withImage()
+                        ->orderByDesc('id')
+                        ->take(12)
+                        ->get();
+                }
+
+                return [
+                    'special'     => $special,
+                    'hasDiscount' => $hasDiscount,
+                    'recent'      => $this->getRecentlyViewedProducts(12, $special->pluck('id')->all()),
+                ];
+            });
         /*
         | علاقه‌مندی‌های کاربر واردشده، بالای صفحه‌ی اصلی.
         |
@@ -109,11 +130,11 @@ class HomeController extends Controller
         }
 
         $advertisements = $this->getAdvertisement('farsi');
-        $carCategories = \App\Models\EshopCategory::withCount('products')
+        $carCategories = Cache::remember('home:car-categories', self::HOME_RAILS_TTL, fn () => \App\Models\EshopCategory::withCount('products')
             ->where('is_featured', 1)
             ->orderByDesc('products_count')
             ->take(10)
-            ->get();
+            ->get());
         return View('index' , compact('articles','products','specialProducts','specialHasDiscount','favoriteProducts','advertisements','carCategories'));
 	}
 

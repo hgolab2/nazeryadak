@@ -66,10 +66,10 @@
                             <div style="width:40px; height:40px; background:var(--primary); color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.9rem;">{{ $i + 1 }}</div>
                         </div>
                         <div>
-                            <h6 class="mb-1" style="font-size:.9rem; font-weight:700;">
+                            <h2 class="mb-1" style="font-size:.9rem; font-weight:700;">
                                 <i class="fas {{ $step['icon'] }} me-1" style="color:var(--primary);"></i>
                                 {{ $step['title'] }}
-                            </h6>
+                            </h2>
                             <p class="font-13 text-muted mb-0" style="line-height:2;">{{ $step['desc'] }}</p>
                         </div>
                     </div>
