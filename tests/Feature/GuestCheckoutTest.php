@@ -215,6 +215,31 @@ class GuestCheckoutTest extends TestCase
         $this->assertNull($order->customer_id);
     }
 
+    /**
+     * پوشه‌ی lang اصلا وجود نداشت و هر فرمی که پیام سفارشی نداشت، متن
+     * پیش‌فرض انگلیسی لاراول را نشان می‌داد: «The address line field is
+     * required». مشتری وسط یک صفحه‌ی فارسی، جمله‌ی انگلیسی می‌دید.
+     */
+    public function test_validation_errors_are_in_persian(): void
+    {
+        $order = Order::create(['status' => 'pending']);
+
+        $response = $this->withSession(['guest_orders' => [$order->id]])
+            ->postJson('/address/save', ['receiver_name' => '', 'address_line' => ''])
+            ->assertStatus(422);
+
+        $errors = $response->json('errors');
+
+        $this->assertSame('وارد کردن آدرس کامل الزامی است.', $errors['address_line'][0]);
+        $this->assertSame('وارد کردن نام و نام خانوادگی گیرنده الزامی است.', $errors['receiver_name'][0]);
+
+        // نه کلید خام ترجمه، نه متن انگلیسی
+        foreach ($errors as $messages) {
+            $this->assertStringNotContainsString('validation.', $messages[0]);
+            $this->assertDoesNotMatchRegularExpression('/[A-Za-z]{4,}/', $messages[0]);
+        }
+    }
+
     public function test_placing_an_order_as_guest_needs_no_login(): void
     {
         $order = Order::create(['status' => 'pending']);
