@@ -2123,3 +2123,33 @@ function popular_search_terms(int $limit = 6): array
 
     return $terms;
 }
+
+/**
+ * آدرس نسخه‌ی بندانگشتی یک تصویر در عرض دلخواه.
+ *
+ * عرض‌های مجاز در App\Services\ThumbnailService::SIZES تعریف شده‌اند و از
+ * اندازه‌ی واقعی نمایش در CSS می‌آیند. اگر تصویر بیرونی، SVG یا ناموجود
+ * باشد null برمی‌گردد و قالب به همان تصویر اصلی بسنده می‌کند.
+ */
+function thumb_url(?string $path, int $width): ?string
+{
+    return \App\Services\ThumbnailService::url($path, $width);
+}
+
+/**
+ * مقدار srcset برای نمایش دو برابری روی نمایشگرهای رتینا.
+ *
+ * اگر هر دو اندازه ساخته‌شدنی باشند «۱x و ۲x» برمی‌گردد، وگرنه null تا
+ * قالب سراغ حالت ساده برود.
+ */
+function thumb_srcset(?string $path, int $width, int $retinaWidth): ?string
+{
+    $one = thumb_url($path, $width);
+    $two = thumb_url($path, $retinaWidth);
+
+    if (! $one || ! $two) {
+        return null;
+    }
+
+    return $one . ' 1x, ' . $two . ' 2x';
+}

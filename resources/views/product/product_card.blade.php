@@ -16,9 +16,14 @@
         @endif
 
         <a href="{{$product->url()}}" class="product-thumb dk-product-thumb">
-            @php $cardWebp = webp_variant($mainImage); @endphp
+            @php
+                /* کارت حدود ۱۳۴px دیده می‌شود؛ بندانگشتی ۳۰۰ (و ۶۰۰ برای رتینا)
+                   به‌جای تصویر ۹۰۰ پیکسلی، حجم را چند برابر کم می‌کند. اگر
+                   بندانگشتی ساخته‌شدنی نبود، به نسخه‌ی webp کنار فایل برمی‌گردیم. */
+                $cardSrcset = thumb_srcset($mainImage, 300, 600) ?: webp_variant($mainImage);
+            @endphp
             <picture>
-                @if($cardWebp)<source srcset="{{ $cardWebp }}" type="image/webp">@endif
+                @if($cardSrcset)<source srcset="{{ $cardSrcset }}" type="image/webp">@endif
                 <img src="{{$mainImage}}" class="slider-pic lazy-img"
                      onerror="this.onerror=null;this.src='/images/no-image.svg';this.classList.add('is-placeholder');"
                      loading="lazy" decoding="async" width="300" height="300"

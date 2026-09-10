@@ -28,6 +28,7 @@ use App\Http\Controllers\Admin\DiscountAdminController;
 use App\Http\Controllers\Admin\SmsAdminController;
 
 use App\Http\Controllers\SitemapController;
+use App\Http\Controllers\ThumbnailController;
 use App\Http\Middleware\ShareDataInFrontend;
 
 /*
@@ -103,6 +104,18 @@ Route::get('/site.webmanifest', function () {
 | ساخته نشود؛ این مسیر با هر حرفِ تایپ‌شده صدا زده می‌شود.
 */
 Route::get('/search-suggest', [ProductController::class, 'suggest'])->name('search.suggest');
+
+/*
+| ساخت بندانگشتی تصاویر در اولین درخواست.
+|
+| بیرون از گروه Frontend است: پاسخ یک فایل تصویری است و ساختن منو، سبد
+| خرید و دسته‌ها برایش هدر رفتن کار است. بعد از ساخته‌شدنِ فایل، آپاچی
+| مستقیم تحویلش می‌دهد و دیگر به اینجا نمی‌رسد.
+*/
+Route::get('/cache/thumbs/{width}/{path}', [ThumbnailController::class, 'show'])
+    ->where('width', '[0-9]+')
+    ->where('path', '.*')
+    ->name('thumbs.show');
 
 Route::group(['namespace' => 'Frontend', 'middleware' => [ShareDataInFrontend::class]], function () {
     Route::get('/payment/zarinpal/{id}', [PaymentController::class, 'request'])->name('payment.request');

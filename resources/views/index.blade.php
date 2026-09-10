@@ -194,7 +194,12 @@
                              یک پرش اضافه. --}}
                         <a href="{{ car_landing_url($cat->name) }}" class="nx-car">
                             @if($cat->image)
-                                <img src="{{ $cat->image }}" alt="قطعات {{ $cat->name }}" loading="lazy" decoding="async" width="120" height="120">
+                                {{-- آیکون ۱۲۰px است؛ ۱۶۰ برای رتینا هم کافی است --}}
+                                @php $carThumb = thumb_url($cat->image, 160); @endphp
+                                <picture>
+                                    @if($carThumb)<source srcset="{{ $carThumb }}" type="image/webp">@endif
+                                    <img src="{{ $cat->image }}" alt="قطعات {{ $cat->name }}" loading="lazy" decoding="async" width="120" height="120">
+                                </picture>
                             @else
                                 <span class="nx-car-fallback"><i class="fas fa-car"></i></span>
                             @endif
@@ -216,7 +221,14 @@
                 <div class="nx-posts">
                     @foreach($articles as $article)
                         <a href="{{ $article->getUrl() }}" class="nx-post">
-                            <img src="{{ article_cover($article) }}" alt="{{ $article->titr }}" class="nx-post-img" loading="lazy" width="600" height="340">
+                            @php
+                                $cover = article_cover($article);
+                                $coverThumb = thumb_url($cover, 600);
+                            @endphp
+                            <picture>
+                                @if($coverThumb)<source srcset="{{ $coverThumb }}" type="image/webp">@endif
+                                <img src="{{ $cover }}" alt="{{ $article->titr }}" class="nx-post-img" loading="lazy" width="600" height="340">
+                            </picture>
                             <span class="nx-post-body">
                                 <h3>{{ $article->titr }}</h3>
                                 @if($article->sutitr)

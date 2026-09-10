@@ -77,7 +77,9 @@
     // تصویر اصلی گالری همان عنصر LCP این صفحه است؛ بالاتر محاسبه می‌شود تا
     // بخش preload هم به آن دسترسی داشته باشد.
     $heroImage = $galleryImages->first()->path;
-    $heroWebp = webp_variant($heroImage);
+    // قاب تصویر اصلی ۳۹۰px است؛ بندانگشتی ۶۰۰ هم برای رتینا جا دارد و هم
+    // حدود یک‌سوم حجم نسخه‌ی ۹۰۰ پیکسلی است.
+    $heroWebp = thumb_url($heroImage, 600) ?: webp_variant($heroImage);
 @endphp
 
 {{-- عنصر LCP این صفحه عکس کالاست. با preload، مرورگر منتظر نمی‌ماند تا
@@ -154,10 +156,16 @@
                 @if($galleryImages->count() > 1)
                 <div class="dk-product-thumbs">
                     @foreach($galleryImages as $image)
-                        @php $thumbWebp = webp_variant($image->path); @endphp
-                        <button type="button" class="product-thumb" data-src="{{ $image->path }}" @if($thumbWebp) data-webp="{{ $thumbWebp }}" @endif aria-label="{{ $fa('%D9%86%D9%85%D8%A7%DB%8C%D8%B4%20%D8%AA%D8%B5%D9%88%DB%8C%D8%B1') }} {{ $loop->iteration }}">
+                        @php
+                            /* دو اندازه‌ی متفاوت لازم است: خودِ دکمه ۶۴px است، ولی
+                               با کلیک روی آن همین تصویر در قاب ۳۹۰px می‌نشیند. پس
+                               دکمه نسخه‌ی ۱۶۰ می‌گیرد و data-webp نسخه‌ی ۶۰۰. */
+                            $thumbSmall = thumb_url($image->path, 160) ?: webp_variant($image->path);
+                            $thumbLarge = thumb_url($image->path, 600) ?: webp_variant($image->path);
+                        @endphp
+                        <button type="button" class="product-thumb" data-src="{{ $image->path }}" @if($thumbLarge) data-webp="{{ $thumbLarge }}" @endif aria-label="{{ $fa('%D9%86%D9%85%D8%A7%DB%8C%D8%B4%20%D8%AA%D8%B5%D9%88%DB%8C%D8%B1') }} {{ $loop->iteration }}">
                             <picture>
-                                @if($thumbWebp)<source srcset="{{ $thumbWebp }}" type="image/webp">@endif
+                                @if($thumbSmall)<source srcset="{{ $thumbSmall }}" type="image/webp">@endif
                                 <img src="{{ $image->path }}" alt="{{ $image->alt ?? $model->title }}" width="80" height="80" loading="lazy" decoding="async">
                             </picture>
                         </button>

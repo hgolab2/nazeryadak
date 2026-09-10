@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Product;
+use App\Services\ThumbnailService;
 use DOMDocument;
 use DOMXPath;
 use Illuminate\Console\Command;
@@ -209,6 +210,10 @@ class SyncIsacoContent extends Command
                     continue;
                 }
                 file_put_contents($local, $response->body());
+
+                // تصویر روی همان مسیر قبلی نوشته شد؛ بندانگشتی‌های قدیمی
+                // باید بروند وگرنه سایت تا مدت‌ها عکس قبلی را نشان می‌دهد.
+                ThumbnailService::forget('upload/products/isaco/' . $code . '/' . $filename);
             }
             $paths[] = '/upload/products/isaco/' . $code . '/' . $filename;
         }

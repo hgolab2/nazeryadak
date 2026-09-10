@@ -34,9 +34,13 @@
     </span>
 
     <a href="{{ $product->url() }}" class="nx-gcard-thumb">
-        @php $listImage = $product->image(); $listWebp = webp_variant($listImage); @endphp
+        @php
+            $listImage = $product->image();
+            // خانه‌ی گرید فروشگاه ۱۹۶px ارتفاع دارد؛ ۳۰۰ کافی است و ۶۰۰ برای رتینا.
+            $listSrcset = thumb_srcset($listImage, 300, 600) ?: webp_variant($listImage);
+        @endphp
         <picture>
-            @if($listWebp)<source srcset="{{ $listWebp }}" type="image/webp">@endif
+            @if($listSrcset)<source srcset="{{ $listSrcset }}" type="image/webp">@endif
             <img src="{{ $listImage }}" class="slider-pic lazy-img"
                  onerror="this.onerror=null;this.src='/images/no-image.svg';this.classList.add('is-placeholder');"
                  loading="lazy" decoding="async" width="300" height="300"
