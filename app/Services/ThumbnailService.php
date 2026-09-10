@@ -248,12 +248,30 @@ class ThumbnailService
         return $canvas;
     }
 
+    /**
+     * خواندن تصویر با تشخیص نوع از روی محتوا، نه پسوند.
+     *
+     * در همین مخزن فایل‌هایی هست که PNG هستند ولی پسوند .jpg دارند
+     * (assets/images/brands2.jpg و چند تای دیگر). انتخاب دیکودر از روی
+     * پسوند برای آن‌ها شکست می‌خورد و تصویر بی‌سروصدا در اندازه‌ی کامل
+     * سرو می‌شد — دقیقا همان چیزی که این کلاس قرار بود درستش کند.
+     */
     private static function load(string $path)
     {
         try {
-            $image = str_ends_with(strtolower($path), '.png')
-                ? @imagecreatefrompng($path)
-                : @imagecreatefromjpeg($path);
+            $info = @getimagesize($path);
+
+            if (! $info) {
+                return null;
+            }
+
+            $image = match ($info[2]) {
+                IMAGETYPE_JPEG => @imagecreatefromjpeg($path),
+                IMAGETYPE_PNG  => @imagecreatefrompng($path),
+                IMAGETYPE_GIF  => @imagecreatefromgif($path),
+                IMAGETYPE_WEBP => @imagecreatefromwebp($path),
+                default        => null,
+            };
 
             return $image ?: null;
         } catch (\Throwable $e) {

@@ -125,6 +125,32 @@ class ThumbnailCacheTest extends TestCase
         }
     }
 
+    /**
+     * چند فایل در assets/images در واقع PNG هستند ولی پسوند .jpg دارند.
+     * اگر دیکودر از روی پسوند انتخاب شود، خواندنشان شکست می‌خورد و تصویر
+     * بی‌سروصدا در اندازه‌ی کامل سرو می‌شود — یعنی همان چیزی که این کلاس
+     * قرار بود جلویش را بگیرد.
+     */
+    public function test_png_saved_with_a_jpg_extension_still_works(): void
+    {
+        $mislabeled = 'cache/__test__/actually-a-png.jpg';
+        $path = public_path($mislabeled);
+
+        $image = imagecreatetruecolor(800, 800);
+        imagefill($image, 0, 0, imagecolorallocate($image, 200, 30, 30));
+        imagepng($image, $path);
+        imagedestroy($image);
+
+        $this->assertSame(IMAGETYPE_PNG, getimagesize($path)[2], 'فایل آزمایشی باید PNG باشد');
+
+        $file = ThumbnailService::generate($mislabeled, 300);
+
+        @unlink($path);
+        @unlink(public_path(ThumbnailService::CACHE_DIR . "/300/{$mislabeled}.webp"));
+
+        $this->assertNotNull($file, 'فایل با پسوند اشتباه باید خوانده شود');
+    }
+
     /** آدرس باید فقط برای تصویرِ محلیِ موجود ساخته شود. */
     public function test_url_helper_only_covers_local_existing_images(): void
     {
