@@ -13692,6 +13692,23 @@ footer{
     transition: var(--transition);
 }
 
+/* نماد اعتماد یک لینک است نه عکس، و لوگویی که اینماد می‌دهد مربع نیست.
+   قاب همان قاب نماد ساماندهی می‌ماند و ابعادش ثابت است تا با دیر رسیدنِ
+   تصویر از سرور اینماد، فوتر جابه‌جا نشود؛ خودِ لوگو داخل قاب جا می‌شود
+   نه اینکه کشیده شود. */
+.footer-detail-pic--link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.footer-detail-pic--link img {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+}
+
 .footer-detail-pic:hover {
     background: rgba(255,255,255,0.12);
     border-color: rgba(255,255,255,0.3);

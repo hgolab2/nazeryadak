@@ -569,7 +569,19 @@
                     <div class="col-lg-3 col-md-6 footer-box mb-4">
                         <p class="footer-title">نماد اعتماد</p>
                         <div class="footer-trust-badges">
-                            <x-smart-image src="/assets/images/f-1.png" class="footer-detail-pic" alt="نماد اعتماد الکترونیکی ناظر یدک" width="90" height="90" />
+                            {{-- کد رسمی اینماد. عکس ساده کافی نیست: خریدار روی نماد کلیک
+                                 می‌کند تا صفحه‌ی تأییدیه باز شود، و نمادی که باز نمی‌شود جعلی
+                                 خوانده می‌شود. پارامتر code و referrerpolicy را خودِ اینماد برای
+                                 اعتبارسنجی لازم دارد و نباید حذف شوند. --}}
+                            <a href="https://trustseal.enamad.ir/?id=773262&Code=SJcpo9m430oXD9L5zX3Vy4bUO3XxG7U2"
+                               class="footer-detail-pic footer-detail-pic--link"
+                               target="_blank" rel="noopener noreferrer" referrerpolicy="origin"
+                               title="مشاهده‌ی تأییدیه‌ی نماد اعتماد الکترونیکی">
+                                <img src="https://trustseal.enamad.ir/logo.aspx?id=773262&Code=SJcpo9m430oXD9L5zX3Vy4bUO3XxG7U2"
+                                     alt="نماد اعتماد الکترونیکی ناظر یدک"
+                                     referrerpolicy="origin" loading="lazy" decoding="async"
+                                     code="SJcpo9m430oXD9L5zX3Vy4bUO3XxG7U2">
+                            </a>
                             <x-smart-image src="/assets/images/f-2.png" class="footer-detail-pic" alt="نماد ساماندهی وزارت فرهنگ و ارشاد اسلامی" width="90" height="90" />
                         </div>
                         <p class="footer-title mt-4">ما را دنبال کنید</p>
