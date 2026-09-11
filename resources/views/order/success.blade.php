@@ -3,14 +3,6 @@
     'robots' => seo_robots_tag(false, true),
     'noBaseSchema' => true,
 ])
-@php
-    /* آدرس باید از خودِ سفارش خوانده شود، نه از مشتری.
-       customer->address اولین آدرسِ آن حساب را می‌دهد؛ اگر خریدارِ مهمان
-       شماره‌ای وارد کرده باشد که حساب قبلی دارد، آدرسِ آن آدم نشان داده
-       می‌شد — هم غلط بود هم افشای اطلاعات. */
-    $successAddress = $order->address;
-    $successGuest   = ! auth()->guard('customer')->check();
-@endphp
 @section('main_content')
 <div class="container">
     <div class="row mt-3 mb-2">
@@ -63,11 +55,11 @@
                     <div class="row font-13 mx-0 mt-3" style="background:#f8f9fa; border-radius:var(--radius-sm);">
                         <div class="col-md-6 py-3 {{ $paymentStatus === 'paid' ? '' : 'border-bottom' }}">
                             <span class="text-muted"><i class="fas fa-user me-1"></i> تحویل‌گیرنده:</span><br>
-                            <strong>{{ optional($successAddress)->receiver_name ?? $order->customer?->fullName() ?? '—' }}</strong>
+                            <strong>{{ optional($order->customer->address)->receiver_name ?? $order->customer?->fullName() ?? '—' }}</strong>
                         </div>
                         <div class="col-md-6 py-3">
                             <span class="text-muted"><i class="fas fa-phone me-1"></i> شماره تماس:</span><br>
-                            <strong>{{ optional($successAddress)->receiver_phone ?? $order->customer?->phone ?? '—' }}</strong>
+                            <strong>{{ optional($order->customer->address)->receiver_phone ?? $order->customer?->phone ?? '—' }}</strong>
                         </div>
                         {{-- total_price همان مبلغی است که از کارت کسر می‌شود؛
                              قبلا final_price نمایش داده می‌شد که هزینه‌ی ارسال را کم داشت --}}
@@ -88,16 +80,14 @@
                         </div>
                         <div class="col-12 py-3 border-top">
                             <span class="text-muted"><i class="fas fa-map-marker-alt me-1"></i> آدرس:</span><br>
-                            {{ optional($successAddress)->address_line ?? '—' }}
+                            {{ optional($order->customer->address)->address_line ?? '—' }}
                         </div>
                     </div>
 
                     {{-- دکمه‌ها --}}
                     <div class="text-center mt-4 d-flex justify-content-center gap-3 flex-wrap">
                         @if($paymentStatus === 'paid')
-                        {{-- مهمان حسابی ندارد که /profile برایش باز شود؛ پیگیری
-                             با شماره‌ی سفارش + موبایل انجام می‌شود --}}
-                        <a href="{{ $successGuest ? '/order-tracking?order=' . $order->id : '/profile/orders' }}" class="btn btn-info px-4 font-13">
+                        <a href="/profile/orders" class="btn btn-info px-4 font-13">
                             <i class="fas fa-box me-1"></i> پیگیری سفارش
                         </a>
                         <a href="/shop" class="btn font-13 px-4" style="border:1px solid var(--primary); color:var(--primary); border-radius:var(--radius-sm);">
