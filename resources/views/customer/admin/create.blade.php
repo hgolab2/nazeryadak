@@ -30,10 +30,6 @@
     @endif
 </div>
 
-@if(session('success'))
-<div class="alert alert-success"><i class="fa fa-check-circle me-1"></i> {{ session('success') }}</div>
-@endif
-
 @if(isset($errors) && $errors->any())
 <div class="alert alert-danger">
     <p class="mb-2 fw-bold"><i class="fa fa-exclamation-triangle me-1"></i> ثبت انجام نشد:</p>

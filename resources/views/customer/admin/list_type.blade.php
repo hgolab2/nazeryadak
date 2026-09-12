@@ -25,7 +25,7 @@
             <tr>
                 <td valign="middle" align="center">
                     <button class="btn btn-icon btn-light btn-xs rounded-circle shadow-sm" type="button" id="contextMenu2" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fi-dots-vertical"></i>
+                        <i class="fa fa-ellipsis-v"></i>
                     </button>
                     <ul class="dropdown-menu my-1" aria-labelledby="contextMenu2">
 

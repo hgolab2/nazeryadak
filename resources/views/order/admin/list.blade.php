@@ -59,6 +59,7 @@
     #orders-page .orders-table .col-qty    { width: 70px; }
     #orders-page .orders-table .col-date   { width: 110px; white-space: nowrap; }
     #orders-page .orders-table .col-tools  { width: 56px; }
+    #orders-page .orders-table .col-status { width: 170px; }
 
     /* موبایل: هر ردیف یک کارت با برچسبِ ستون کنار مقدار */
     @media (max-width: 767.98px) {
@@ -306,6 +307,9 @@
 
     var pagin = 1;
     var str = "";
+    // فیلتر وضعیت از آدرس (لینک‌های داشبورد: /admin/order/list?status=paid)
+    var urlStatus = new URLSearchParams(window.location.search).get('status');
+    if (urlStatus) { $('#status').val(urlStatus); }
     CheckSend();
     $("#form_search").click(function() {
         str = "";

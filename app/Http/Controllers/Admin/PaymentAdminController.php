@@ -7,6 +7,7 @@ use App\Models\CustomerNotification;
 use App\Models\Payment;
 use App\Services\OrderFulfillmentService;
 use App\Services\OrderNotifier;
+use App\Services\OrderStatusService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -103,30 +104,9 @@ class PaymentAdminController extends Controller
             'reviewed_at' => now(),
         ]);
 
-        $previousStatus = (string) $order->status;
-
-        // سفارشی که قبلا پرداخت‌شده شده، نباید دوباره موجودی‌اش کم شود
-        if ($previousStatus !== 'paid') {
-            $order->update(['status' => 'paid']);
-
-            try {
-                (new OrderFulfillmentService())->decrementStock($order);
-            } catch (\Throwable $e) {
-                Log::error('کم کردن موجودی پس از تأیید رسید ناموفق بود', [
-                    'order_id' => $order->id,
-                    'message'  => $e->getMessage(),
-                ]);
-            }
-
-            try {
-                (new OrderNotifier())->statusChanged($order->fresh('customer'), $previousStatus);
-            } catch (\Throwable $e) {
-                Log::error('اطلاع‌رسانی تأیید پرداخت ناموفق بود', [
-                    'order_id' => $order->id,
-                    'message'  => $e->getMessage(),
-                ]);
-            }
-        }
+        // کم کردن موجودی (فقط بار اول) و اطلاع‌رسانی، همان مسیری که بقیه‌ی
+        // تغییر وضعیت‌ها می‌روند
+        (new OrderStatusService())->change($order, 'paid', 'payment');
 
         return back()->with('success', 'پرداخت سفارش #' . $order->id . ' تأیید شد و وضعیت سفارش «پرداخت شده» است.');
     }

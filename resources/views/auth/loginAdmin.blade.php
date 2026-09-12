@@ -8,6 +8,8 @@
     <link rel="icon" type="image/ico" href="/favicon.ico"/>
     <link rel="stylesheet" href="/assets/css/bootstrap.rtl.css">
     <link rel="stylesheet" href="/assets/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="/assets/fontawesome/css/fa-fonts.css">
+    <link rel="stylesheet" href="/assets/fontawesome/css/fa6-aliases.css">
     <style>
         * { font-family: vazir-fa-med, Tahoma, sans-serif; }
         @font-face {

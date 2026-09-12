@@ -27,6 +27,9 @@ use App\Http\Controllers\Admin\SeoAdminController;
 use App\Http\Controllers\Admin\PaymentAdminController;
 use App\Http\Controllers\Admin\DiscountAdminController;
 use App\Http\Controllers\Admin\SmsAdminController;
+use App\Http\Controllers\Admin\FinanceAdminController;
+use App\Http\Controllers\Admin\BaleAdminController;
+use App\Http\Controllers\BaleWebhookController;
 
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\ThumbnailController;
@@ -105,6 +108,13 @@ Route::get('/site.webmanifest', function () {
 | ساخته نشود؛ این مسیر با هر حرفِ تایپ‌شده صدا زده می‌شود.
 */
 Route::get('/search-suggest', [ProductController::class, 'suggest'])->name('search.suggest');
+
+/*
+| وبهوک ربات بله: پیام مدیر و لمس دکمه‌های زیر پیام سفارش به این‌جا می‌رسد.
+| بیرون از گروه Frontend است (داده‌های مشترک صفحات را نمی‌خواهد) و از CSRF
+| معاف است (bootstrap/app.php)؛ هویت با بخش مخفی آدرس تأیید می‌شود.
+*/
+Route::post('/bale/webhook/{secret}', [BaleWebhookController::class, 'handle'])->name('bale.webhook');
 
 /*
 | ساخت بندانگشتی تصاویر در اولین درخواست.
@@ -319,7 +329,10 @@ Route::group(['namespace' => 'Frontend', 'middleware' => [ShareDataInFrontend::c
         Route::get('/admin/order/edit/{id}', [OrderAdminController::class, 'admin_edit']);
         Route::post('/admin/order/store', [OrderAdminController::class, 'admin_store']);
         Route::put('/admin/order/update/{id}', [OrderAdminController::class, 'admin_update']);
-        // برچسب پستی؛ مسیر گروهی قبل از {id} تا «labels» شناسه تلقی نشود
+        // تغییر سریع وضعیت از لیست/داشبورد/مشاهده (JSON)
+        Route::put('/admin/order/{id}/status', [OrderAdminController::class, 'admin_status']);
+        // قیمت خرید (و در صورت نیاز قیمت فروش) یک قلم، از صفحه‌ی مشاهده
+        Route::put('/admin/order/{id}/item/{itemId}/cost', [OrderAdminController::class, 'admin_item_cost']);        // برچسب پستی؛ مسیر گروهی قبل از {id} تا «labels» شناسه تلقی نشود
         Route::get('/admin/order/labels', [OrderAdminController::class, 'admin_labels']);
         Route::get('/admin/order/label/{id}', [OrderAdminController::class, 'admin_label']);
         // متد کنترلر admin_destroy است؛ ارجاع به destroy وجود نداشت و حذف
@@ -397,6 +410,20 @@ Route::group(['namespace' => 'Frontend', 'middleware' => [ShareDataInFrontend::c
         Route::get('/admin/seo/404', [SeoAdminController::class, 'notFound']);
         Route::delete('/admin/seo/404/clear', [SeoAdminController::class, 'notFoundClear']);
         Route::delete('/admin/seo/404/{id}', [SeoAdminController::class, 'notFoundDestroy']);
+
+        /* حسابداری — دفتر درآمد/هزینه و گزارش سود */
+        Route::get('/admin/finance', [FinanceAdminController::class, 'index']);
+        Route::get('/admin/finance/create', [FinanceAdminController::class, 'create']);
+        Route::post('/admin/finance', [FinanceAdminController::class, 'store']);
+        Route::get('/admin/finance/edit/{id}', [FinanceAdminController::class, 'edit']);
+        Route::put('/admin/finance/{id}', [FinanceAdminController::class, 'update']);
+        Route::delete('/admin/finance/{id}', [FinanceAdminController::class, 'destroy']);
+
+        /* بله — وضعیت اتصال، وبهوک ربات، ارسال دوباره‌ی سفارش‌ها */
+        Route::get('/admin/bale', [BaleAdminController::class, 'index']);
+        Route::post('/admin/bale/test', [BaleAdminController::class, 'test']);
+        Route::post('/admin/bale/webhook', [BaleAdminController::class, 'webhook']);
+        Route::post('/admin/bale/resend', [BaleAdminController::class, 'resend']);
 
         /* SMS */
         Route::get('/admin/sms', [SmsAdminController::class, 'index']);

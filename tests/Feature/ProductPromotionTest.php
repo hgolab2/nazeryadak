@@ -27,6 +27,7 @@ class ProductPromotionTest extends TestCase
             $table->string('title')->nullable();
             $table->string('file_path')->nullable();
             $table->integer('price')->default(0);
+            $table->unsignedBigInteger('cost_price')->nullable();
             $table->boolean('wholesale_enabled')->default(true);
             $table->boolean('is_active')->default(true);
             $table->timestamps();

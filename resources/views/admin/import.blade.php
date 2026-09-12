@@ -11,20 +11,6 @@
     </div>
 </div>
 
-@if(session('success'))
-<div class="alert alert-success d-flex align-items-center gap-2" style="font-size:0.85rem; border-radius:10px;">
-    <i class="fas fa-check-circle" style="font-size:1.2rem;"></i>
-    <div>{!! session('success') !!}</div>
-</div>
-@endif
-
-@if(session('error'))
-<div class="alert alert-danger d-flex align-items-center gap-2" style="font-size:0.85rem; border-radius:10px;">
-    <i class="fas fa-exclamation-circle" style="font-size:1.2rem;"></i>
-    <div>{{ session('error') }}</div>
-</div>
-@endif
-
 <div class="row g-3">
     <div class="col-lg-7">
         <div class="admin-card">

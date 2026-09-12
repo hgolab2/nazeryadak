@@ -50,6 +50,21 @@ class OrderPhoneVerificationTest extends TestCase
             $table->unsignedBigInteger('total_price')->default(0);
             $table->unsignedBigInteger('final_price')->default(0);
             $table->string('status')->nullable();
+            $table->timestamp('paid_at')->nullable();
+            $table->timestamp('bale_notified_at')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('finance_transactions', function (Blueprint $table) {
+            $table->id();
+            $table->string('type', 10);
+            $table->string('category', 40);
+            $table->string('title', 190);
+            $table->unsignedBigInteger('amount');
+            $table->unsignedBigInteger('order_id')->nullable();
+            $table->date('occurred_on');
+            $table->text('note')->nullable();
+            $table->unsignedBigInteger('created_by')->nullable();
             $table->timestamps();
         });
     }

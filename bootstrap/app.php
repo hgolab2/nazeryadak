@@ -27,6 +27,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // مطلق را http می‌سازد و canonical با آدرس واقعی صفحه فرق می‌کند.
         $middleware->trustProxies(at: '*');
 
+        // وبهوک بله از سمت سرور بله می‌آید و توکن CSRF ندارد؛ هویتش با بخش
+        // مخفی آدرس تأیید می‌شود (BaleWebhookController).
+        $middleware->validateCsrfTokens(except: ['bale/webhook/*']);
         // کاربرِ واردنشده‌ی مسیرهای پنل باید به صفحه‌ی ورود پنل برود، نه به
         // صفحه‌ی ورود مشتری؛ مقصد پیش‌فرض لاراول مسیرِ نام‌گذاری‌شده‌ی login است
         // که همان ورود مشتری با پیامک است و مدیر آنجا کاری نمی‌تواند بکند.

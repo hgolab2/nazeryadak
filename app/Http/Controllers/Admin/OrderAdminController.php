@@ -5,6 +5,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Customer;
 use App\Models\CustomerAddress;
+use App\Models\OrderItem;
+use App\Services\OrderStatusService;
 use App\Support\Mobile;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rules\Password as PasswordRule;
@@ -24,7 +26,7 @@ class OrderAdminController extends Controller
 
         // pendingReceipt هم eager می‌شود تا مدیر در همان لیست ببیند کدام سفارش
         // رسید بررسی‌نشده دارد
-        $query = Order::with(['customer', 'items', 'pendingReceipt']);
+        $query = Order::with(['customer', 'items', 'pendingReceipt', 'expenses']);
 
         // فیلترها — کادرهای جستجو با ارقام فارسی هم پر می‌شوند و بدون تبدیل،
         // جستجو همیشه «موردی یافت نشد» می‌داد
@@ -140,34 +142,23 @@ class OrderAdminController extends Controller
             return back()->withErrors($validator)->withInput();
         }
 
-        $previousStatus = $order->status;
-
         $order->fill($request->only([
             'customer_id',
             'address_id',
             'shipping_method_id',
             'final_price',
-            'status',
         ]));
 
         $order->shipping_price = (int) $request->input('shipping_price', 0);
         $order->recalculateTotals();
         $order->save();
 
-        // اطلاع‌رسانی فقط وقتی وضعیت واقعا عوض شده باشد؛ ویرایش مبلغ یا آدرس
-        // نباید برای مشتری پیامک بفرستد. خطای درگاه هم نباید ذخیره را بشکند.
-        if ($previousStatus !== $order->status) {
-            try {
-                (new \App\Services\OrderNotifier())->statusChanged($order->fresh('customer'), $previousStatus);
-            } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::error('اطلاع‌رسانی تغییر وضعیت سفارش ناموفق بود', [
-                    'order_id' => $order->id,
-                    'message'  => $e->getMessage(),
-                ]);
-            }
-        }
+        // وضعیت جدا و از مسیر مشترک عوض می‌شود تا موجودی و اطلاع‌رسانی
+        // دقیقا مثل بقیه‌ی راه‌های تغییر وضعیت رفتار کند. ویرایش مبلغ یا
+        // آدرس به‌تنهایی برای مشتری پیامک نمی‌فرستد.
+        (new OrderStatusService())->change($order, (string) $request->input('status'), 'panel');
 
-        return redirect('/admin/order/list')
+        return redirect('/admin/order/show/' . $order->id)
             ->with('success', 'سفارش با موفقیت بروزرسانی شد');
     }
 
@@ -248,6 +239,8 @@ class OrderAdminController extends Controller
         // اقلام و پرداخت‌های سفارشِ حذف‌شده برای همیشه یتیم می‌ماندند
         DB::table('order_items')->where('order_id', $order->id)->delete();
         DB::table('payments')->where('order_id', $order->id)->delete();
+        // هزینه‌های ثبت‌شده پول واقعی خرج‌شده‌اند؛ پاک نمی‌شوند، فقط از سفارش جدا می‌شوند
+        DB::table('finance_transactions')->where('order_id', $order->id)->update(['order_id' => null]);
 
         $order->delete();
 
@@ -272,6 +265,7 @@ class OrderAdminController extends Controller
             'items.product',
             'payments.reviewer',
             'shippingMethod',
+            'expenses.creator',
         ])->find($id);
 
         if (! $order) {
@@ -280,6 +274,80 @@ class OrderAdminController extends Controller
         }
 
         return view('order.admin.show', compact('order'));
+    }
+
+    /**
+     * تغییر سریع وضعیت از منوی کشویی لیست، داشبورد و صفحه‌ی مشاهده.
+     *
+     * پاسخ JSON است تا صفحه دوباره بارگذاری نشود؛ مسیر مشترک
+     * OrderStatusService موجودی و پیامک/بله را هم انجام می‌دهد.
+     */
+    public function admin_status(Request $request, $id)
+    {
+        if (!Auth::user()) return response()->json(['success' => false, 'message' => 'وارد نشده‌اید.'], 401);
+        access(388);
+
+        $order  = Order::findOrFail($id);
+        $status = (string) $request->input('status');
+
+        if (! isset(Order::STATUSES[$status])) {
+            return response()->json(['success' => false, 'message' => 'وضعیت انتخاب‌شده معتبر نیست.'], 422);
+        }
+
+        $changed = (new OrderStatusService())->change($order, $status, 'panel');
+
+        return response()->json([
+            'success' => true,
+            'changed' => $changed,
+            'status'  => $status,
+            'label'   => Order::STATUSES[$status],
+            'badge'   => $order->statusBadgeClass(),
+            'message' => $changed
+                ? 'وضعیت سفارش #' . $order->id . ' به «' . Order::STATUSES[$status] . '» تغییر کرد.'
+                : 'وضعیت سفارش همان بود.',
+        ]);
+    }
+
+    /**
+     * ثبت/اصلاح قیمت خرید یک قلم از صفحه‌ی سفارش.
+     *
+     * قیمت خرید در لحظه‌ی سفارش قفل می‌شود، ولی گاهی غلط یا خالی است (محصول
+     * حذف‌شده، قطعه‌ی استعلامی که بعدا قیمت گرفته). مدیر همین‌جا درستش
+     * می‌کند و سود سفارش دوباره حساب می‌شود.
+     */
+    public function admin_item_cost(Request $request, $id, $itemId)
+    {
+        if (!Auth::user()) return redirect('/login');
+        access(388);
+
+        $item = OrderItem::where('order_id', $id)->findOrFail($itemId);
+
+        $cost = (int) str_replace(',', '', toLatinDigits((string) $request->input('unit_cost', '')));
+
+        if ($cost < 0) {
+            return back()->with('error', 'قیمت خرید نمی‌تواند منفی باشد.');
+        }
+
+        $item->unit_cost = $cost;
+        $item->save();
+
+        // اگر قطعه‌ی استعلامی بوده و مدیر حالا قیمت فروشش را هم می‌داند
+        if ($request->filled('unit_price')) {
+            $price = (int) str_replace(',', '', toLatinDigits((string) $request->input('unit_price')));
+
+            if ($price >= 0) {
+                $item->unit_price  = $price;
+                $item->total_price = $price * (int) $item->quantity;
+                $item->save();
+
+                $order = Order::findOrFail($id);
+                $order->final_price = (int) $order->items()->sum('total_price');
+                $order->recalculateTotals();
+                $order->save();
+            }
+        }
+
+        return back()->with('success', 'قیمت قلم ذخیره شد.');
     }
 
     /**

@@ -31,6 +31,7 @@ class ProductStockImportTest extends TestCase
             $table->string('sku')->nullable();
             $table->string('file_path')->nullable();
             $table->integer('price')->default(0);
+            $table->unsignedBigInteger('cost_price')->nullable();
             $table->integer('regular_price')->default(0);
             $table->integer('compare_at_price')->nullable();
             $table->integer('import_bonus_percent')->default(0);

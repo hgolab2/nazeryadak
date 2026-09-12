@@ -53,6 +53,7 @@ class Product extends Model
         'description',
         'short_description',
         'price',
+        'cost_price',
         'regular_price',
         'compare_at_price',
         'import_bonus_percent',
@@ -688,6 +689,34 @@ class Product extends Model
     public static function flushContactPriceCache(): void
     {
         self::$contactPriceCache = [];
+    }
+
+    /**
+     * قیمت خرید یک واحد (تومان).
+     *
+     * ایمپورت اکسل ستون cost_price را پر می‌کند؛ برای محصولی که هنوز آن را
+     * ندارد، از قیمت فروش بازسازی می‌شود: قیمت سایت همان قیمت اکسل × ۱.۲
+     * است و پاداش تصادفی ایمپورت روی قیمتِ پیش از تخفیف نشسته. سود هر سفارش
+     * از روی همین عدد در لحظه‌ی ثبت سفارش قفل می‌شود (OrderItem::unit_cost).
+     */
+    public function purchaseCost(): int
+    {
+        $manual = (int) $this->cost_price;
+        if ($manual > 0) {
+            return $manual;
+        }
+
+        $base = (int) ($this->compare_at_price ?: $this->price);
+        if ($base <= 0) {
+            return 0;
+        }
+
+        $bonus = min(100, max(0, (int) $this->import_bonus_percent));
+        if ($bonus > 0) {
+            $base = $base * 100 / (100 + $bonus);
+        }
+
+        return (int) round($base / self::RETAIL_MARKUP);
     }
 
     /**

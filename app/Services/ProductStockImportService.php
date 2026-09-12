@@ -77,6 +77,8 @@ class ProductStockImportService
                 'title'         => $row['title'],
                 'slug'          => Str::slug($sku),
                 'price'         => $listPrice,
+                // قیمت خرید واقعی (اکسل، ریال → تومان، بدون ضریب فروش)؛ مبنای سود
+                'cost_price'    => $row['sale_price'] > 0 ? (int) round($row['sale_price'] / self::RIAL_TO_TOMAN) : null,
                 'regular_price' => $this->sitePrice($row['avg_price']),
                 'compare_at_price'     => $beforeDiscount,
                 'import_bonus_percent' => $bonus,

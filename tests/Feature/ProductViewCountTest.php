@@ -34,6 +34,7 @@ class ProductViewCountTest extends TestCase
             $table->string('slug')->nullable();
             $table->string('file_path')->nullable();
             $table->integer('price')->default(0);
+            $table->unsignedBigInteger('cost_price')->nullable();
             $table->integer('discount_percent')->default(0);
             $table->boolean('is_special_offer')->default(false);
             // مدل Product مقدار پیش‌فرض این ستون را روی نمونه‌ی تازه می‌نشاند

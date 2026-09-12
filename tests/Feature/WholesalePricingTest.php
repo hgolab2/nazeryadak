@@ -32,6 +32,7 @@ class WholesalePricingTest extends TestCase
             $table->string('sku')->nullable();
             $table->string('file_path')->nullable();
             $table->integer('price')->default(0);
+            $table->unsignedBigInteger('cost_price')->nullable();
             $table->integer('regular_price')->default(0);
             $table->integer('compare_at_price')->nullable();
             $table->integer('import_bonus_percent')->default(0);
@@ -265,6 +266,21 @@ class WholesalePricingTest extends TestCase
             $table->integer('customer_id')->nullable();
             $table->integer('address_id')->nullable();
             $table->string('status')->nullable();
+            $table->timestamp('paid_at')->nullable();
+            $table->timestamp('bale_notified_at')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('finance_transactions', function (Blueprint $table) {
+            $table->id();
+            $table->string('type', 10);
+            $table->string('category', 40);
+            $table->string('title', 190);
+            $table->unsignedBigInteger('amount');
+            $table->unsignedBigInteger('order_id')->nullable();
+            $table->date('occurred_on');
+            $table->text('note')->nullable();
+            $table->unsignedBigInteger('created_by')->nullable();
             $table->timestamps();
         });
 
@@ -274,6 +290,7 @@ class WholesalePricingTest extends TestCase
             $table->integer('product_id');
             $table->integer('quantity');
             $table->integer('unit_price');
+            $table->integer('unit_cost')->nullable();
             $table->integer('total_price');
             $table->timestamps();
         });

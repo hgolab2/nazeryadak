@@ -11,10 +11,6 @@
     </ol>
 </nav>
 
-@if(session('success'))
-    <div class="alert alert-success">{{ session('success') }}</div>
-@endif
-
 <div class="d-flex align-items-center justify-content-between mb-3">
     <h1 class="h4 mb-0">مدیریت بلاگ</h1>
     <a href="/admin/article/create" class="btn btn-primary">

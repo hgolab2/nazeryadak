@@ -33,7 +33,7 @@ class OrderSummary
     public static function baleFields(Order $order): array
     {
         // بدون این، به ازای هر قلم سفارش یک کوئری محصول اجرا می‌شود
-        $order->loadMissing(['customer', 'address.province', 'items.product']);
+        $order->loadMissing(['customer', 'address.province', 'items.product', 'expenses']);
 
         $fields = [
             'سفارش' => '#' . $order->id,
@@ -48,6 +48,7 @@ class OrderSummary
         $fields[] = self::addressBlock($order);
         $fields[] = self::itemsBlock($order);
         $fields[] = self::totalsBlock($order);
+        $fields[] = self::profitBlock($order);
 
         return $fields;
     }
@@ -162,6 +163,77 @@ class OrderSummary
         }
 
         return implode("\n", $lines);
+    }
+
+    /**
+     * سود سفارش؛ فقط برای چشم مدیر است و در هیچ پیامی به مشتری نمی‌رود.
+     * قیمت خرید از order_items.unit_cost می‌آید؛ اگر قلمی قیمت خرید ندارد،
+     * عدد «برآوردی» است و همین را می‌گوید.
+     */
+    private static function profitBlock(Order $order): string
+    {
+        $cost = $order->itemsCost();
+
+        if ($cost <= 0 && (int) $order->total_price <= 0) {
+            return '';
+        }
+
+        $lines = ['', '📈 سود'];
+        $lines[] = 'قیمت خرید اقلام: ' . number_format($cost) . ' تومان';
+
+        $expenses = $order->expensesTotal();
+        if ($expenses > 0) {
+            $lines[] = 'هزینه‌های سفارش: ' . number_format($expenses) . ' تومان';
+        }
+
+        $lines[] = 'سود خالص: ' . number_format($order->netProfit()) . ' تومان'
+            . ((int) $order->total_price > 0 ? ' (' . $order->profitMargin() . '٪)' : '')
+            . ($order->hasCompleteCosts() ? '' : ' — برآوردی');
+
+        return implode("\n", $lines);
+    }
+
+    /**
+     * دکمه‌های شیشه‌ای زیر پیام سفارش: قدم‌های بعدیِ وضعیت + لینک پنل.
+     *
+     * callback_data به شکل «st:{id}:{status}» است و BaleBot آن را می‌خواند.
+     * دو دکمه در هر ردیف تا روی موبایل خوانا بماند.
+     *
+     * @return array<int, array<int, array{text: string, callback_data?: string, url?: string}>>
+     */
+    public static function keyboard(Order $order): array
+    {
+        $buttons = [];
+
+        foreach ($order->nextStatuses() as $status) {
+            $buttons[] = [
+                'text'          => Order::statusIcon($status) . ' ' . (Order::STATUSES[$status] ?? $status),
+                'callback_data' => 'st:' . $order->id . ':' . $status,
+            ];
+        }
+
+        $rows = array_chunk($buttons, 2);
+
+        $rows[] = [
+            ['text' => '🔄 وضعیت فعلی', 'callback_data' => 'show:' . $order->id],
+            ['text' => '🖥 باز کردن در پنل', 'url' => url('/admin/order/show/' . $order->id)],
+        ];
+
+        return $rows;
+    }
+
+    /**
+     * یک خط خلاصه برای فهرست‌ها: «#۱۲ ✅ پرداخت شده — علی رضایی — ۳۲۰,۰۰۰ تومان»
+     */
+    public static function line(Order $order): string
+    {
+        $status   = (string) $order->status;
+        $customer = $order->customer?->fullName() ?: $order->customer?->phone ?: '—';
+
+        return '#' . $order->id . ' ' . Order::statusIcon($status) . ' ' . self::statusLabel($order)
+            . ' — ' . $customer
+            . ' — ' . number_format((int) $order->total_price) . ' تومان'
+            . ' — ' . self::date($order->created_at);
     }
 
     private static function statusLabel(Order $order): string

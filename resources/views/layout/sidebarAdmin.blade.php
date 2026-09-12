@@ -30,6 +30,9 @@
 <a href="/admin/customer/list" class="admin-menu-item {{ ($menu ?? '') == 'customer/list' ? 'active' : '' }}">
     <i class="fas fa-users"></i> مشتریان
 </a>
+<a href="/admin/finance" class="admin-menu-item {{ ($menu ?? '') == 'finance' ? 'active' : '' }}">
+    <i class="fas fa-calculator"></i> حسابداری و سود
+</a>
 
 <div class="admin-menu-title">محتوا</div>
 <a href="/admin/article/list" class="admin-menu-item {{ ($menu ?? '') == 'article/list' ? 'active' : '' }}">
@@ -77,6 +80,14 @@
 </a>
 <a href="/admin/sms" class="admin-menu-item {{ ($menu ?? '') == 'sms/list' ? 'active' : '' }}">
     <i class="fas fa-comment-sms"></i> مدیریت پیامک‌ها
+</a>
+@php $baleProblem = \App\Services\BaleNotifier::problem(); @endphp
+<a href="/admin/bale" class="admin-menu-item {{ ($menu ?? '') == 'bale' ? 'active' : '' }}">
+    <i class="fas fa-robot"></i> اتصال بله
+    @if($baleProblem)
+        {{-- توکن یا مقصد خالی است؛ هیچ سفارشی به بله نمی‌رسد و باید از هر صفحه دیده شود --}}
+        <span class="badge bg-danger" style="margin-right:6px;" title="{{ $baleProblem }}">!</span>
+    @endif
 </a>
 
 <div style="padding:15px 18px; margin-top:20px; border-top:1px solid rgba(255,255,255,0.08);">

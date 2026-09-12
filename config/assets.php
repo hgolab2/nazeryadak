@@ -23,6 +23,8 @@ return [
         'sources' => [
             '/assets/css/bootstrap.rtl.css',
             '/assets/fontawesome/css/all.min.css',
+            // نام‌های نسخه‌ی ۶ فونت‌آوسام روی فونت ۵ — باید بلافاصله بعد از all.min.css بیاید
+            '/assets/fontawesome/css/fa6-aliases.css',
             '/assets/css/owl.carousel.min.css',
             '/assets/css/owl.theme.default.min.css',
             '/assets/css/style.css',

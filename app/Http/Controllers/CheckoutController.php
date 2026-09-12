@@ -55,6 +55,9 @@ class CheckoutController extends Controller
                 'product_id' => $id,
                 'quantity'   => $quantity,
                 'unit_price' => $price,
+                // قیمت خرید همین لحظه قفل می‌شود تا سود سفارش با تغییر
+                // قیمت‌های بعدی محصول عوض نشود
+                'unit_cost'  => $product ? $product->purchaseCost() : null,
                 'total_price' => $price * $quantity,
             ]);
             $total += $price * $quantity;

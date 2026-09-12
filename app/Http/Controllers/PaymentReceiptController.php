@@ -204,7 +204,10 @@ class PaymentReceiptController extends Controller
             'روش'       => $payment->methodLabel(),
             'پیگیری'    => (string) ($payment->reference ?? ''),
             'پرداخت‌کننده' => (string) ($payment->payer_name ?? ''),
-        ], OrderSummary::baleFields($order)));
+        ], OrderSummary::baleFields($order)), [
+            // مدیر همان‌جا در بله می‌تواند بعد از دیدن رسید، سفارش را جلو ببرد
+            'keyboard' => OrderSummary::keyboard($order),
+        ]);
 
         $adminPhone = config('payment.notify_mobile');
 

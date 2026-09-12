@@ -29,6 +29,7 @@ class ProductReviewCriteriaTest extends TestCase
             $table->string('slug')->nullable();
             $table->string('file_path')->nullable();
             $table->integer('price')->default(0);
+            $table->unsignedBigInteger('cost_price')->nullable();
             $table->integer('stock')->default(0);
             $table->boolean('is_active')->default(true);
             $table->boolean('wholesale_enabled')->default(true);

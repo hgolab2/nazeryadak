@@ -64,12 +64,26 @@ class AdminOrderPanelTest extends TestCase
             $table->timestamps();
         });
 
+        Schema::create('finance_transactions', function (Blueprint $table) {
+            $table->id();
+            $table->string('type', 10);
+            $table->string('category', 40);
+            $table->string('title', 190);
+            $table->unsignedBigInteger('amount');
+            $table->unsignedBigInteger('order_id')->nullable();
+            $table->date('occurred_on');
+            $table->text('note')->nullable();
+            $table->unsignedBigInteger('created_by')->nullable();
+            $table->timestamps();
+        });
+
         Schema::create('order_items', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('order_id')->nullable();
             $table->unsignedBigInteger('product_id')->nullable();
             $table->integer('quantity')->default(1);
             $table->integer('unit_price')->nullable();
+            $table->integer('unit_cost')->nullable();
             $table->integer('total_price')->nullable();
             $table->timestamps();
         });
@@ -81,6 +95,7 @@ class AdminOrderPanelTest extends TestCase
             $table->string('slug')->nullable();
             $table->string('sku')->nullable();
             $table->integer('price')->default(0);
+            $table->unsignedBigInteger('cost_price')->nullable();
             $table->boolean('is_active')->default(true);
             $table->boolean('wholesale_enabled')->default(true);
             $table->timestamps();
@@ -190,7 +205,7 @@ class AdminOrderPanelTest extends TestCase
             'shipping_price' => 90_000,
             'final_price'    => 2_000_000,
             'status'         => 'processing',
-        ])->assertRedirect('/admin/order/list');
+        ])->assertRedirect('/admin/order/show/' . $order->id);
 
         $order->refresh();
 
@@ -214,7 +229,7 @@ class AdminOrderPanelTest extends TestCase
             'shipping_price' => 50_000,
             'final_price'    => 1_000_000,
             'status'         => 'pending',
-        ])->assertRedirect('/admin/order/list');
+        ])->assertRedirect('/admin/order/show/' . $order->id);
 
         $this->assertSame(950_000, (int) $order->refresh()->total_price);
     }

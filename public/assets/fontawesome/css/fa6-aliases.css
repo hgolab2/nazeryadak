@@ -1,0 +1,27 @@
+/*!
+ * نام‌های Font Awesome 6 روی فونت Font Awesome 5.14
+ *
+ * چند جای پروژه (منوی پنل، صفحه‌ی سفارش، تنظیمات) با نام‌های نسخه‌ی ۶ نوشته
+ * شده‌اند در حالی که فونت بسته‌بندی‌شده نسخه‌ی ۵ است؛ آن آیکن‌ها خالی رندر
+ * می‌شدند. هر نام ۶ به همان گلیف معادلش در ۵ نگاشت می‌شود تا نیازی به
+ * دست‌بردن در ده‌ها فایل نباشد و نام‌های جدید هم در آینده قابل استفاده بمانند.
+ */
+.fa-arrow-up-long:before{content:"\f30c"}
+.fa-boxes-stacked:before{content:"\f468"}
+.fa-building-columns:before{content:"\f19c"}
+.fa-chart-simple:before{content:"\f080"}
+.fa-circle-check:before{content:"\f058"}
+.fa-circle-info:before{content:"\f05a"}
+.fa-circle-xmark:before{content:"\f057"}
+.fa-comment-sms:before{content:"\f7cd"}
+.fa-heart-pulse:before{content:"\f21e"}
+.fa-location-dot:before{content:"\f3c5"}
+.fa-money-check-dollar:before{content:"\f53d"}
+.fa-rotate-left:before{content:"\f0e2"}
+.fa-sign-in:before{content:"\f2f6"}
+.fa-signs-post:before{content:"\f277"}
+.fa-triangle-exclamation:before{content:"\f071"}
+.fa-truck-fast:before{content:"\f48b"}
+.fa-ellipsis-vertical:before{content:"\f142"}
+.fa-sack-dollar:before{content:"\f51e"}
+.fa-file-invoice-dollar:before{content:"\f571"}

@@ -26,6 +26,7 @@
             <th>{{ l('مشتری') }}</th>
             <th class="text-center col-qty">{{ l('اقلام') }}</th>
             <th class="text-center col-price">{{ l('مبلغ پرداختی') }}</th>
+            <th class="text-center col-profit">{{ l('سود') }}</th>
             <th class="text-center col-status">{{ l('وضعیت') }}</th>
             <th class="text-center col-date">{{ l('تاریخ') }}</th>
             <th class="text-center col-tools">{{ l('ابزار') }}</th>
@@ -47,8 +48,8 @@
                 </td>
 
                 <td data-label="{{ l('مشتری') }}">
-                    {{-- مشتری بی‌نام در داشبورد با شماره نشان داده می‌شد و اینجا فقط خط تیره --}}
-                    <span class="d-block">{{ $order->customer?->fullName() ?: '—' }}</span>
+                    {{-- نام مشتری هم به صفحه‌ی سفارش می‌رود؛ قبلا فقط شماره و منوی ابزار لینک داشتند --}}
+                    <a href="/admin/order/show/{{ $order->id }}" class="d-block" style="color:inherit;">{{ $order->customer?->fullName() ?: '—' }}</a>
                     @if($order->customer?->phone)
                         <span class="cell-sub" dir="ltr">{{ $order->customer->phone }}</span>
                     @endif
@@ -75,11 +76,20 @@
                     @endif
                 </td>
 
+                <td class="text-center col-profit" data-label="{{ l('سود') }}">
+                    @php $profit = $order->netProfit(); @endphp
+                    <span class="{{ $profit >= 0 ? 'profit-pos' : 'profit-neg' }} fw-bold">{{ number_format($profit) }}</span>
+                    @if(! $order->hasCompleteCosts())
+                        {{-- قلمی بدون قیمت خرید دارد؛ عدد برآوردی است --}}
+                        <span class="cell-sub text-muted" title="{{ l('قیمت خرید بعضی اقلام ثبت نشده') }}">{{ l('برآوردی') }}</span>
+                    @elseif((int) $order->total_price > 0)
+                        <span class="cell-sub text-muted">{{ $order->profitMargin() }}٪</span>
+                    @endif
+                </td>
+
                 <td class="text-center col-status" data-label="{{ l('وضعیت') }}">
-                    {{-- همه‌ی وضعیت‌ها یک رنگ بودند و لیست از یک نگاه خوانده نمی‌شد --}}
-                    <span class="badge {{ $order->statusBadgeClass() }}">
-                        {{ $order->status() }}
-                    </span>
+                    {{-- وضعیت همین‌جا عوض می‌شود؛ قبلا باید به صفحه‌ی ویرایش می‌رفتید --}}
+                    @include('order.admin._status', ['order' => $order])
                     @if($order->pendingReceipt)
                         {{-- رسید دستیِ تعیین‌تکلیف‌نشده؛ کاری که روی زمین مانده --}}
                         <a href="/admin/payment/list?status=pending&order_id={{ $order->id }}"
@@ -97,7 +107,7 @@
                 <td class="text-center col-tools" data-label="{{ l('ابزار') }}">
                     <button class="btn btn-icon btn-light btn-xs rounded-circle shadow-sm"
                             type="button" data-bs-toggle="dropdown">
-                        <i class="fi-dots-vertical"></i>
+                        <i class="fa fa-ellipsis-v"></i>
                     </button>
                     <ul class="dropdown-menu my-1">
                         <li>
@@ -131,7 +141,7 @@
             </tr>
         @empty
             <tr class="row-empty">
-                <td colspan="8" class="text-center text-muted py-4">
+                <td colspan="9" class="text-center text-muted py-4">
                     <i class="fa fa-inbox d-block mb-2 fs-4"></i>
                     {{ l('موردی یافت نشد') }}
                 </td>

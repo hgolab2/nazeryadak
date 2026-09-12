@@ -122,7 +122,17 @@ class OrderNotifier
         }
 
         // order_placed رویداد ثبت است نه وضعیت؛ از این مسیر نباید بیرون بیاید
-        if ($status === 'order_placed' || ! isset(self::EVENTS[$status])) {
+        if ($status === 'order_placed') {
+            return;
+        }
+
+        // وضعیتی که پیامک ندارد (مثل «مرجوع شده») باز هم باید به مدیر در
+        // بله خبر داده شود؛ فقط مشتری پیامی نمی‌گیرد.
+        if (! isset(self::EVENTS[$status])) {
+            if (isset(BaleNotifier::EVENTS[$status])) {
+                self::notifyBale($order, $status);
+            }
+
             return;
         }
 
@@ -145,7 +155,7 @@ class OrderNotifier
 
         // اطلاع‌رسانی بله برای مدیر است و به متن پیامکِ مشتری وابسته نیست؛
         // اگر ادمین متن پیامک را خالی کرده باشد هم باید از سفارش باخبر شود.
-        BaleNotifier::send($event, OrderSummary::baleFields($order));
+        self::notifyBale($order, $event);
 
         if ($notifyMessage === '' && $smsMessage === '') {
             // ادمین متن را خالی گذاشته یعنی این اطلاع‌رسانی را نمی‌خواهد
@@ -153,6 +163,28 @@ class OrderNotifier
         }
 
         $this->push($order, $config['title'], $notifyMessage, $smsMessage, $config['icon']);
+    }
+
+    /**
+     * پیام سفارش برای مدیر در بله، با دکمه‌های تغییر وضعیت زیرش.
+     *
+     * بعد از تحویل موفق، bale_notified_at پر می‌شود؛ سفارشی که این ستونش
+     * خالی بماند یعنی به بله نرسیده و صفحه‌ی «بله» در پنل (و دستور
+     * bale:resend-orders) دوباره می‌فرستدش. خطای ساختن خلاصه هم نباید جلوی
+     * پیامک مشتری را بگیرد.
+     */
+    public static function notifyBale(Order $order, string $event): void
+    {
+        try {
+            $orderId = $order->id;
+
+            BaleNotifier::send($event, OrderSummary::baleFields($order), [
+                'keyboard' => OrderSummary::keyboard($order),
+                'then'     => fn () => Order::whereKey($orderId)->whereNull('bale_notified_at')->update(['bale_notified_at' => now()]),
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('ساخت پیام بله برای سفارش ناموفق بود', ['order' => $order->id, 'message' => $e->getMessage()]);
+        }
     }
 
     /**

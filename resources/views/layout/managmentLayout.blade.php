@@ -9,6 +9,11 @@
     <link rel="icon" type="image/ico" href="/favicon.ico"/>
     <link rel="stylesheet" href="/assets/css/bootstrap.rtl.css">
     <link rel="stylesheet" href="/assets/fontawesome/css/all.min.css">
+    {{-- اعلان‌های @font-face برای سرعتِ صفحات سایت از all.min.css جدا شده‌اند؛
+         پنل فقط قاعده‌ی آیکن‌ها را داشت و فونتش را نه، و همه‌ی آیکن‌ها خالی
+         می‌ماندند. fa6-aliases هم نام‌های نسخه‌ی ۶ را روی فونت ۵ می‌نشاند. --}}
+    <link rel="stylesheet" href="/assets/fontawesome/css/fa-fonts.css">
+    <link rel="stylesheet" href="/assets/fontawesome/css/fa6-aliases.css">
     <style>
         @font-face {
             font-family: vazir-fa-med;
@@ -167,6 +172,35 @@
         .badge-status {
             font-size:0.72rem; padding:4px 10px; border-radius:50px; font-weight:600;
         }
+
+        /* --- منوی کشویی وضعیت سفارش (لیست، داشبورد، مشاهده) ---
+           رنگ نوار کناری همان رنگ نشان وضعیت است تا بدون خواندن متن هم
+           وضعیت از یک نگاه معلوم باشد. */
+        .order-status-select {
+            font-size:0.78rem; padding:4px 26px 4px 8px; min-width:150px;
+            border-radius:6px; border:1px solid #dde4ec; border-right-width:4px;
+            background-color:#fff; cursor:pointer;
+        }
+        .order-status-select:disabled { opacity:.6; cursor:wait; }
+        .order-status-select.st-pending, .order-status-select.st-awaiting_call { border-right-color:#f9a825; }
+        .order-status-select.st-paid, .order-status-select.st-delivered { border-right-color:#2e7d32; }
+        .order-status-select.st-processing, .order-status-select.st-shipped { border-right-color:#1565c0; }
+        .order-status-select.st-canceled, .order-status-select.st-failed { border-right-color:#c62828; }
+        .order-status-select.st-returned { border-right-color:#333; }
+
+        /* --- پیام کوتاه گوشه‌ی صفحه --- */
+        .admin-toast {
+            position:fixed; bottom:20px; left:20px; z-index:2000; min-width:220px; max-width:360px;
+            padding:12px 16px; border-radius:8px; color:#fff; font-size:0.82rem;
+            box-shadow:0 4px 14px rgba(0,0,0,.18); opacity:0; transform:translateY(10px);
+            transition:all .25s;
+        }
+        .admin-toast.show { opacity:1; transform:none; }
+        .admin-toast.success { background:#2e7d32; }
+        .admin-toast.error { background:#c62828; }
+
+        .profit-pos { color:#2e7d32; }
+        .profit-neg { color:#c62828; }
     </style>
     @yield('head')
 </head>
@@ -207,6 +241,20 @@
 
     {{-- Content --}}
     <div class="admin-content">
+        {{-- پیام‌های بعد از ذخیره/حذف؛ یک‌جا برای همه‌ی صفحه‌ها تا هر صفحه
+             خودش تکرارش نکند. صفحه‌ای که خودش نشان می‌دهد، دوبار دیده می‌شود
+             و باید نسخه‌ی خودش را بردارد. --}}
+        @if(session('success') && ! View::hasSection('own_flash'))
+            <div class="alert alert-success" style="border-radius:10px; font-size:0.85rem;">
+                <i class="fas fa-check-circle me-1"></i> {{ session('success') }}
+            </div>
+        @endif
+        @if(session('error') && ! View::hasSection('own_flash'))
+            <div class="alert alert-danger" style="border-radius:10px; font-size:0.85rem;">
+                <i class="fas fa-exclamation-circle me-1"></i> {{ session('error') }}
+            </div>
+        @endif
+
         @yield('main_content')
     </div>
 
@@ -220,6 +268,48 @@
     $('#sidebarOverlay').on('click', function() {
         $('#adminSidebar').removeClass('show');
         $(this).removeClass('show');
+    });
+
+    /* پیام کوتاه گوشه‌ی صفحه */
+    function adminToast(message, type) {
+        var el = $('<div class="admin-toast ' + (type || 'success') + '"></div>').text(message).appendTo('body');
+        setTimeout(function () { el.addClass('show'); }, 10);
+        setTimeout(function () { el.removeClass('show'); setTimeout(function () { el.remove(); }, 300); }, 3500);
+    }
+
+    /* ── تغییر وضعیت سفارش از منوی کشویی ─────────────────────────────
+       یک رفتار برای لیست، داشبورد و صفحه‌ی مشاهده. delegate است چون لیست
+       سفارش‌ها با ajax جایگزین می‌شود. */
+    var ADMIN_CSRF = '{{ csrf_token() }}';
+    $(document).on('change', '.order-status-select', function () {
+        var el = $(this), id = el.data('order'), status = el.val(), prev = el.data('current');
+        if (status === prev) return;
+
+        var label = el.find('option:selected').text().trim();
+        if (!confirm('وضعیت سفارش #' + id + ' به «' + label + '» تغییر کند؟\nمشتری پیامک تغییر وضعیت می‌گیرد.')) {
+            el.val(prev);
+            return;
+        }
+
+        el.prop('disabled', true);
+        $.ajax({
+            url: '/admin/order/' + id + '/status',
+            type: 'PUT',
+            data: { _token: ADMIN_CSRF, status: status },
+            dataType: 'json'
+        }).done(function (r) {
+            el.data('current', r.status).attr('data-current', r.status);
+            el.removeClass(function (i, c) { return (c.match(/\bst-\S+/g) || []).join(' '); }).addClass('st-' + r.status);
+            // نشان‌های وضعیتِ همین سفارش در صفحه (مثلا سربرگ صفحه‌ی مشاهده)
+            $('.order-status-badge[data-order="' + id + '"]').attr('class', 'badge order-status-badge ' + r.badge).attr('data-order', id).text(r.label);
+            adminToast(r.message, 'success');
+        }).fail(function (xhr) {
+            el.val(prev);
+            var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'تغییر وضعیت انجام نشد.';
+            adminToast(msg, 'error');
+        }).always(function () {
+            el.prop('disabled', false);
+        });
     });
     </script>
     @yield('js')

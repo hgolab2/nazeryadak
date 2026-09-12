@@ -14,12 +14,6 @@
     </div>
 </div>
 
-@if(session('success'))
-    <div class="alert alert-success" style="border-radius:10px; font-size:0.85rem;">
-        <i class="fas fa-check-circle me-1"></i> {{ session('success') }}
-    </div>
-@endif
-
 @if($errors->any())
     <div class="alert alert-danger" style="border-radius:10px; font-size:0.85rem;">
         <ul class="mb-0 ps-3">

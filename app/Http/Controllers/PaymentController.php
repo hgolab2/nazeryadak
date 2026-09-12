@@ -218,7 +218,7 @@ class PaymentController extends Controller
         BaleNotifier::send('payment_failed', array_merge(
             ['علت' => $reason, 'مبلغ تراکنش' => number_format((int) $payment->amount) . ' تومان'],
             OrderSummary::baleFields($order)
-        ));
+        ), ['keyboard' => OrderSummary::keyboard($order)]);
     }
 
     /**
@@ -237,7 +237,9 @@ class PaymentController extends Controller
             return;
         }
 
-        $order->update(['status' => 'paid']);
+        // paid_at هم ثبت می‌شود تا OrderStatusService بداند موجودی همین‌جا کم
+        // شده و تغییر وضعیت بعدی در پنل دوباره کمش نکند
+        $order->update(['status' => 'paid', 'paid_at' => $order->paid_at ?: now()]);
 
         $fulfillment = new OrderFulfillmentService();
 

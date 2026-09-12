@@ -17,6 +17,13 @@ class Order extends Model
         'discount_code',
         'discount_amount',
         'status',
+        'paid_at',
+        'bale_notified_at',
+    ];
+
+    protected $casts = [
+        'paid_at'          => 'datetime',
+        'bale_notified_at' => 'datetime',
     ];
 
     /* Relations */
@@ -29,6 +36,12 @@ class Order extends Model
     public function items()
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    /** هزینه‌هایی که بابت همین سفارش در دفتر مالی ثبت شده (پست، بسته‌بندی، ...). */
+    public function expenses()
+    {
+        return $this->hasMany(FinanceTransaction::class)->where('type', FinanceTransaction::TYPE_EXPENSE);
     }
 
     /**
@@ -261,4 +274,115 @@ class Order extends Model
         };
     }
 
+
+    /* ------------------------------------------------------- وضعیت‌ها */
+
+    /**
+     * وضعیت‌هایی که یعنی پول این سفارش گرفته شده و فروش به حساب می‌آید.
+     * گزارش درآمد و سود فقط همین‌ها را می‌شمارد.
+     */
+    public const SETTLED_STATUSES = ['paid', 'processing', 'shipped', 'delivered'];
+
+    /**
+     * وضعیت‌هایی که هنوز کسی باید روی سفارش کاری بکند (تماس، آماده‌سازی،
+     * ارسال). فهرست «سفارش‌های باز» بله و داشبورد از همین استفاده می‌کند.
+     */
+    public const OPEN_STATUSES = ['awaiting_call', 'paid', 'processing'];
+
+    /**
+     * از هر وضعیت، کدام وضعیت‌ها قدم بعدیِ طبیعی‌اند.
+     *
+     * دکمه‌های زیر پیام بله از همین ساخته می‌شوند تا مدیر با یک لمس، بدون
+     * دیدن نُه گزینه، سفارش را جلو ببرد. پنل همچنان همه‌ی وضعیت‌ها را دارد.
+     */
+    public const NEXT_STATUSES = [
+        'pending'       => ['paid', 'awaiting_call', 'canceled'],
+        'awaiting_call' => ['paid', 'processing', 'canceled'],
+        'failed'        => ['paid', 'awaiting_call', 'canceled'],
+        'paid'          => ['processing', 'shipped', 'canceled'],
+        'processing'    => ['shipped', 'canceled'],
+        'shipped'       => ['delivered', 'returned'],
+        'delivered'     => ['returned'],
+        'canceled'      => ['awaiting_call', 'paid'],
+        'returned'      => [],
+    ];
+
+    /** @return string[] */
+    public function nextStatuses(): array
+    {
+        return self::NEXT_STATUSES[(string) $this->status] ?? [];
+    }
+
+    public function isSettled(): bool
+    {
+        return in_array((string) $this->status, self::SETTLED_STATUSES, true);
+    }
+
+    /** ایموجی هر وضعیت؛ در بله که رنگ نداریم، همین جای نشان رنگی را می‌گیرد. */
+    public static function statusIcon(string $status): string
+    {
+        return match ($status) {
+            'pending'       => '⏳',
+            'awaiting_call' => '📞',
+            'paid'          => '✅',
+            'processing'    => '📦',
+            'shipped'       => '🚚',
+            'delivered'     => '🏁',
+            'canceled'      => '❌',
+            'returned'      => '↩️',
+            'failed'        => '⚠️',
+            default         => '•',
+        };
+    }
+
+    /* ------------------------------------------------------- سود و زیان */
+
+    /**
+     * قیمت خرید کل اقلام (بهای تمام‌شده‌ی کالا).
+     *
+     * از unit_cost ثبت‌شده روی هر قلم خوانده می‌شود، نه از قیمت امروز محصول؛
+     * سود سفارشِ ماه پیش نباید با تغییر قیمت این هفته عوض شود.
+     */
+    public function itemsCost(): int
+    {
+        $this->loadMissing('items');
+
+        return (int) $this->items->sum(fn ($item) => $item->totalCost());
+    }
+
+    /** جمع هزینه‌های جانبی ثبت‌شده برای همین سفارش. */
+    public function expensesTotal(): int
+    {
+        if ($this->relationLoaded('expenses')) {
+            return (int) $this->expenses->sum('amount');
+        }
+
+        return (int) $this->expenses()->sum('amount');
+    }
+
+    /**
+     * سود خالص: هرچه از مشتری گرفته‌ایم (اقلام − تخفیف + ارسال) منهای قیمت
+     * خرید اقلام و هزینه‌های جانبی. هزینه‌ی ارسالی که از مشتری می‌گیریم
+     * درآمد است و پولی که به پست می‌دهیم، هزینه‌ی سفارش؛ این دو یکی نیستند.
+     */
+    public function netProfit(): int
+    {
+        return (int) $this->total_price - $this->itemsCost() - $this->expensesTotal();
+    }
+
+    /** درصد سود نسبت به مبلغ دریافتی؛ صفر وقتی مبلغی در کار نیست. */
+    public function profitMargin(): float
+    {
+        $total = (int) $this->total_price;
+
+        return $total > 0 ? round($this->netProfit() * 100 / $total, 1) : 0.0;
+    }
+
+    /** آیا برای همه‌ی اقلام قیمت خرید داریم؟ اگر نه، سود فقط برآورد است. */
+    public function hasCompleteCosts(): bool
+    {
+        $this->loadMissing('items');
+
+        return $this->items->every(fn ($item) => $item->unit_cost !== null || (int) $item->unit_price === 0);
+    }
 }
