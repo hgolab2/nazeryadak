@@ -151,4 +151,22 @@ class AdminImpersonationTest extends TestCase
         // قبلا اینجا bcrypt(null) ذخیره می‌شد و مشتری «رمزدار» به حساب می‌آمد
         $this->assertNull(Customer::where('phone', '09121110005')->first()->password);
     }
+    /**
+     * کلید url.intended بین مشتری و مدیر مشترک است؛ مقصدِ مانده از مسیر خرید
+     * نباید ورود مدیر را به صفحه‌ی مشتری (و از آن‌جا به /login) بفرستد.
+     */
+    public function test_admin_login_ignores_a_customer_intended_url(): void
+    {
+        $this->admin();
+
+        $this->withSession(['url.intended' => '/order/shopping'])
+            ->post('/loginAdmin', ['username' => 'admin', 'password' => 'secret123'])
+            ->assertRedirect('/dashboardAdmin');
+
+        // مقصد داخل پنل همچنان محترم است
+        $this->post('/logout');
+        $this->withSession(['url.intended' => '/admin/order/list'])
+            ->post('/loginAdmin', ['username' => 'admin', 'password' => 'secret123'])
+            ->assertRedirect('/admin/order/list');
+    }
 }

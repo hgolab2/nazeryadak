@@ -26,10 +26,30 @@ class UserController extends Controller
     public function loginAdmin(Request $request)
     {
         if (Auth::guard('web')->check()) {
-            return redirect(session('url.intended') ?? '/dashboardAdmin');
+            return redirect($this->adminIntendedUrl());
         }
 
         return view('auth.loginAdmin');
+    }
+
+    /**
+     * مقصد بعد از ورود مدیر.
+     *
+     * کلید url.intended بین مسیر مشتری و مدیر مشترک است: اگر همین مرورگر
+     * قبلا به صفحه‌ای مثل /order/shopping رفته باشد، آن صفحه مقصد را ذخیره
+     * می‌کند و به /login می‌فرستد. ورود مدیر آن مقصد را برمی‌داشت، به صفحه‌ی
+     * مشتری می‌رفت و دوباره به /login پرت می‌شد. فقط مقصدِ داخل پنل معتبر است.
+     */
+    private function adminIntendedUrl(): string
+    {
+        $intended = (string) session()->pull('url.intended', '');
+        $path     = ltrim((string) parse_url($intended, PHP_URL_PATH), '/');
+
+        if ($path === 'dashboardAdmin' || str_starts_with($path, 'admin/')) {
+            return $intended;
+        }
+
+        return '/dashboardAdmin';
     }
 
     public function verifyLogin(Request $request)
@@ -65,7 +85,7 @@ class UserController extends Controller
                 'IP'    => $request->ip(),
             ]);
 
-            return redirect(session()->pull('url.intended', '/dashboardAdmin'));
+            return redirect($this->adminIntendedUrl());
         }
 
         RateLimiter::hit($key, 600);
