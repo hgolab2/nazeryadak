@@ -50,6 +50,15 @@
 <a href="/admin/seo/health" class="admin-menu-item {{ ($menu ?? '') == 'seo/health' ? 'active' : '' }}">
     <i class="fas fa-heart-pulse"></i> سلامت سئو
 </a>
+<a href="/admin/seo/keywords" class="admin-menu-item {{ ($menu ?? '') == 'seo/keywords' ? 'active' : '' }}">
+    <i class="fas fa-bullseye"></i> کلیدواژه‌های هدف
+</a>
+<a href="/admin/seo/searches" class="admin-menu-item {{ ($menu ?? '') == 'seo/searches' ? 'active' : '' }}">
+    <i class="fas fa-magnifying-glass"></i> جستجوهای کاربران
+</a>
+<a href="/admin/seo/gsc" class="admin-menu-item {{ ($menu ?? '') == 'seo/gsc' ? 'active' : '' }}">
+    <i class="fab fa-google"></i> سرچ کنسول
+</a>
 <a href="/admin/seo/terms" class="admin-menu-item {{ ($menu ?? '') == 'seo/terms' ? 'active' : '' }}">
     <i class="fas fa-signs-post"></i> صفحات فرود
 </a>

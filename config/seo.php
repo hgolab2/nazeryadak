@@ -100,6 +100,24 @@ return [
     // «category» اینجا نیست چون به مسیر آدرس منتقل شده: /shop/{slug}
     'canonical_query_whitelist' => ['page', 'car_model'],
 
+    /*
+    | Google Search Console — همگام‌سازی خودکار عبارت‌های جستجو.
+    |
+    | credentials: مسیر فایل JSON یک Service Account (Google Cloud → IAM →
+    |   Service Accounts → Keys). ایمیل همان حساب باید در سرچ کنسول به‌عنوان
+    |   کاربر (Full یا Restricted) به سایت اضافه شود.
+    | site_url: دقیقا همان شناسه‌ی property؛ برای property دامنه‌ای
+    |   «sc-domain:nazeryadak.ir» و برای property آدرسی «https://nazeryadak.ir/».
+    |
+    | اگر خالی باشد، دستور seo:gsc-sync کاری نمی‌کند و مدیر می‌تواند CSV
+    | خروجی سرچ کنسول را از پنل آپلود کند.
+    */
+    'search_console' => [
+        'credentials' => env('SEO_GSC_CREDENTIALS', ''),
+        'site_url'    => env('SEO_GSC_SITE_URL', ''),
+        'days'        => (int) env('SEO_GSC_DAYS', 28),
+    ],
+
     'sitemap' => [
         'cache_minutes'   => 180,
         'products_per_map'=> 2000,

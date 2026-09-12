@@ -24,6 +24,7 @@ use App\Http\Controllers\Admin\ImportController;
 use App\Http\Controllers\Admin\ArticleAdminController;
 use App\Http\Controllers\Admin\SettingAdminController;
 use App\Http\Controllers\Admin\SeoAdminController;
+use App\Http\Controllers\Admin\SeoKeywordAdminController;
 use App\Http\Controllers\Admin\PaymentAdminController;
 use App\Http\Controllers\Admin\DiscountAdminController;
 use App\Http\Controllers\Admin\SmsAdminController;
@@ -410,6 +411,19 @@ Route::group(['namespace' => 'Frontend', 'middleware' => [ShareDataInFrontend::c
         Route::get('/admin/seo/404', [SeoAdminController::class, 'notFound']);
         Route::delete('/admin/seo/404/clear', [SeoAdminController::class, 'notFoundClear']);
         Route::delete('/admin/seo/404/{id}', [SeoAdminController::class, 'notFoundDestroy']);
+
+        /* SEO — کلیدواژه‌های هدف، جستجوی داخلی، سرچ کنسول */
+        Route::get('/admin/seo/keywords', [SeoKeywordAdminController::class, 'index']);
+        Route::post('/admin/seo/keywords', [SeoKeywordAdminController::class, 'store']);
+        Route::post('/admin/seo/keywords/check', [SeoKeywordAdminController::class, 'check']);
+        Route::post('/admin/seo/keywords/seed', [SeoKeywordAdminController::class, 'seed']);
+        Route::post('/admin/seo/keywords/{id}/check', [SeoKeywordAdminController::class, 'check']);
+        Route::put('/admin/seo/keywords/{id}', [SeoKeywordAdminController::class, 'update']);
+        Route::delete('/admin/seo/keywords/{id}', [SeoKeywordAdminController::class, 'destroy']);
+        Route::get('/admin/seo/searches', [SeoKeywordAdminController::class, 'searches']);
+        Route::get('/admin/seo/gsc', [SeoKeywordAdminController::class, 'gsc']);
+        Route::post('/admin/seo/gsc/sync', [SeoKeywordAdminController::class, 'gscSync']);
+        Route::post('/admin/seo/gsc/import', [SeoKeywordAdminController::class, 'gscImport']);
 
         /* حسابداری — دفتر درآمد/هزینه و گزارش سود */
         Route::get('/admin/finance', [FinanceAdminController::class, 'index']);
